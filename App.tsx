@@ -28,6 +28,16 @@ type Member = {
   city: string;
 };
 
+// Friendly welcome lines shown once on the directory right after login.
+// A mix of Sundanese + Indonesian, matching the SMA 5 Bandung (Lima) community.
+const WELCOME_MESSAGES = [
+  'Wilujeng sumping, senang kamu kembali.',
+  'Selamat datang kembali di LIMA Circle.',
+  'Apa yang akan kita lakukan hari ini?',
+  'Senang melihatmu lagi di sini.',
+  'Siap terhubung dengan keluarga Lima hari ini?',
+];
+
 function AppInner() {
   const insets = useSafeAreaInsets();
 
@@ -65,6 +75,11 @@ function AppInner() {
   // When a directory card is tapped, show that member's detail screen.
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
 
+  // Welcome banner: shown once on the directory right after login, then hidden
+  // as soon as the user navigates elsewhere (and not shown again on return).
+  const [welcomeVisible, setWelcomeVisible] = useState(false);
+  const [welcomeMsg, setWelcomeMsg] = useState('');
+
   // Call POST /login, store the token, then load the directory.
   async function handleLogin() {
     setError(null);
@@ -82,6 +97,9 @@ function AppInner() {
       }
       setToken(data.token);
       setUser(data.user);
+      // Pick one random welcome line for this session and reveal the banner.
+      setWelcomeMsg(WELCOME_MESSAGES[Math.floor(Math.random() * WELCOME_MESSAGES.length)]);
+      setWelcomeVisible(true);
       await loadMembers(''); // initial directory load
     } catch (e: any) {
       setError(e.message);
@@ -114,6 +132,7 @@ function AppInner() {
     setPhone('');
     setPassword('');
     setSelectedMemberId(null);
+    setWelcomeVisible(false);
   }
 
   // Hold rendering until fonts are ready (keeps the brand look consistent).
@@ -201,7 +220,14 @@ function AppInner() {
       <View style={styles.flex}>
       <Header title="Directory" onLogout={logout} />
 
-      <View style={styles.searchRow}>
+      {welcomeVisible && (
+        <View style={styles.welcomeCard}>
+          <Text style={styles.welcomeHi}>Hai {user?.name},</Text>
+          <Text style={styles.welcomeMsg}>{welcomeMsg}</Text>
+        </View>
+      )}
+
+      <View style={[styles.searchRow, welcomeVisible && styles.searchRowTight]}>
         <TextInput
           style={[styles.input, styles.searchInput]}
           placeholder="Search by name…"
@@ -231,7 +257,10 @@ function AppInner() {
         renderItem={({ item }) => (
           <Pressable
             style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-            onPress={() => setSelectedMemberId(item.id)}
+            onPress={() => {
+              setWelcomeVisible(false);
+              setSelectedMemberId(item.id);
+            }}
           >
             {item.avatar?.thumbnail ? (
               <Image source={{ uri: item.avatar.thumbnail }} style={styles.avatar} />
@@ -266,7 +295,7 @@ function AppInner() {
         <Pressable style={styles.tabItem} onPress={() => setTab('directory')}>
           <Text style={[styles.tabLabel, tab === 'directory' && styles.tabActive]}>Directory</Text>
         </Pressable>
-        <Pressable style={styles.tabItem} onPress={() => setTab('profile')}>
+        <Pressable style={styles.tabItem} onPress={() => { setWelcomeVisible(false); setTab('profile'); }}>
           <Text style={[styles.tabLabel, tab === 'profile' && styles.tabActive]}>Profile</Text>
         </Pressable>
       </View>
@@ -344,8 +373,21 @@ const styles = StyleSheet.create({
   menuLogout: { paddingVertical: 14, paddingHorizontal: 10, borderTopWidth: 1, borderTopColor: colors.border, marginTop: 8 },
   menuLogoutText: { fontFamily: fonts.bodySemi, fontSize: 15, color: colors.danger },
 
+  // ---- Welcome banner (directory, once after login) ----
+  welcomeCard: {
+    marginHorizontal: 12, marginTop: 40, backgroundColor: colors.card,
+    borderRadius: 14, borderLeftWidth: 4, borderLeftColor: colors.secondary,
+    paddingVertical: 14, paddingHorizontal: 16,
+    borderWidth: 1, borderColor: colors.border,
+    shadowColor: colors.primaryDark, shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  welcomeHi: { fontFamily: fonts.heading, fontSize: 20, color: colors.heading },
+  welcomeMsg: { fontFamily: fonts.body, fontSize: 14, color: colors.text, marginTop: 4, lineHeight: 20 },
+
   // ---- Search ----
   searchRow: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 46, paddingBottom: 12, gap: 8, alignItems: 'center' },
+  searchRowTight: { paddingTop: 14 },
   searchInput: { flex: 1, marginBottom: 0 },
   searchBtn: {
     backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 20,
