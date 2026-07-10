@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, ScrollView, StyleSheet, Text, View,
+  ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
@@ -9,23 +9,52 @@ import ProfileView, { ProfileViewData } from './ProfileView';
 
 const INDUSTRY_GLOSSARY_ID = 1;
 
-type Props = { memberId: number; onBack: () => void; onLogout: () => void };
+// The signed-in viewer, used to decide whether to show Verify / Recognize.
+type Viewer = {
+  id: number;
+  angkatan?: string;
+  caps?: {
+    recognize?: boolean;
+    verify_any?: boolean;
+    verify_same_angkatan?: boolean;
+    appoint_pengurus?: boolean;
+  };
+} | null;
 
-// Read-only detail for a member tapped in the directory. Fetches the public
-// /member/{id} payload and resolves the industry label from the glossary.
-export default function MemberDetailScreen({ memberId, onBack, onLogout }: Props) {
+type Props = {
+  memberId: number;
+  token: string;
+  viewer: Viewer;
+  onBack: () => void;
+  onLogout: () => void;
+};
+
+// Read-only detail for a member tapped in the directory. Fetches the
+// (auth-gated) /member/{id} payload and resolves the industry label. Pengurus
+// see a Verify button for eligible subscribers; members see a Recognize button.
+export default function MemberDetailScreen({ memberId, token, viewer, onBack, onLogout }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ProfileViewData | null>(null);
+
+  // Promotion state for this target.
+  const [isMember, setIsMember] = useState(true); // assume member until told otherwise
+  const [isPengurusAngkatan, setIsPengurusAngkatan] = useState(false);
+  const [angkatan, setAngkatan] = useState<string>('');
+  const [acting, setActing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const authHeaders = { 'X-IA5-Token': token };
 
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
       setError(null);
+      setNotice(null);
       try {
         const [mRes, gRes] = await Promise.all([
-          fetch(`${API_BASE}/member/${memberId}`),
+          fetch(`${API_BASE}/member/${memberId}`, { headers: authHeaders }),
           fetch(`${API_BASE}/glossary/${INDUSTRY_GLOSSARY_ID}`),
         ]);
         const m = await mRes.json();
@@ -34,6 +63,9 @@ export default function MemberDetailScreen({ memberId, onBack, onLogout }: Props
         const industryLabel =
           (g?.options || []).find((o: any) => o.value === m.industry)?.label || '';
         if (!alive) return;
+        setIsMember(!!m.is_member);
+        setIsPengurusAngkatan((m.roles || []).includes('Pengurus Angkatan'));
+        setAngkatan(m.angkatan || '');
         setData({
           name: m.name,
           avatar: m.avatar,
@@ -47,6 +79,13 @@ export default function MemberDetailScreen({ memberId, onBack, onLogout }: Props
           open_for_collaboration: m.open_for_collaboration,
           social: m.social,
         });
+
+        // Best-effort profile-view tracking (also the trigger context for the
+        // pengurus Verify button). Ignore failures.
+        fetch(`${API_BASE}/track-profile-view/${memberId}`, {
+          method: 'POST',
+          headers: authHeaders,
+        }).catch(() => {});
       } catch (e: any) {
         if (alive) setError(e.message);
       } finally {
@@ -58,6 +97,61 @@ export default function MemberDetailScreen({ memberId, onBack, onLogout }: Props
     };
   }, [memberId]);
 
+  // Verify eligibility (only for not-yet-members that aren't the viewer).
+  const isSelf = viewer?.id === memberId;
+  const caps = viewer?.caps || {};
+  const canVerifyAny = !!caps.verify_any;
+  const canVerifyAngkatan = !!caps.verify_same_angkatan && !!angkatan && viewer?.angkatan === angkatan;
+  const showVerify = !isMember && !isSelf && (canVerifyAny || canVerifyAngkatan);
+  const verifyLabel = canVerifyAny ? 'Verify Member' : 'Verify Alumni';
+  // Pengurus IA Lima only: appoint the member as Pengurus Angkatan (their year).
+  const canAppointAngkatan = !!caps.appoint_pengurus && !isSelf && !!angkatan && !isPengurusAngkatan;
+  // Recognize is for ordinary members; pengurus who can verify use Verify instead.
+  const showRecognize =
+    !isMember && !isSelf && !!caps.recognize && !canVerifyAny && !canVerifyAngkatan;
+
+  async function act(path: string, successText: (d: any) => string, onDone?: (d: any) => void) {
+    setActing(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`${API_BASE}${path}`, {
+        method: 'POST',
+        headers: { ...authHeaders, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ target_id: String(memberId) }).toString(),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d?.message || 'Action failed');
+      if (d.promoted) setIsMember(true);
+      onDone?.(d);
+      setNotice(successText(d));
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setActing(false);
+    }
+  }
+
+  const doVerify = () =>
+    act('/verify-member', () => `${data?.name || 'Alumni'} is now a Member.`);
+
+  const doRecognize = () =>
+    act('/recognize-member', (d) =>
+      d.promoted
+        ? `${data?.name || 'Alumni'} reached ${d.threshold} recognitions and is now a Member.`
+        : `Recognized. ${d.recognize_count}/${d.threshold} recognitions.`,
+    );
+
+  const doAppointAngkatan = () =>
+    act(
+      '/appoint-pengurus-angkatan',
+      (d) => `${data?.name || 'Alumni'} is now Pengurus Angkatan ${d.angkatan}.`,
+      () => {
+        setIsMember(true);
+        setIsPengurusAngkatan(true);
+      },
+    );
+
   return (
     <View style={styles.flex}>
       <Header title={data?.name || 'Profile'} onBack={onBack} onLogout={onLogout} />
@@ -66,11 +160,46 @@ export default function MemberDetailScreen({ memberId, onBack, onLogout }: Props
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
         </View>
-      ) : error ? (
+      ) : error && !data ? (
         <Text style={styles.error}>{error}</Text>
       ) : data ? (
         <ScrollView contentContainerStyle={styles.content}>
           <ProfileView data={data} />
+
+          {!!notice && <Text style={styles.notice}>{notice}</Text>}
+          {!!error && <Text style={styles.error}>{error}</Text>}
+
+          {showVerify && (
+            <Pressable
+              style={({ pressed }) => [styles.primaryBtn, pressed && styles.primaryBtnPressed]}
+              onPress={doVerify}
+              disabled={acting}
+            >
+              <Text style={styles.primaryBtnText}>{acting ? 'Working…' : verifyLabel}</Text>
+            </Pressable>
+          )}
+
+          {canAppointAngkatan && (
+            <Pressable
+              style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.85 }]}
+              onPress={doAppointAngkatan}
+              disabled={acting}
+            >
+              <Text style={styles.secondaryBtnText}>
+                {acting ? 'Working…' : `Jadikan Pengurus Angkatan${angkatan ? ' ' + angkatan : ''}`}
+              </Text>
+            </Pressable>
+          )}
+
+          {showRecognize && (
+            <Pressable
+              style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.85 }]}
+              onPress={doRecognize}
+              disabled={acting}
+            >
+              <Text style={styles.secondaryBtnText}>{acting ? 'Working…' : 'Recognize this alumni'}</Text>
+            </Pressable>
+          )}
         </ScrollView>
       ) : null}
     </View>
@@ -82,5 +211,16 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { padding: 16, paddingTop: 40, paddingBottom: 40 },
 
-  error: { color: colors.danger, textAlign: 'center', marginTop: 30, fontFamily: fonts.bodyMedium },
+  error: { color: colors.danger, textAlign: 'center', marginTop: 16, fontFamily: fonts.bodyMedium },
+  notice: { color: colors.primary, textAlign: 'center', marginTop: 16, fontFamily: fonts.bodyMedium },
+
+  primaryBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginTop: 20 },
+  primaryBtnPressed: { backgroundColor: colors.accentDark },
+  primaryBtnText: { color: colors.white, fontFamily: fonts.headingSemi, fontSize: 16, letterSpacing: 0.5 },
+
+  secondaryBtn: {
+    borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 12,
+    borderWidth: 1.5, borderColor: colors.primary,
+  },
+  secondaryBtnText: { color: colors.primary, fontFamily: fonts.headingSemi, fontSize: 15 },
 });

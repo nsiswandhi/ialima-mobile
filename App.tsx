@@ -17,7 +17,24 @@ import KeyboardAwareScroll from './src/KeyboardAwareScroll';
 const logo = require('./assets/logo.png');
 
 // ---- Types that mirror what the WordPress API returns ----
-type User = { id: number; name: string; email: string };
+type Caps = {
+  member_features: boolean;
+  recognize: boolean;
+  verify_same_angkatan: boolean;
+  verify_any: boolean;
+  appoint_pengurus: boolean;
+  manage_community: boolean;
+  manage_own_brand: boolean;
+};
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  angkatan?: string;
+  roles?: string[];
+  is_member?: boolean;
+  caps?: Caps;
+};
 type Member = {
   id: number;
   name: string;
@@ -100,7 +117,7 @@ function AppInner() {
       // Pick one random welcome line for this session and reveal the banner.
       setWelcomeMsg(WELCOME_MESSAGES[Math.floor(Math.random() * WELCOME_MESSAGES.length)]);
       setWelcomeVisible(true);
-      await loadMembers(''); // initial directory load
+      await loadMembers('', data.token); // initial directory load (token not yet in state)
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -108,13 +125,15 @@ function AppInner() {
     }
   }
 
-  // Call GET /members (public endpoint) with an optional name search.
-  async function loadMembers(q: string) {
+  // Call GET /members (auth-gated) with an optional name search. On the initial
+  // post-login load the token isn't in state yet, so it can be passed explicitly.
+  async function loadMembers(q: string, authToken?: string) {
+    const t = authToken ?? token;
     setError(null);
     setLoading(true);
     try {
       const url = `${API_BASE}/members?per_page=50&search=${encodeURIComponent(q)}`;
-      const res = await fetch(url);
+      const res = await fetch(url, t ? { headers: { 'X-IA5-Token': t } } : undefined);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || 'Could not load members');
       setMembers(data.data || []);
@@ -213,6 +232,8 @@ function AppInner() {
       ) : selectedMemberId ? (
         <MemberDetailScreen
           memberId={selectedMemberId}
+          token={token}
+          viewer={user}
           onBack={() => setSelectedMemberId(null)}
           onLogout={logout}
         />
