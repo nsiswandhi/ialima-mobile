@@ -45,6 +45,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   // "I know this person" mutual connection state (viewer -> this member).
   const [iKnowThem, setIKnowThem] = useState(false);
   const [theyKnowMe, setTheyKnowMe] = useState(false);
+  const [recognizeCount, setRecognizeCount] = useState(0); // how many people know this member
   const [acting, setActing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -72,6 +73,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
         setAngkatan(m.angkatan || '');
         setIKnowThem(!!m.i_know_them);
         setTheyKnowMe(!!m.they_know_me);
+        setRecognizeCount(Number(m.recognize_count) || 0);
         setData({
           name: m.name,
           avatar: m.avatar,
@@ -153,6 +155,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
       if (!res.ok) throw new Error(d?.message || 'Action failed');
       setIKnowThem(!!d.i_know_them);
       setTheyKnowMe(!!d.they_know_me);
+      if (typeof d.recognize_count === 'number') setRecognizeCount(d.recognize_count);
       if (d.promoted) setIsMember(true);
     } catch (e: any) {
       setError(e.message);
@@ -211,24 +214,29 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
           )}
 
           {!isSelf && (
-            <Pressable
-              style={({ pressed }) => [
-                mutual ? styles.knowMutualBtn : iKnowThem ? styles.knowActiveBtn : styles.secondaryBtn,
-                pressed && { opacity: 0.85 },
-              ]}
-              onPress={toggleKnow}
-              disabled={acting}
-            >
-              <Text style={mutual ? styles.knowMutualText : styles.secondaryBtnText}>
-                {acting
-                  ? 'Working…'
-                  : mutual
-                  ? 'Saling Kenal 🤝'
-                  : iKnowThem
-                  ? 'Saya Kenal Dia ✓'
-                  : 'Saya Kenal Dia'}
-              </Text>
-            </Pressable>
+            <View>
+              {recognizeCount > 0 && (
+                <Text style={styles.knowCount}>{recognizeCount} mengenal dia.</Text>
+              )}
+              <Pressable
+                style={({ pressed }) => [
+                  mutual ? styles.knowMutualBtn : iKnowThem ? styles.knowActiveBtn : styles.secondaryBtn,
+                  pressed && { opacity: 0.85 },
+                ]}
+                onPress={toggleKnow}
+                disabled={acting}
+              >
+                <Text style={mutual ? styles.knowMutualText : styles.secondaryBtnText}>
+                  {acting
+                    ? 'Working…'
+                    : mutual
+                    ? 'Saling Kenal 🤝'
+                    : iKnowThem
+                    ? 'Saya Kenal Dia ✓'
+                    : 'Saya Kenal Dia'}
+                </Text>
+              </Pressable>
+            </View>
           )}
         </ScrollView>
       ) : null}
@@ -253,6 +261,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.primary,
   },
   secondaryBtnText: { color: colors.primary, fontFamily: fonts.headingSemi, fontSize: 15 },
+
+  // Inbound recognition tally shown above the "Saya Kenal Dia" button.
+  knowCount: {
+    marginTop: 20, marginBottom: 2, textAlign: 'center',
+    color: colors.muted, fontFamily: fonts.bodyMedium, fontSize: 13.5,
+  },
 
   // "I know this person" — you flagged, not yet mutual (selected, filled tint).
   knowActiveBtn: {
