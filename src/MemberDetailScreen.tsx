@@ -41,6 +41,10 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   const [isMember, setIsMember] = useState(true); // assume member until told otherwise
   const [isPengurusAngkatan, setIsPengurusAngkatan] = useState(false);
   const [angkatan, setAngkatan] = useState<string>('');
+
+  // "I know this person" mutual connection state (viewer -> this member).
+  const [iKnowThem, setIKnowThem] = useState(false);
+  const [theyKnowMe, setTheyKnowMe] = useState(false);
   const [acting, setActing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -66,6 +70,8 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
         setIsMember(!!m.is_member);
         setIsPengurusAngkatan((m.roles || []).includes('Pengurus Angkatan'));
         setAngkatan(m.angkatan || '');
+        setIKnowThem(!!m.i_know_them);
+        setTheyKnowMe(!!m.they_know_me);
         setData({
           name: m.name,
           avatar: m.avatar,
@@ -106,9 +112,9 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   const verifyLabel = canVerifyAny ? 'Verify Member' : 'Verify Alumni';
   // Pengurus IA Lima only: appoint the member as Pengurus Angkatan (their year).
   const canAppointAngkatan = !!caps.appoint_pengurus && !isSelf && !!angkatan && !isPengurusAngkatan;
-  // Recognize is for ordinary members; pengurus who can verify use Verify instead.
-  const showRecognize =
-    !isMember && !isSelf && !!caps.recognize && !canVerifyAny && !canVerifyAngkatan;
+  // "I know this person" connection — shown on every profile but your own, for
+  // all roles. Mutual ("Saling Kenal") once both have flagged.
+  const mutual = iKnowThem && theyKnowMe;
 
   async function act(path: string, successText: (d: any) => string, onDone?: (d: any) => void) {
     setActing(true);
@@ -135,12 +141,25 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   const doVerify = () =>
     act('/verify-member', () => `${data?.name || 'Alumni'} is now a Member.`);
 
-  const doRecognize = () =>
-    act('/recognize-member', (d) =>
-      d.promoted
-        ? `${data?.name || 'Alumni'} reached ${d.threshold} recognitions and is now a Member.`
-        : `Recognized. ${d.recognize_count}/${d.threshold} recognitions.`,
-    );
+  async function toggleKnow() {
+    setActing(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/recognize-member?target_id=${memberId}`, {
+        method: iKnowThem ? 'DELETE' : 'POST',
+        headers: authHeaders,
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d?.message || 'Action failed');
+      setIKnowThem(!!d.i_know_them);
+      setTheyKnowMe(!!d.they_know_me);
+      if (d.promoted) setIsMember(true);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setActing(false);
+    }
+  }
 
   const doAppointAngkatan = () =>
     act(
@@ -191,13 +210,24 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
             </Pressable>
           )}
 
-          {showRecognize && (
+          {!isSelf && (
             <Pressable
-              style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.85 }]}
-              onPress={doRecognize}
+              style={({ pressed }) => [
+                mutual ? styles.knowMutualBtn : iKnowThem ? styles.knowActiveBtn : styles.secondaryBtn,
+                pressed && { opacity: 0.85 },
+              ]}
+              onPress={toggleKnow}
               disabled={acting}
             >
-              <Text style={styles.secondaryBtnText}>{acting ? 'Working…' : 'Recognize this alumni'}</Text>
+              <Text style={mutual ? styles.knowMutualText : styles.secondaryBtnText}>
+                {acting
+                  ? 'Working…'
+                  : mutual
+                  ? 'Saling Kenal 🤝'
+                  : iKnowThem
+                  ? 'Saya Kenal Dia ✓'
+                  : 'Saya Kenal Dia'}
+              </Text>
             </Pressable>
           )}
         </ScrollView>
@@ -223,4 +253,16 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.primary,
   },
   secondaryBtnText: { color: colors.primary, fontFamily: fonts.headingSemi, fontSize: 15 },
+
+  // "I know this person" — you flagged, not yet mutual (selected, filled tint).
+  knowActiveBtn: {
+    borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 12,
+    backgroundColor: colors.bgAlt, borderWidth: 1.5, borderColor: colors.primary,
+  },
+  // Mutual — both flagged ("Saling Kenal").
+  knowMutualBtn: {
+    borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 12,
+    backgroundColor: colors.primary,
+  },
+  knowMutualText: { color: colors.white, fontFamily: fonts.headingSemi, fontSize: 15 },
 });
