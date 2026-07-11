@@ -11,6 +11,7 @@ import Header from './src/Header';
 import ProfileScreen from './src/ProfileScreen';
 import SignUpScreen from './src/SignUpScreen';
 import MemberDetailScreen from './src/MemberDetailScreen';
+import MarketplaceScreen from './src/MarketplaceScreen';
 import KeyboardAwareScroll from './src/KeyboardAwareScroll';
 
 // Brand logo, downloaded from the WordPress site (wp-content/.../logo-apps.png).
@@ -81,7 +82,7 @@ function AppInner() {
   const [authView, setAuthView] = useState<'login' | 'signup'>('login');
 
   // Which authenticated tab is showing.
-  const [tab, setTab] = useState<'directory' | 'profile'>('directory');
+  const [tab, setTab] = useState<'directory' | 'marketplace' | 'profile'>('directory');
 
   // Directory + UI state.
   const [members, setMembers] = useState<Member[]>([]);
@@ -229,6 +230,13 @@ function AppInner() {
           onBackToDirectory={() => setTab('directory')}
           onNameUpdated={(name) => setUser((u) => (u ? { ...u, name } : u))}
         />
+      ) : tab === 'marketplace' ? (
+        <MarketplaceScreen
+          token={token}
+          viewerId={user!.id}
+          canManage={!!user?.caps?.manage_own_brand}
+          onLogout={logout}
+        />
       ) : selectedMemberId ? (
         <MemberDetailScreen
           memberId={selectedMemberId}
@@ -315,6 +323,9 @@ function AppInner() {
       <View style={[styles.tabBar, { paddingBottom: insets.bottom || 10 }]}>
         <Pressable style={styles.tabItem} onPress={() => setTab('directory')}>
           <Text style={[styles.tabLabel, tab === 'directory' && styles.tabActive]}>Directory</Text>
+        </Pressable>
+        <Pressable style={styles.tabItem} onPress={() => { setWelcomeVisible(false); setTab('marketplace'); }}>
+          <Text style={[styles.tabLabel, tab === 'marketplace' && styles.tabActive]}>Marketplace</Text>
         </Pressable>
         <Pressable style={styles.tabItem} onPress={() => { setWelcomeVisible(false); setTab('profile'); }}>
           <Text style={[styles.tabLabel, tab === 'profile' && styles.tabActive]}>Profile</Text>
