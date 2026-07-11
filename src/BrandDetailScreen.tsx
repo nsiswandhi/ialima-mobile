@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View,
+  ActivityIndicator, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
+import { API_BASE } from './config';
 import { colors, fonts } from './theme';
 import Header from './Header';
 import {
@@ -14,7 +15,14 @@ type Props = {
   viewerId: number;
   onBack: () => void;
   onLogout: () => void;
-  onManage: (brand: BrandDetail) => void; // owner taps "Kelola Brand"
+  onManage?: (brand: BrandDetail) => void; // owner taps "Kelola Brand" (optional)
+};
+
+type OwnerProfile = {
+  name: string;
+  avatar: { thumbnail: string } | null;
+  angkatan?: string;
+  roles?: string[];
 };
 
 const DAY_LABELS: [keyof Place['operating_hours'], string][] = [
@@ -28,6 +36,8 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [brand, setBrand] = useState<BrandDetail | null>(null);
+  const [owner, setOwner] = useState<OwnerProfile | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null); // full-image popup uri
 
   useEffect(() => {
     let alive = true;
@@ -50,6 +60,23 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
     };
   }, [brandId]);
 
+  // Load the owner's public profile for the footer block (avatar/name/angkatan/roles).
+  useEffect(() => {
+    if (!brand?.owner_id) return;
+    let alive = true;
+    fetch(`${API_BASE}/member/${brand.owner_id}`, { headers: { 'X-IA5-Token': token } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m) => {
+        if (alive && m) {
+          setOwner({ name: m.name, avatar: m.avatar, angkatan: m.angkatan, roles: m.roles });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [brand?.owner_id]);
+
   const isOwner = !!brand && brand.owner_id === viewerId;
   const isPlace = brand?.type === 'place';
 
@@ -57,7 +84,7 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
   const openDirections = () => brand?.place && Linking.openURL(directionsUrl(brand.place));
 
   const ctaLabel =
-    brand?.type === 'service' ? 'Hubungi via WhatsApp' : 'Beli via WhatsApp';
+    brand?.type === 'product' ? 'Beli via WhatsApp' : 'Hubungi via WhatsApp';
 
   return (
     <View style={styles.flex}>
@@ -116,7 +143,7 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
             <Text style={isPlace ? styles.secondaryBtnText : styles.primaryBtnText}>{ctaLabel}</Text>
           </Pressable>
 
-          {isOwner && (
+          {isOwner && onManage && (
             <Pressable style={styles.manageBtn} onPress={() => onManage(brand)}>
               <Text style={styles.manageBtnText}>Kelola Brand</Text>
             </Pressable>
@@ -152,6 +179,20 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
             </View>
           )}
 
+          {/* Place gallery */}
+          {isPlace && brand.place && (brand.place.gallery?.length ?? 0) > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Galeri</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryRow}>
+                {brand.place.gallery!.map((g) => (
+                  <Pressable key={g.id} onPress={() => setLightbox(g.full)}>
+                    <Image source={{ uri: g.thumbnail || g.full }} style={styles.galleryImg} />
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Items */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
@@ -163,8 +204,46 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
               brand.items.map((it) => <ItemRow key={it.id} item={it} onTap={() => openWhatsApp(it.name)} />)
             )}
           </View>
+
+          {/* Owner block */}
+          {owner && (
+            <View style={styles.ownerCard}>
+              <Text style={styles.ownerLabel}>Pemilik Brand</Text>
+              <View style={styles.ownerRow}>
+                {owner.avatar?.thumbnail ? (
+                  <Image source={{ uri: owner.avatar.thumbnail }} style={styles.ownerAvatar} />
+                ) : (
+                  <View style={[styles.ownerAvatar, styles.ownerAvatarFallback]}>
+                    <Text style={styles.ownerAvatarLetter}>{owner.name.charAt(0)}</Text>
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.ownerName}>{owner.name}</Text>
+                  <View style={styles.ownerBadges}>
+                    {!!owner.angkatan && (
+                      <View style={styles.ownerBadge}>
+                        <Text style={styles.ownerBadgeText}>Angkatan {owner.angkatan}</Text>
+                      </View>
+                    )}
+                    {(owner.roles || []).map((r) => (
+                      <View style={styles.ownerRoleBadge} key={r}>
+                        <Text style={styles.ownerRoleText}>{r}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
         </ScrollView>
       ) : null}
+
+      {/* Full-image lightbox (real dimensions, not cropped) */}
+      <Modal visible={!!lightbox} transparent animationType="fade" onRequestClose={() => setLightbox(null)}>
+        <Pressable style={styles.lightboxBackdrop} onPress={() => setLightbox(null)}>
+          {lightbox && <Image source={{ uri: lightbox }} style={styles.lightboxImg} resizeMode="contain" />}
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -204,7 +283,7 @@ const styles = StyleSheet.create({
   cover: { width: '100%', height: 150, backgroundColor: colors.bgAlt },
   coverFallback: { backgroundColor: colors.primaryDark, opacity: 0.15 },
 
-  headRow: { flexDirection: 'row', gap: 14, paddingHorizontal: 16, marginTop: -30, alignItems: 'flex-end' },
+  headRow: { flexDirection: 'row', gap: 14, paddingHorizontal: 16, marginTop: 14, alignItems: 'center' },
   logo: { width: 72, height: 72, borderRadius: 16, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.card },
   logoFallback: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary },
   logoLetter: { fontFamily: fonts.heading, fontSize: 30, color: colors.white },
@@ -230,6 +309,10 @@ const styles = StyleSheet.create({
   hourRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: colors.border },
   hourDay: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.heading, width: 44 },
   hourVal: { fontFamily: fonts.body, fontSize: 13, color: colors.text },
+  galleryRow: { gap: 10, paddingRight: 16 },
+  galleryImg: { width: 112, height: 112, borderRadius: 12, backgroundColor: colors.bgAlt },
+  lightboxBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
+  lightboxImg: { width: '100%', height: '100%' },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   chip: { backgroundColor: colors.bgAlt, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
   chipText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.primary },
@@ -244,4 +327,21 @@ const styles = StyleSheet.create({
   itemPrice: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.primary, marginTop: 3 },
   itemNote: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   soldOut: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.danger },
+
+  // Owner block (footer).
+  ownerCard: {
+    marginTop: 28, marginHorizontal: 16, backgroundColor: colors.card, borderRadius: 14,
+    borderWidth: 1, borderColor: colors.border, padding: 14,
+  },
+  ownerLabel: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.muted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  ownerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  ownerAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.bgAlt },
+  ownerAvatarFallback: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
+  ownerAvatarLetter: { fontFamily: fonts.heading, fontSize: 22, color: colors.primary },
+  ownerName: { fontFamily: fonts.headingSemi, fontSize: 16, color: colors.heading },
+  ownerBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  ownerBadge: { backgroundColor: colors.bgAlt, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
+  ownerBadgeText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primary },
+  ownerRoleBadge: { backgroundColor: colors.secondary, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
+  ownerRoleText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.heading },
 });

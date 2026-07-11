@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View,
+  ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View,
 } from 'react-native';
 import { colors, fonts } from './theme';
 import Header from './Header';
+import KeyboardAwareScroll from './KeyboardAwareScroll';
 import { BrandDetail, BrandType, Hours, mkApi, TYPE_LABELS } from './marketplace/api';
-import { pickAndUpload } from './marketplace/pickAndUpload';
+import { pickAndUpload, pickAndUploadMany } from './marketplace/pickAndUpload';
 
 type Props = {
   token: string;
@@ -60,6 +61,11 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState<null | 'logo' | 'cover'>(null);
 
+  // Place gallery: parallel id + preview arrays (send the full id list on save).
+  const [galleryIds, setGalleryIds] = useState<number[]>([]);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+  const [galleryUploading, setGalleryUploading] = useState(false);
+
   const isPlace = type === 'place';
 
   // Edit mode: hydrate from the brand detail.
@@ -83,6 +89,8 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
           setLat(b.place.lat ? String(b.place.lat) : '');
           setLng(b.place.lng ? String(b.place.lng) : '');
           setOfferings(b.place.offerings || []);
+          setGalleryIds((b.place.gallery || []).map((g) => g.id));
+          setGalleryPreviews((b.place.gallery || []).map((g) => g.thumbnail || g.full));
           const h = emptyHours();
           for (const [day] of DAYS) {
             const ranges = b.place.operating_hours?.[day] || [];
@@ -133,6 +141,26 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
     }
   };
 
+  const pickGallery = async () => {
+    setGalleryUploading(true);
+    try {
+      const imgs = await pickAndUploadMany(token);
+      if (imgs.length) {
+        setGalleryIds((ids) => [...ids, ...imgs.map((i) => i.id)]);
+        setGalleryPreviews((p) => [...p, ...imgs.map((i) => i.full)]);
+      }
+    } catch (e: any) {
+      Alert.alert('Gagal unggah', e.message);
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  const removeGalleryAt = (idx: number) => {
+    setGalleryIds((ids) => ids.filter((_, i) => i !== idx));
+    setGalleryPreviews((p) => p.filter((_, i) => i !== idx));
+  };
+
   const hoursRows = useMemo(
     () =>
       DAYS.filter(([d]) => hours[d].enabled && hours[d].open && hours[d].close).map(([d]) => ({
@@ -179,6 +207,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
       fields.lng = lng.trim();
       fields.operating_hours = hoursRows;
       fields.offerings = offerings;
+      fields.place_gallery = galleryIds;
     }
 
     try {
@@ -237,7 +266,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
   return (
     <View style={styles.flex}>
       <Header title={title} onBack={onBack} onLogout={onLogout} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScroll contentContainerStyle={styles.content}>
         <View style={styles.typeBadge}>
           <Text style={styles.typeBadgeText}>{type ? TYPE_LABELS[type] : ''}</Text>
         </View>
@@ -320,19 +349,24 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
                   <View style={styles.hourRow} key={day}>
                     <Switch
                       value={hours[day].enabled}
-                      onValueChange={(v) => setDay(day, { enabled: v })}
+                      onValueChange={(v) =>
+                        setDay(
+                          day,
+                          // Seed default times when turning a day on, so it's a
+                          // valid savable row even if the user doesn't edit them.
+                          v
+                            ? { enabled: true, open: hours[day].open || '08:00', close: hours[day].close || '17:00' }
+                            : { enabled: false },
+                        )
+                      }
                       trackColor={{ true: colors.primary, false: colors.border }}
                     />
                     <Text style={styles.hourDay}>{label}</Text>
                     {hours[day].enabled ? (
                       <View style={styles.hourTimes}>
-                        <TextInput style={styles.timeInput} value={hours[day].open}
-                          onChangeText={(t) => setDay(day, { open: t })} placeholder="08:00"
-                          placeholderTextColor={colors.muted} />
+                        <TimeInput value={hours[day].open} onChange={(v) => setDay(day, { open: v })} />
                         <Text style={styles.dash}>–</Text>
-                        <TextInput style={styles.timeInput} value={hours[day].close}
-                          onChangeText={(t) => setDay(day, { close: t })} placeholder="17:00"
-                          placeholderTextColor={colors.muted} />
+                        <TimeInput value={hours[day].close} onChange={(v) => setDay(day, { close: v })} />
                       </View>
                     ) : (
                       <Text style={styles.closedText}>Tutup</Text>
@@ -362,6 +396,26 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
                 </View>
               )}
             </Field>
+
+            <Field label="Galeri Foto">
+              <View style={styles.galleryGrid}>
+                {galleryPreviews.map((uri, idx) => (
+                  <View style={styles.galleryItem} key={`${uri}-${idx}`}>
+                    <Image source={{ uri }} style={styles.galleryImg} />
+                    <Pressable style={styles.galleryRemove} onPress={() => removeGalleryAt(idx)}>
+                      <Text style={styles.galleryRemoveText}>✕</Text>
+                    </Pressable>
+                  </View>
+                ))}
+                <Pressable style={styles.galleryAdd} onPress={pickGallery} disabled={galleryUploading}>
+                  {galleryUploading ? (
+                    <ActivityIndicator color={colors.primary} />
+                  ) : (
+                    <Text style={styles.pickHint}>＋ Foto</Text>
+                  )}
+                </Pressable>
+              </View>
+            </Field>
           </>
         )}
 
@@ -375,7 +429,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
             <Text style={styles.saveBtnText}>{isEdit ? 'Simpan Perubahan' : 'Buat Brand'}</Text>
           )}
         </Pressable>
-      </ScrollView>
+      </KeyboardAwareScroll>
     </View>
   );
 }
@@ -386,6 +440,63 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <Text style={styles.label}>{label}</Text>
       {children}
     </View>
+  );
+}
+
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+
+// Pure-JS time picker (no native module, so it runs in Expo Go). A bottom sheet
+// with scrollable hour + minute columns; keeps the "HH:MM" string contract.
+function TimeInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [show, setShow] = useState(false);
+  const [h, setH] = useState('08');
+  const [m, setM] = useState('00');
+
+  const open = () => {
+    const [hh, mm] = (value || '08:00').split(':');
+    setH(hh || '08');
+    setM(mm || '00');
+    setShow(true);
+  };
+  const done = () => {
+    onChange(`${h}:${m}`);
+    setShow(false);
+  };
+
+  return (
+    <>
+      <Pressable style={styles.timeInput} onPress={open}>
+        <Text style={styles.timeText}>{value || '--:--'}</Text>
+      </Pressable>
+      <Modal visible={show} transparent animationType="fade" onRequestClose={() => setShow(false)}>
+        <Pressable style={styles.pickerBackdrop} onPress={() => setShow(false)}>
+          <Pressable style={styles.pickerSheet} onPress={() => {}}>
+            <Text style={styles.pickerTime}>{h}:{m}</Text>
+            <View style={styles.pickerCols}>
+              <ScrollView style={styles.pickerCol} showsVerticalScrollIndicator={false}>
+                {HOURS.map((x) => (
+                  <Pressable key={x} style={[styles.pickerOpt, x === h && styles.pickerOptSel]} onPress={() => setH(x)}>
+                    <Text style={[styles.pickerOptText, x === h && styles.pickerOptTextSel]}>{x}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+              <Text style={styles.pickerColon}>:</Text>
+              <ScrollView style={styles.pickerCol} showsVerticalScrollIndicator={false}>
+                {MINUTES.map((x) => (
+                  <Pressable key={x} style={[styles.pickerOpt, x === m && styles.pickerOptSel]} onPress={() => setM(x)}>
+                    <Text style={[styles.pickerOptText, x === m && styles.pickerOptTextSel]}>{x}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+            <Pressable style={styles.pickerDone} onPress={done}>
+              <Text style={styles.pickerDoneText}>Selesai</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
@@ -437,9 +548,38 @@ const styles = StyleSheet.create({
   hourTimes: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
   timeInput: {
     flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10,
-    paddingHorizontal: 10, paddingVertical: 8, fontSize: 14, fontFamily: fonts.body, color: colors.heading, textAlign: 'center',
+    paddingHorizontal: 10, paddingVertical: 10, alignItems: 'center', justifyContent: 'center',
   },
+  timeText: { fontSize: 14, fontFamily: fonts.bodySemi, color: colors.heading },
   dash: { fontFamily: fonts.body, color: colors.muted },
+
+  // Pure-JS time-picker bottom sheet.
+  pickerBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
+  pickerSheet: { backgroundColor: colors.card, borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingTop: 16, paddingBottom: 24, paddingHorizontal: 16 },
+  pickerTime: { fontFamily: fonts.heading, fontSize: 22, color: colors.heading, textAlign: 'center', marginBottom: 10 },
+  pickerCols: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', height: 200, gap: 8 },
+  pickerCol: { flex: 1, maxWidth: 120 },
+  pickerColon: { fontFamily: fonts.heading, fontSize: 22, color: colors.muted },
+  pickerOpt: { paddingVertical: 11, alignItems: 'center', borderRadius: 10 },
+  pickerOptSel: { backgroundColor: colors.primary },
+  pickerOptText: { fontFamily: fonts.bodySemi, fontSize: 18, color: colors.text },
+  pickerOptTextSel: { color: colors.white },
+  pickerDone: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 12 },
+  pickerDoneText: { color: colors.white, fontFamily: fonts.headingSemi, fontSize: 15 },
+
+  // Place gallery.
+  galleryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  galleryItem: { width: 84, height: 84, borderRadius: 12, overflow: 'hidden' },
+  galleryImg: { width: '100%', height: '100%', backgroundColor: colors.bgAlt },
+  galleryRemove: {
+    position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center',
+  },
+  galleryRemoveText: { color: colors.white, fontSize: 12, fontFamily: fonts.bodySemi },
+  galleryAdd: {
+    width: 84, height: 84, borderRadius: 12, backgroundColor: colors.card, borderWidth: 1,
+    borderColor: colors.border, alignItems: 'center', justifyContent: 'center',
+  },
   closedText: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, flex: 1 },
 
   offerInputRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },

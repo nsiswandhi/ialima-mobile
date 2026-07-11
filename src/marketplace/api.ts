@@ -27,12 +27,15 @@ export type Hours = Record<
   { open: string; close: string }[]
 >;
 
+export type GalleryImage = { id: number; full: string; thumbnail: string };
+
 export type Place = {
   lat: number;
   lng: number;
   address: string;
   operating_hours: Hours;
   offerings: string[];
+  gallery?: GalleryImage[]; // absent on older backends until place_gallery ships
 };
 
 // Directory card shape (GET /marketplace).
@@ -45,6 +48,7 @@ export type BrandSummary = {
   logo: Img;
   has_location: boolean;
   owner_id: number;
+  is_featured?: boolean;
 };
 
 // Full brand (GET /marketplace/{id}).
@@ -124,13 +128,14 @@ function form(fields: Record<string, unknown>) {
 export const mkApi = {
   list(
     token: string,
-    opts: { type?: BrandType; category?: string; owner?: number; search?: string; page?: number } = {},
+    opts: { type?: BrandType; category?: string; owner?: number; search?: string; page?: number; featured?: boolean } = {},
   ) {
     const q = new URLSearchParams({ per_page: '20', page: String(opts.page ?? 1) });
     if (opts.type) q.append('type', opts.type);
     if (opts.category) q.append('category', opts.category);
     if (opts.owner) q.append('owner', String(opts.owner));
     if (opts.search) q.append('search', opts.search);
+    if (opts.featured) q.append('featured', '1');
     return fetch(`${API_BASE}/marketplace?${q.toString()}`, { headers: headers(token) }).then(
       parse<Paged<BrandSummary>>,
     );
@@ -215,14 +220,15 @@ export const mkApi = {
 export function whatsappUrl(brand: BrandDetail, itemName?: string) {
   const num = brand.whatsapp_number.replace(/[^\d]/g, '');
   let text: string;
-  if (brand.type === 'service') {
-    text = itemName
-      ? `Halo, saya ingin menanyakan layanan *${itemName}* dari ${brand.name}.`
-      : `Halo, saya ingin menanyakan layanan dari ${brand.name}.`;
-  } else {
+  if (brand.type === 'product') {
     text = itemName
       ? `Halo, saya tertarik membeli *${itemName}* dari ${brand.name}.`
       : `Halo, saya tertarik dengan ${brand.name}.`;
+  } else {
+    // service & place → contact/enquiry wording
+    text = itemName
+      ? `Halo, saya ingin menanyakan *${itemName}* dari ${brand.name}.`
+      : `Halo, saya ingin menanyakan ${brand.name}.`;
   }
   return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
 }

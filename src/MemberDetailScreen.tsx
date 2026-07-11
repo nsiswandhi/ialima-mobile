@@ -6,6 +6,9 @@ import { API_BASE } from './config';
 import { colors, fonts } from './theme';
 import Header from './Header';
 import ProfileView, { ProfileViewData } from './ProfileView';
+import BrandCard from './marketplace/BrandCard';
+import BrandDetailScreen from './BrandDetailScreen';
+import { BrandSummary, mkApi } from './marketplace/api';
 
 const INDUSTRY_GLOSSARY_ID = 1;
 
@@ -36,6 +39,10 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ProfileViewData | null>(null);
+
+  // This member's brands (shown in the MARKETPLACE section) + detail overlay.
+  const [memberBrands, setMemberBrands] = useState<BrandSummary[]>([]);
+  const [openBrandId, setOpenBrandId] = useState<number | null>(null);
 
   // Promotion state for this target.
   const [isMember, setIsMember] = useState(true); // assume member until told otherwise
@@ -100,6 +107,18 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
         if (alive) setLoading(false);
       }
     })();
+    return () => {
+      alive = false;
+    };
+  }, [memberId]);
+
+  // Load this member's brands for the MARKETPLACE section.
+  useEffect(() => {
+    let alive = true;
+    mkApi
+      .list(token, { owner: memberId })
+      .then((r) => { if (alive) setMemberBrands(r.data); })
+      .catch(() => {});
     return () => {
       alive = false;
     };
@@ -174,6 +193,18 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
       },
     );
 
+  if (openBrandId != null) {
+    return (
+      <BrandDetailScreen
+        brandId={openBrandId}
+        token={token}
+        viewerId={viewer?.id ?? 0}
+        onBack={() => setOpenBrandId(null)}
+        onLogout={onLogout}
+      />
+    );
+  }
+
   return (
     <View style={styles.flex}>
       <Header title={data?.name || 'Profile'} onBack={onBack} onLogout={onLogout} />
@@ -187,6 +218,20 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
       ) : data ? (
         <ScrollView contentContainerStyle={styles.content}>
           <ProfileView data={data} />
+
+          {memberBrands.length > 0 && (
+            <View style={styles.mpSection}>
+              <View style={styles.mpHeadRow}>
+                <View style={styles.mpBar} />
+                <Text style={styles.mpHead}>MARKETPLACE</Text>
+              </View>
+              <View style={styles.grid}>
+                {memberBrands.map((b) => (
+                  <BrandCard key={b.id} brand={b} style={styles.gridItem} onPress={() => setOpenBrandId(b.id)} />
+                ))}
+              </View>
+            </View>
+          )}
 
           {!!notice && <Text style={styles.notice}>{notice}</Text>}
           {!!error && <Text style={styles.error}>{error}</Text>}
@@ -279,4 +324,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   knowMutualText: { color: colors.white, fontFamily: fonts.headingSemi, fontSize: 15 },
+
+  // MARKETPLACE section (this member's brands), mirroring the KARIR DATA heading.
+  mpSection: { marginTop: 24 },
+  mpHeadRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  mpBar: { width: 4, height: 18, borderRadius: 2, backgroundColor: colors.primary },
+  mpHead: { fontFamily: fonts.heading, fontSize: 16, color: colors.primary, letterSpacing: 0.5 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  gridItem: { width: '48%' },
 });
+

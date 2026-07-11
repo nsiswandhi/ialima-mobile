@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { colors, fonts } from './theme';
 import Header from './Header';
+import KeyboardAwareScroll from './KeyboardAwareScroll';
 import { BrandDetail, Item, mkApi } from './marketplace/api';
 import { pickAndUpload } from './marketplace/pickAndUpload';
 
@@ -143,7 +144,7 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout }: 
       <View style={styles.flex}>
         <Header title={editingId === 'new' ? `Tambah ${itemLabel}` : `Ubah ${itemLabel}`}
           onBack={() => setEditingId(null)} onLogout={onLogout} />
-        <ScrollView contentContainerStyle={styles.formContent} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScroll contentContainerStyle={styles.formContent}>
           <Field label="Foto">
             <Pressable style={styles.photoPick} onPress={pickImage} disabled={uploading}>
               {uploading ? (
@@ -196,7 +197,7 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout }: 
             disabled={saving || uploading}>
             {saving ? <ActivityIndicator color={colors.white} /> : <Text style={styles.saveBtnText}>Simpan</Text>}
           </Pressable>
-        </ScrollView>
+        </KeyboardAwareScroll>
       </View>
     );
   }

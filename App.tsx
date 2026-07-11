@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
+import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './src/config';
 import { colors, fonts } from './src/theme';
 import Header from './src/Header';
@@ -12,6 +13,7 @@ import ProfileScreen from './src/ProfileScreen';
 import SignUpScreen from './src/SignUpScreen';
 import MemberDetailScreen from './src/MemberDetailScreen';
 import MarketplaceScreen from './src/MarketplaceScreen';
+import DashboardScreen from './src/DashboardScreen';
 import KeyboardAwareScroll from './src/KeyboardAwareScroll';
 
 // Brand logo, downloaded from the WordPress site (wp-content/.../logo-apps.png).
@@ -46,16 +48,6 @@ type Member = {
   city: string;
 };
 
-// Friendly welcome lines shown once on the directory right after login.
-// A mix of Sundanese + Indonesian, matching the SMA 5 Bandung (Lima) community.
-const WELCOME_MESSAGES = [
-  'Wilujeng sumping, senang kamu kembali.',
-  'Selamat datang kembali di LIMA Circle.',
-  'Apa yang akan kita lakukan hari ini?',
-  'Senang melihatmu lagi di sini.',
-  'Siap terhubung dengan keluarga Lima hari ini?',
-];
-
 function AppInner() {
   const insets = useSafeAreaInsets();
 
@@ -81,8 +73,10 @@ function AppInner() {
   // Which auth screen shows when logged out.
   const [authView, setAuthView] = useState<'login' | 'signup'>('login');
 
-  // Which authenticated tab is showing.
-  const [tab, setTab] = useState<'directory' | 'marketplace' | 'profile'>('directory');
+  // Which authenticated tab is showing. Login lands on the Dashboard.
+  const [tab, setTab] = useState<'dashboard' | 'directory' | 'marketplace' | 'profile'>('dashboard');
+  // A brand id to deep-link into on the Marketplace tab (e.g. from the Dashboard).
+  const [marketplaceBrandId, setMarketplaceBrandId] = useState<number | null>(null);
 
   // Directory + UI state.
   const [members, setMembers] = useState<Member[]>([]);
@@ -92,11 +86,6 @@ function AppInner() {
 
   // When a directory card is tapped, show that member's detail screen.
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
-
-  // Welcome banner: shown once on the directory right after login, then hidden
-  // as soon as the user navigates elsewhere (and not shown again on return).
-  const [welcomeVisible, setWelcomeVisible] = useState(false);
-  const [welcomeMsg, setWelcomeMsg] = useState('');
 
   // Call POST /login, store the token, then load the directory.
   async function handleLogin() {
@@ -115,10 +104,8 @@ function AppInner() {
       }
       setToken(data.token);
       setUser(data.user);
-      // Pick one random welcome line for this session and reveal the banner.
-      setWelcomeMsg(WELCOME_MESSAGES[Math.floor(Math.random() * WELCOME_MESSAGES.length)]);
-      setWelcomeVisible(true);
-      await loadMembers('', data.token); // initial directory load (token not yet in state)
+      setTab('dashboard');
+      await loadMembers('', data.token); // prefetch the directory for the Directory tab
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -152,7 +139,7 @@ function AppInner() {
     setPhone('');
     setPassword('');
     setSelectedMemberId(null);
-    setWelcomeVisible(false);
+    setTab('dashboard');
   }
 
   // Hold rendering until fonts are ready (keeps the brand look consistent).
@@ -222,20 +209,29 @@ function AppInner() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {tab === 'profile' ? (
+      {tab === 'dashboard' ? (
+        <DashboardScreen
+          token={token}
+          userName={user?.name}
+          onOpenBrand={(id) => { setMarketplaceBrandId(id); setTab('marketplace'); }}
+          onOpenMember={(id) => { setSelectedMemberId(id); setTab('directory'); }}
+          onLogout={logout}
+        />
+      ) : tab === 'profile' ? (
         <ProfileScreen
           token={token}
           userId={user!.id}
           onLogout={logout}
           onBackToDirectory={() => setTab('directory')}
           onNameUpdated={(name) => setUser((u) => (u ? { ...u, name } : u))}
+          canManage={!!user?.caps?.manage_own_brand}
         />
       ) : tab === 'marketplace' ? (
         <MarketplaceScreen
           token={token}
           viewerId={user!.id}
-          canManage={!!user?.caps?.manage_own_brand}
           onLogout={logout}
+          initialBrandId={marketplaceBrandId}
         />
       ) : selectedMemberId ? (
         <MemberDetailScreen
@@ -249,14 +245,7 @@ function AppInner() {
       <View style={styles.flex}>
       <Header title="Directory" onLogout={logout} />
 
-      {welcomeVisible && (
-        <View style={styles.welcomeCard}>
-          <Text style={styles.welcomeHi}>Hai {user?.name},</Text>
-          <Text style={styles.welcomeMsg}>{welcomeMsg}</Text>
-        </View>
-      )}
-
-      <View style={[styles.searchRow, welcomeVisible && styles.searchRowTight]}>
+      <View style={styles.searchRow}>
         <TextInput
           style={[styles.input, styles.searchInput]}
           placeholder="Search by name…"
@@ -286,10 +275,7 @@ function AppInner() {
         renderItem={({ item }) => (
           <Pressable
             style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-            onPress={() => {
-              setWelcomeVisible(false);
-              setSelectedMemberId(item.id);
-            }}
+            onPress={() => setSelectedMemberId(item.id)}
           >
             {item.avatar?.thumbnail ? (
               <Image source={{ uri: item.avatar.thumbnail }} style={styles.avatar} />
@@ -321,15 +307,32 @@ function AppInner() {
 
       {/* Bottom tab bar — pad by the bottom inset so it clears the gesture nav. */}
       <View style={[styles.tabBar, { paddingBottom: insets.bottom || 10 }]}>
-        <Pressable style={styles.tabItem} onPress={() => setTab('directory')}>
-          <Text style={[styles.tabLabel, tab === 'directory' && styles.tabActive]}>Directory</Text>
-        </Pressable>
-        <Pressable style={styles.tabItem} onPress={() => { setWelcomeVisible(false); setTab('marketplace'); }}>
-          <Text style={[styles.tabLabel, tab === 'marketplace' && styles.tabActive]}>Marketplace</Text>
-        </Pressable>
-        <Pressable style={styles.tabItem} onPress={() => { setWelcomeVisible(false); setTab('profile'); }}>
-          <Text style={[styles.tabLabel, tab === 'profile' && styles.tabActive]}>Profile</Text>
-        </Pressable>
+        {([
+          { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
+          { key: 'directory', label: 'Directory', icon: 'people' },
+          { key: 'marketplace', label: 'Marketplace', icon: 'storefront' },
+          { key: 'profile', label: 'Profile', icon: 'person' },
+        ] as const).map((t) => {
+          const active = tab === t.key;
+          return (
+            <Pressable
+              key={t.key}
+              style={styles.tabItem}
+              onPress={() => {
+                setSelectedMemberId(null);
+                setMarketplaceBrandId(null);
+                setTab(t.key);
+              }}
+            >
+              <Ionicons
+                name={(active ? t.icon : `${t.icon}-outline`) as any}
+                size={22}
+                color={active ? colors.primary : colors.muted}
+              />
+              <Text style={[styles.tabLabel, active && styles.tabActive]}>{t.label}</Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
@@ -354,8 +357,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border,
     backgroundColor: colors.card,
   },
-  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  tabLabel: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.muted },
+  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 8, gap: 3 },
+  tabLabel: { fontFamily: fonts.bodySemi, fontSize: 11, color: colors.muted },
   tabActive: { color: colors.primary },
 
   // ---- Login ----

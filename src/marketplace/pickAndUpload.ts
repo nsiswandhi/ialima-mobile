@@ -26,3 +26,32 @@ export async function pickAndUpload(
 
   return mkApi.uploadImage(token, res.assets[0].uri);
 }
+
+// Multi-select variant for the place gallery: pick several images and upload each,
+// returning the uploaded attachments (skips any that fail).
+export async function pickAndUploadMany(token: string, limit = 10): Promise<UploadedImage[]> {
+  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!perm.granted) {
+    throw new Error('Izin akses galeri ditolak.');
+  }
+
+  const res = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsMultipleSelection: true,
+    selectionLimit: limit,
+    quality: 0.8,
+  });
+  if (res.canceled || !res.assets || res.assets.length === 0) {
+    return [];
+  }
+
+  const out: UploadedImage[] = [];
+  for (const asset of res.assets) {
+    try {
+      out.push(await mkApi.uploadImage(token, asset.uri));
+    } catch {
+      // skip failed uploads
+    }
+  }
+  return out;
+}

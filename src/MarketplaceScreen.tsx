@@ -1,18 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { colors, fonts } from './theme';
 import Header from './Header';
 import BrandDetailScreen from './BrandDetailScreen';
-import MyBrandsScreen from './MyBrandsScreen';
+import BrandCard from './marketplace/BrandCard';
 import { BrandSummary, BrandType, mkApi, TYPE_LABELS } from './marketplace/api';
 
 type Props = {
   token: string;
   viewerId: number;
-  canManage: boolean; // viewer holds ia5_manage_own_brand (member+)
   onLogout: () => void;
+  initialBrandId?: number | null; // deep-link straight to a brand (e.g. from Dashboard)
 };
 
 type Filter = 'all' | BrandType;
@@ -23,12 +23,12 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'place', label: TYPE_LABELS.place },
 ];
 
-// Marketplace root. Owns the browse directory and internal navigation to the
-// brand detail page and the "Brand Saya" manage flow (keeps App.tsx unchanged
-// beyond adding the tab).
-export default function MarketplaceScreen({ token, viewerId, canManage, onLogout }: Props) {
-  const [view, setView] = useState<'list' | 'detail' | 'mybrands'>('list');
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+// Marketplace directory: 2-column brand grid with type filter + search, and the
+// brand detail page. Brand management now lives in My Profile, so there is no
+// "Brand Saya" entry here anymore.
+export default function MarketplaceScreen({ token, viewerId, onLogout, initialBrandId }: Props) {
+  const [view, setView] = useState<'list' | 'detail'>(initialBrandId ? 'detail' : 'list');
+  const [selectedId, setSelectedId] = useState<number | null>(initialBrandId ?? null);
 
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -68,25 +68,6 @@ export default function MarketplaceScreen({ token, viewerId, canManage, onLogout
         viewerId={viewerId}
         onBack={() => setView('list')}
         onLogout={onLogout}
-        onManage={() => setView('mybrands')}
-      />
-    );
-  }
-
-  if (view === 'mybrands') {
-    return (
-      <MyBrandsScreen
-        token={token}
-        viewerId={viewerId}
-        onBack={() => {
-          setView('list');
-          load(filter, search);
-        }}
-        onLogout={onLogout}
-        onOpenBrand={(id) => {
-          setSelectedId(id);
-          setView('detail');
-        }}
       />
     );
   }
@@ -103,9 +84,7 @@ export default function MarketplaceScreen({ token, viewerId, canManage, onLogout
             style={[styles.filterTab, filter === f.key && styles.filterTabActive]}
             onPress={() => setFilter(f.key)}
           >
-            <Text style={[styles.filterLabel, filter === f.key && styles.filterLabelActive]}>
-              {f.label}
-            </Text>
+            <Text style={[styles.filterLabel, filter === f.key && styles.filterLabelActive]}>{f.label}</Text>
           </Pressable>
         ))}
       </View>
@@ -126,48 +105,25 @@ export default function MarketplaceScreen({ token, viewerId, canManage, onLogout
         </Pressable>
       </View>
 
-      {canManage && (
-        <Pressable style={styles.myBrandsLink} onPress={() => setView('mybrands')}>
-          <Text style={styles.myBrandsText}>＋ Brand Saya</Text>
-        </Pressable>
-      )}
-
       {loading && <ActivityIndicator style={{ marginTop: 20 }} color={colors.primary} />}
       {error && <Text style={styles.error}>{error}</Text>}
 
       <FlatList
         data={brands}
         keyExtractor={(b) => String(b.id)}
-        contentContainerStyle={{ padding: 12 }}
+        numColumns={2}
+        columnWrapperStyle={styles.column}
+        contentContainerStyle={styles.grid}
         ListEmptyComponent={!loading ? <Text style={styles.empty}>Belum ada brand.</Text> : null}
         renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+          <BrandCard
+            brand={item}
+            style={styles.gridItem}
             onPress={() => {
               setSelectedId(item.id);
               setView('detail');
             }}
-          >
-            {item.logo?.thumbnail ? (
-              <Image source={{ uri: item.logo.thumbnail }} style={styles.logo} />
-            ) : (
-              <View style={[styles.logo, styles.logoFallback]}>
-                <Text style={styles.logoLetter}>{item.name.charAt(0)}</Text>
-              </View>
-            )}
-            <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{item.name}</Text>
-              <View style={styles.metaRow}>
-                {!!item.type && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{TYPE_LABELS[item.type]}</Text>
-                  </View>
-                )}
-                {!!item.city && <Text style={styles.metaLight}>{item.city}</Text>}
-              </View>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </Pressable>
+          />
         )}
       />
     </View>
@@ -185,7 +141,7 @@ const styles = StyleSheet.create({
   filterLabel: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.muted },
   filterLabelActive: { color: colors.white },
 
-  searchRow: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 10, gap: 8, alignItems: 'center' },
+  searchRow: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 10, paddingBottom: 4, gap: 8, alignItems: 'center' },
   searchInput: {
     flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12,
     paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, fontFamily: fonts.body, color: colors.heading,
@@ -193,22 +149,7 @@ const styles = StyleSheet.create({
   searchBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 18 },
   searchBtnText: { color: colors.white, fontFamily: fonts.headingSemi, fontSize: 15 },
 
-  myBrandsLink: { paddingHorizontal: 16, paddingTop: 12 },
-  myBrandsText: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.primary },
-
-  card: {
-    backgroundColor: colors.card, borderRadius: 14, padding: 14, marginBottom: 10,
-    flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1, borderColor: colors.border,
-    shadowColor: colors.primaryDark, shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
-  },
-  cardPressed: { backgroundColor: colors.bgAlt },
-  logo: { width: 54, height: 54, borderRadius: 12, backgroundColor: colors.bgAlt },
-  logoFallback: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary },
-  logoLetter: { fontFamily: fonts.heading, fontSize: 22, color: colors.white },
-  name: { fontFamily: fonts.headingSemi, fontSize: 16, color: colors.heading },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
-  metaLight: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
-  badge: { backgroundColor: colors.bgAlt, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
-  badgeText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primary },
-  chevron: { fontFamily: fonts.heading, fontSize: 24, color: colors.muted, marginLeft: 4 },
+  grid: { padding: 12, gap: 12 },
+  column: { gap: 12 },
+  gridItem: { flex: 1, maxWidth: '48%' },
 });
