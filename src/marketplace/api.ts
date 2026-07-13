@@ -29,6 +29,9 @@ export type Hours = Record<
 
 export type GalleryImage = { id: number; full: string; thumbnail: string };
 
+// A social / ordering link row (Instagram, GoFood, website, email, …).
+export type BrandLink = { link: string; link_address: string };
+
 export type Place = {
   lat: number;
   lng: number;
@@ -66,6 +69,7 @@ export type BrandDetail = {
   owner_name: string;
   created_at: string;
   view_count: number;
+  links?: BrandLink[];
   items: Item[];
   place?: Place;
 };
@@ -243,3 +247,32 @@ export const TYPE_LABELS: Record<BrandType, string> = {
   service: 'Jasa',
   place: 'Tempat',
 };
+
+// Brand-link platforms → an Ionicons name + brand colour, or a bundled PNG logo
+// (`image`) for the Indonesian delivery/marketplace platforms Ionicons lacks.
+// When `image` is set the UI renders that logo; otherwise the Ionicons glyph.
+// Keys must match the JetEngine select values.
+export const LINK_PLATFORMS: { key: string; label: string; icon: string; color: string; image?: any }[] = [
+  { key: 'instagram', label: 'Instagram', icon: 'logo-instagram', color: '#E4405F' },
+  { key: 'facebook', label: 'Facebook', icon: 'logo-facebook', color: '#1877F2' },
+  { key: 'tiktok', label: 'TikTok', icon: 'logo-tiktok', color: '#111111' },
+  { key: 'youtube', label: 'YouTube', icon: 'logo-youtube', color: '#FF0000' },
+  { key: 'gofood', label: 'GoFood', icon: 'fast-food', color: '#E23744', image: require('../../assets/marketplace-links/gofood.png') },
+  { key: 'grabfood', label: 'GrabFood', icon: 'fast-food', color: '#00B14F', image: require('../../assets/marketplace-links/grabfood.png') },
+  { key: 'shopee', label: 'Shopee', icon: 'bag-handle', color: '#EE4D2D', image: require('../../assets/marketplace-links/shopee.png') },
+  { key: 'tokopedia', label: 'Tokopedia', icon: 'storefront', color: '#42B549', image: require('../../assets/marketplace-links/tokopedia.png') },
+  { key: 'website', label: 'Website', icon: 'globe-outline', color: '#0A7EA4' },
+  { key: 'email', label: 'Email', icon: 'mail-outline', color: '#6A7A73' },
+];
+
+export function linkPlatform(key: string) {
+  return LINK_PLATFORMS.find((p) => p.key === (key || '').toLowerCase());
+}
+
+// Resolve a link row to an openable URL: mailto: for email, https:// prefix for
+// bare domains, otherwise the address as-is.
+export function linkOpenUrl(l: BrandLink) {
+  const a = (l.link_address || '').trim();
+  if (l.link === 'email') return a.startsWith('mailto:') ? a : `mailto:${a}`;
+  return /^https?:\/\//i.test(a) ? a : `https://${a}`;
+}

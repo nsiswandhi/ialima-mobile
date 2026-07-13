@@ -2,10 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from './theme';
 import Header from './Header';
 import KeyboardAwareScroll from './KeyboardAwareScroll';
-import { BrandDetail, BrandType, Hours, mkApi, TYPE_LABELS } from './marketplace/api';
+import { BrandDetail, BrandLink, BrandType, Hours, LINK_PLATFORMS, mkApi, TYPE_LABELS } from './marketplace/api';
 import { pickAndUpload, pickAndUploadMany } from './marketplace/pickAndUpload';
 
 type Props = {
@@ -44,6 +45,8 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
   const [whatsapp, setWhatsapp] = useState('');
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('');
+  const [links, setLinks] = useState<BrandLink[]>([]);
+  const [linkPickerOpen, setLinkPickerOpen] = useState(false);
 
   const [address, setAddress] = useState('');
   const [lat, setLat] = useState('');
@@ -82,6 +85,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
         setWhatsapp(b.whatsapp_number);
         setCity(b.city);
         setCategory(b.category);
+        setLinks(b.links || []);
         setLogoPreview(b.logo?.full || null);
         setCoverPreview(b.cover?.full || null);
         if (b.place) {
@@ -120,6 +124,14 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
     setOfferings((o) => (o.includes(v) ? o : [...o, v]));
     setOfferDraft('');
   };
+
+  const addLink = (key: string) => {
+    setLinks((ls) => [...ls, { link: key, link_address: '' }]);
+    setLinkPickerOpen(false);
+  };
+  const setLinkAddr = (idx: number, v: string) =>
+    setLinks((ls) => ls.map((l, i) => (i === idx ? { ...l, link_address: v } : l)));
+  const removeLink = (idx: number) => setLinks((ls) => ls.filter((_, i) => i !== idx));
 
   const pickImage = async (which: 'logo' | 'cover') => {
     setUploading(which);
@@ -198,6 +210,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
       city: city.trim(),
       category: category.trim(),
     };
+    fields.links = links.filter((l) => l.link_address.trim() !== '');
     if (!isEdit) fields.type = type; // type is immutable after create
     if (logoId != null) fields.logo_id = logoId;
     if (coverId != null) fields.cover_id = coverId;
@@ -319,6 +332,38 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
           </View>
         </Field>
 
+        <Field label="Tautan / Media Sosial">
+          {links.map((l, idx) => {
+            const p = LINK_PLATFORMS.find((x) => x.key === l.link);
+            return (
+              <View style={styles.linkRow} key={`${l.link}-${idx}`}>
+                {p?.image ? (
+                  <Image source={p.image} style={styles.linkLogoBox} />
+                ) : (
+                  <View style={[styles.linkIcon, { backgroundColor: (p?.color || colors.primary) + '22' }]}>
+                    <Ionicons name={(p?.icon || 'link') as any} size={18} color={p?.color || colors.primary} />
+                  </View>
+                )}
+                <TextInput
+                  style={[styles.input, styles.linkInput]}
+                  value={l.link_address}
+                  onChangeText={(v) => setLinkAddr(idx, v)}
+                  placeholder={l.link === 'email' ? 'email@domain.com' : 'https://…'}
+                  placeholderTextColor={colors.muted}
+                  autoCapitalize="none"
+                  keyboardType={l.link === 'email' ? 'email-address' : 'url'}
+                />
+                <Pressable style={styles.linkRemove} onPress={() => removeLink(idx)}>
+                  <Text style={styles.linkRemoveText}>✕</Text>
+                </Pressable>
+              </View>
+            );
+          })}
+          <Pressable style={styles.addLinkBtn} onPress={() => setLinkPickerOpen(true)}>
+            <Text style={styles.addLinkText}>＋ Tambah Tautan</Text>
+          </Pressable>
+        </Field>
+
         {isPlace && (
           <>
             <Text style={styles.section}>Lokasi & Jam Buka</Text>
@@ -430,6 +475,27 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
           )}
         </Pressable>
       </KeyboardAwareScroll>
+
+      {/* Platform picker for adding a link row */}
+      <Modal visible={linkPickerOpen} transparent animationType="fade" onRequestClose={() => setLinkPickerOpen(false)}>
+        <Pressable style={styles.pickerBackdrop} onPress={() => setLinkPickerOpen(false)}>
+          <Pressable style={styles.linkPickerSheet} onPress={() => {}}>
+            <Text style={styles.linkPickerTitle}>Pilih Platform</Text>
+            <View style={styles.linkPickerGrid}>
+              {LINK_PLATFORMS.map((p) => (
+                <Pressable key={p.key} style={styles.linkPickerOpt} onPress={() => addLink(p.key)}>
+                  {p.image ? (
+                    <Image source={p.image} style={styles.linkPickerLogo} />
+                  ) : (
+                    <Ionicons name={p.icon as any} size={22} color={p.color} />
+                  )}
+                  <Text style={styles.linkPickerLabel}>{p.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -588,6 +654,22 @@ const styles = StyleSheet.create({
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   chip: { backgroundColor: colors.bgAlt, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
   chipText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.primary },
+
+  // Brand links (social / ordering) rows + platform picker.
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  linkIcon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  linkLogoBox: { width: 38, height: 38, borderRadius: 10, resizeMode: 'contain' },
+  linkPickerLogo: { width: 24, height: 24, resizeMode: 'contain' },
+  linkInput: { flex: 1 },
+  linkRemove: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  linkRemoveText: { fontSize: 15, color: colors.muted, fontFamily: fonts.bodySemi },
+  addLinkBtn: { alignSelf: 'flex-start', marginTop: 4, paddingVertical: 8 },
+  addLinkText: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.primary },
+  linkPickerSheet: { backgroundColor: colors.card, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, paddingBottom: 28 },
+  linkPickerTitle: { fontFamily: fonts.heading, fontSize: 18, color: colors.heading, marginBottom: 14 },
+  linkPickerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
+  linkPickerOpt: { width: '31%', alignItems: 'center', paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, gap: 6, marginBottom: 6 },
+  linkPickerLabel: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.heading },
 
   saveBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginTop: 28 },
   saveBtnDisabled: { opacity: 0.6 },

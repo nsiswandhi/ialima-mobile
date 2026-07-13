@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
 import Header from './Header';
 import {
   BrandDetail, Item, Place, mkApi, whatsappUrl, directionsUrl, TYPE_LABELS,
+  linkPlatform, linkOpenUrl,
 } from './marketplace/api';
 
 type Props = {
@@ -129,6 +131,28 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
           <Text style={styles.views}>{brand.view_count} kali dilihat</Text>
 
           {!!brand.description && <Text style={styles.desc}>{brand.description}</Text>}
+
+          {/* Social / ordering links — brand icons (20px), directly above the CTAs */}
+          {!!brand.links?.length && (
+            <View style={styles.linksRow}>
+              {brand.links.map((l, i) => {
+                const p = linkPlatform(l.link);
+                return (
+                  <Pressable
+                    key={`${l.link}-${i}`}
+                    style={styles.linkBtn}
+                    onPress={() => Linking.openURL(linkOpenUrl(l))}
+                  >
+                    {p?.image ? (
+                      <Image source={p.image} style={styles.linkLogo} />
+                    ) : (
+                      <Ionicons name={(p?.icon || 'link') as any} size={20} color={p?.color || colors.primary} />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
 
           {/* Primary CTA */}
           {isPlace ? (
@@ -292,6 +316,10 @@ const styles = StyleSheet.create({
   metaLight: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
   badge: { backgroundColor: colors.bgAlt, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
   badgeText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primary },
+
+  linksRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 16, marginTop: 14, alignItems: 'center' },
+  linkBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.bgAlt, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  linkLogo: { width: 24, height: 24, resizeMode: 'contain' },
 
   views: { fontFamily: fonts.body, fontSize: 12.5, color: colors.muted, paddingHorizontal: 16, marginTop: 10 },
   desc: { fontFamily: fonts.body, fontSize: 14, color: colors.text, lineHeight: 20, paddingHorizontal: 16, marginTop: 10 },
