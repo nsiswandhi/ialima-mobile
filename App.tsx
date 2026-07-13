@@ -345,6 +345,8 @@ function AppInner() {
           fallbackTitle="About LIMA Circle"
           onBack={() => setTab('dashboard')}
           onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
         />
       ) : tab === 'privacy' ? (
         <StaticPageScreen
@@ -352,6 +354,8 @@ function AppInner() {
           fallbackTitle="Privacy Policy"
           onBack={() => setTab('dashboard')}
           onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
         />
       ) : tab === 'terms' ? (
         <StaticPageScreen
@@ -359,6 +363,8 @@ function AppInner() {
           fallbackTitle="Terms and Conditions"
           onBack={() => setTab('dashboard')}
           onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
         />
       ) : selectedMemberId ? (
         <MemberDetailScreen

@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   menuBackdropLeft: { flex: 1, flexDirection: 'row' },
   menuFill: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
   drawer: { width: '78%', maxWidth: 300, backgroundColor: colors.primaryDark, flexDirection: 'column' },
-  drawerScroll: { flex: 1, paddingHorizontal: 10, paddingTop: 10 },
+  drawerScroll: { flex: 1, paddingHorizontal: 10, paddingTop: 10, paddingBottom: 16 },
 
   profileCard: { paddingHorizontal: 18, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.15)' },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
