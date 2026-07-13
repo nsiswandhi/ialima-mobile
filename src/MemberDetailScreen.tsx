@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
-import Header from './Header';
+import Header, { DrawerProfile, NavTarget } from './Header';
 import ProfileView, { ProfileViewData } from './ProfileView';
 import BrandCard from './marketplace/BrandCard';
 import BrandDetailScreen from './BrandDetailScreen';
@@ -31,12 +31,14 @@ type Props = {
   viewer: Viewer;
   onBack: () => void;
   onLogout: () => void;
+  profile?: DrawerProfile;
+  onNavigate?: (target: NavTarget) => void;
 };
 
 // Read-only detail for a member tapped in the directory. Fetches the
 // (auth-gated) /member/{id} payload and resolves the industry label. Pengurus
 // see a Verify button for eligible subscribers; members see a Recognize button.
-export default function MemberDetailScreen({ memberId, token, viewer, onBack, onLogout }: Props) {
+export default function MemberDetailScreen({ memberId, token, viewer, onBack, onLogout, profile, onNavigate }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ProfileViewData | null>(null);
@@ -207,13 +209,15 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
         viewerId={viewer?.id ?? 0}
         onBack={() => setOpenBrandId(null)}
         onLogout={onLogout}
+        profile={profile}
+        onNavigate={onNavigate}
       />
     );
   }
 
   return (
     <View style={styles.flex}>
-      <Header title={data?.name || 'Profile'} onBack={onBack} onLogout={onLogout} />
+      <Header title={data?.name || 'Profile'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
 
       {loading ? (
         <View style={styles.center}>

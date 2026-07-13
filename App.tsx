@@ -373,6 +373,8 @@ function AppInner() {
           viewer={user}
           onBack={() => setSelectedMemberId(null)}
           onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
         />
       ) : (
       <View style={styles.flex}>

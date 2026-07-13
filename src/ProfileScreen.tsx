@@ -333,7 +333,16 @@ export default function ProfileScreen({
       const back = () => setBrandNav(null);
       const saved = () => { setBrandNav(null); setBrandRefresh((k) => k + 1); };
       if (brandNav.kind === 'items') {
-        return <ManageItemsScreen token={token} brandId={brandNav.id} onBack={back} onLogout={onLogout} />;
+        return (
+          <ManageItemsScreen
+            token={token}
+            brandId={brandNav.id}
+            onBack={back}
+            onLogout={onLogout}
+            profile={profile}
+            onNavigate={onNavigate}
+          />
+        );
       }
       return (
         <BrandFormScreen
@@ -342,6 +351,8 @@ export default function ProfileScreen({
           onBack={back}
           onSaved={saved}
           onLogout={onLogout}
+          profile={profile}
+          onNavigate={onNavigate}
         />
       );
     }
@@ -401,7 +412,7 @@ export default function ProfileScreen({
   // ---------- EDIT MODE (the form) ----------
   return (
     <View style={styles.flex}>
-    <Header title="Update Profile" onBack={() => setMode('view')} onLogout={onLogout} />
+    <Header title="Update Profile" onBack={() => setMode('view')} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
     <KeyboardAwareScroll style={styles.flex} contentContainerStyle={styles.content}>
 
       {/* Completion score — mirrors "SKOR KELENGKAPAN DATA". */}

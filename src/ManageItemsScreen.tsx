@@ -3,7 +3,7 @@ import {
   ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View,
 } from 'react-native';
 import { colors, fonts } from './theme';
-import Header from './Header';
+import Header, { DrawerProfile, NavTarget } from './Header';
 import KeyboardAwareScroll from './KeyboardAwareScroll';
 import { BrandDetail, Item, mkApi } from './marketplace/api';
 import { pickAndUpload } from './marketplace/pickAndUpload';
@@ -13,6 +13,8 @@ type Props = {
   brandId: number;
   onBack: () => void;
   onLogout: () => void;
+  profile?: DrawerProfile;
+  onNavigate?: (target: NavTarget) => void;
 };
 
 type Draft = {
@@ -27,7 +29,7 @@ const emptyDraft = (): Draft => ({
 
 // Manage a brand's items (products / services / menu rows). Add, edit, delete.
 // Item photo upload is a follow-up (needs the image picker).
-export default function ManageItemsScreen({ token, brandId, onBack, onLogout }: Props) {
+export default function ManageItemsScreen({ token, brandId, onBack, onLogout, profile, onNavigate }: Props) {
   const [brand, setBrand] = useState<BrandDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -143,7 +145,7 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout }: 
     return (
       <View style={styles.flex}>
         <Header title={editingId === 'new' ? `Tambah ${itemLabel}` : `Ubah ${itemLabel}`}
-          onBack={() => setEditingId(null)} onLogout={onLogout} />
+          onBack={() => setEditingId(null)} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
         <KeyboardAwareScroll contentContainerStyle={styles.formContent}>
           <Field label="Foto">
             <Pressable style={styles.photoPick} onPress={pickImage} disabled={uploading}>
@@ -204,7 +206,7 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout }: 
 
   return (
     <View style={styles.flex}>
-      <Header title={brand ? `${itemLabel} — ${brand.name}` : 'Item'} onBack={onBack} onLogout={onLogout} />
+      <Header title={brand ? `${itemLabel} — ${brand.name}` : 'Item'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
 
       {loading ? (
         <View style={styles.center}>

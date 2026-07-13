@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from './theme';
-import Header from './Header';
+import Header, { DrawerProfile, NavTarget } from './Header';
 import KeyboardAwareScroll from './KeyboardAwareScroll';
 import { BrandDetail, BrandLink, BrandType, Hours, LINK_PLATFORMS, mkApi, TYPE_LABELS } from './marketplace/api';
 import { pickAndUpload, pickAndUploadMany } from './marketplace/pickAndUpload';
@@ -15,6 +15,8 @@ type Props = {
   onBack: () => void;
   onSaved: (brand: BrandDetail) => void;
   onLogout: () => void;
+  profile?: DrawerProfile;
+  onNavigate?: (target: NavTarget) => void;
 };
 
 const DAYS: [keyof Hours, string][] = [
@@ -32,7 +34,7 @@ const emptyHours = (): Record<keyof Hours, DayState> =>
 // Create + edit a Brand. In create mode the member picks a type first (locked
 // afterwards); place brands expose the address / coordinates / hours / offerings
 // block. Logo & cover upload is a separate follow-up (needs the image picker).
-export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLogout }: Props) {
+export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLogout, profile, onNavigate }: Props) {
   const isEdit = brandId != null;
 
   const [loading, setLoading] = useState(isEdit);
@@ -244,7 +246,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
   if (loading) {
     return (
       <View style={styles.flex}>
-        <Header title={title} onBack={onBack} onLogout={onLogout} />
+        <Header title={title} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
         </View>
@@ -256,7 +258,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
   if (!isEdit && !type) {
     return (
       <View style={styles.flex}>
-        <Header title={title} onBack={onBack} onLogout={onLogout} />
+        <Header title={title} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
         <ScrollView contentContainerStyle={styles.pickerWrap}>
           <Text style={styles.pickerTitle}>Apa jenis brand Anda?</Text>
           {(['product', 'service', 'place'] as BrandType[]).map((t) => (
@@ -278,7 +280,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
 
   return (
     <View style={styles.flex}>
-      <Header title={title} onBack={onBack} onLogout={onLogout} />
+      <Header title={title} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       <KeyboardAwareScroll contentContainerStyle={styles.content}>
         <View style={styles.typeBadge}>
           <Text style={styles.typeBadgeText}>{type ? TYPE_LABELS[type] : ''}</Text>

@@ -6,7 +6,7 @@ import {
   ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Header from '../Header';
+import Header, { DrawerProfile, NavTarget } from '../Header';
 import { colors, fonts } from '../theme';
 import { commApi, CommunityDetail, CommunityMember, MyStatus } from './api';
 
@@ -16,9 +16,11 @@ type Props = {
   onBack: () => void;
   onLogout: () => void;
   onEdit?: (id: number) => void;
+  profile?: DrawerProfile;
+  onNavigate?: (target: NavTarget) => void;
 };
 
-export default function CommunityDetailScreen({ token, communityId, onBack, onLogout, onEdit }: Props) {
+export default function CommunityDetailScreen({ token, communityId, onBack, onLogout, onEdit, profile, onNavigate }: Props) {
   const [data, setData] = useState<CommunityDetail | null>(null);
   const [members, setMembers] = useState<CommunityMember[]>([]);
   const [pending, setPending] = useState<CommunityMember[]>([]);
@@ -97,7 +99,7 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
 
   return (
     <View style={styles.flex}>
-      <Header title={data?.name || 'Komunitas'} onBack={onBack} onLogout={onLogout} />
+      <Header title={data?.name || 'Komunitas'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />

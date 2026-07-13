@@ -59,6 +59,8 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
           setEditId(id);
           setView('form');
         }}
+        profile={profile}
+        onNavigate={onNavigate}
       />
     );
   }
@@ -75,6 +77,8 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
           setView('detail');
         }}
         onLogout={onLogout}
+        profile={profile}
+        onNavigate={onNavigate}
       />
     );
   }

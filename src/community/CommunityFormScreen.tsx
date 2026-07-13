@@ -5,7 +5,7 @@ import {
   ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import Header from '../Header';
+import Header, { DrawerProfile, NavTarget } from '../Header';
 import KeyboardAwareScroll from '../KeyboardAwareScroll';
 import { colors, fonts } from '../theme';
 import { commApi, CommunityDetail } from './api';
@@ -16,9 +16,11 @@ type Props = {
   onBack: () => void;
   onSaved: (id: number) => void;
   onLogout: () => void;
+  profile?: DrawerProfile;
+  onNavigate?: (target: NavTarget) => void;
 };
 
-export default function CommunityFormScreen({ token, communityId, onBack, onSaved, onLogout }: Props) {
+export default function CommunityFormScreen({ token, communityId, onBack, onSaved, onLogout, profile, onNavigate }: Props) {
   const editing = !!communityId;
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
@@ -96,7 +98,7 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
   if (loading) {
     return (
       <View style={styles.flex}>
-        <Header title="Komunitas" onBack={onBack} onLogout={onLogout} />
+        <Header title="Komunitas" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
         </View>
@@ -106,7 +108,7 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
 
   return (
     <View style={styles.flex}>
-      <Header title={editing ? 'Edit Komunitas' : 'Komunitas Baru'} onBack={onBack} onLogout={onLogout} />
+      <Header title={editing ? 'Edit Komunitas' : 'Komunitas Baru'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       <KeyboardAwareScroll style={styles.flex} contentContainerStyle={styles.content}>
         <Text style={styles.label}>Nama *</Text>
         <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Nama komunitas" placeholderTextColor={colors.muted} />

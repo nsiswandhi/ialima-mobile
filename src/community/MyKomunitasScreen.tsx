@@ -70,6 +70,8 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, profile, on
         onBack={() => setNav(null)}
         onLogout={onLogout}
         onEdit={(id) => setNav({ kind: 'edit', id })}
+        profile={profile}
+        onNavigate={onNavigate}
       />
     );
   }
@@ -81,6 +83,8 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, profile, on
         onBack={() => setNav(null)}
         onSaved={() => { setNav(null); setRefresh((k) => k + 1); }}
         onLogout={onLogout}
+        profile={profile}
+        onNavigate={onNavigate}
       />
     );
   }

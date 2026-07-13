@@ -5,7 +5,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
-import Header from './Header';
+import Header, { DrawerProfile, NavTarget } from './Header';
 import {
   BrandDetail, Item, Place, mkApi, whatsappUrl, directionsUrl, TYPE_LABELS,
   linkPlatform, linkOpenUrl,
@@ -18,6 +18,8 @@ type Props = {
   onBack: () => void;
   onLogout: () => void;
   onManage?: (brand: BrandDetail) => void; // owner taps "Kelola Brand" (optional)
+  profile?: DrawerProfile;
+  onNavigate?: (target: NavTarget) => void;
 };
 
 type OwnerProfile = {
@@ -34,7 +36,7 @@ const DAY_LABELS: [keyof Place['operating_hours'], string][] = [
 
 // Public brand page. Fires a one-time view increment on open, then renders the
 // items and (for place brands) hours + directions. Owners get a manage button.
-export default function BrandDetailScreen({ brandId, token, viewerId, onBack, onLogout, onManage }: Props) {
+export default function BrandDetailScreen({ brandId, token, viewerId, onBack, onLogout, onManage, profile, onNavigate }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [brand, setBrand] = useState<BrandDetail | null>(null);
@@ -90,7 +92,7 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
 
   return (
     <View style={styles.flex}>
-      <Header title={brand?.name || 'Brand'} onBack={onBack} onLogout={onLogout} />
+      <Header title={brand?.name || 'Brand'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
 
       {loading ? (
         <View style={styles.center}>

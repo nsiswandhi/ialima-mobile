@@ -70,6 +70,8 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
         viewerId={viewerId}
         onBack={() => setView('list')}
         onLogout={onLogout}
+        profile={profile}
+        onNavigate={onNavigate}
       />
     );
   }

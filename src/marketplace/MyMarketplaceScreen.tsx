@@ -29,7 +29,16 @@ export default function MyMarketplaceScreen({ token, viewerId, canManage, onBack
     const back = () => setBrandNav(null);
     const saved = () => { setBrandNav(null); setRefresh((k) => k + 1); };
     if (brandNav.kind === 'items') {
-      return <ManageItemsScreen token={token} brandId={brandNav.id} onBack={back} onLogout={onLogout} />;
+      return (
+        <ManageItemsScreen
+          token={token}
+          brandId={brandNav.id}
+          onBack={back}
+          onLogout={onLogout}
+          profile={profile}
+          onNavigate={onNavigate}
+        />
+      );
     }
     return (
       <BrandFormScreen
@@ -38,6 +47,8 @@ export default function MyMarketplaceScreen({ token, viewerId, canManage, onBack
         onBack={back}
         onSaved={saved}
         onLogout={onLogout}
+        profile={profile}
+        onNavigate={onNavigate}
       />
     );
   }
