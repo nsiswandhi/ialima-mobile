@@ -9,6 +9,7 @@ import ProfileView, { ProfileViewData } from './ProfileView';
 import BrandCard from './marketplace/BrandCard';
 import BrandDetailScreen from './BrandDetailScreen';
 import { BrandSummary, mkApi } from './marketplace/api';
+import AppointKomunitasSheet from './community/AppointKomunitasSheet';
 
 const INDUSTRY_GLOSSARY_ID = 1;
 
@@ -47,6 +48,8 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   // Promotion state for this target.
   const [isMember, setIsMember] = useState(true); // assume member until told otherwise
   const [isPengurusAngkatan, setIsPengurusAngkatan] = useState(false);
+  const [isPengurusKomunitas, setIsPengurusKomunitas] = useState(false);
+  const [showAppointKomunitas, setShowAppointKomunitas] = useState(false);
   const [angkatan, setAngkatan] = useState<string>('');
 
   // "I know this person" mutual connection state (viewer -> this member).
@@ -77,6 +80,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
         if (!alive) return;
         setIsMember(!!m.is_member);
         setIsPengurusAngkatan((m.roles || []).includes('Pengurus Angkatan'));
+        setIsPengurusKomunitas((m.roles || []).includes('Pengurus Komunitas'));
         setAngkatan(m.angkatan || '');
         setIKnowThem(!!m.i_know_them);
         setTheyKnowMe(!!m.they_know_me);
@@ -133,6 +137,8 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   const verifyLabel = canVerifyAny ? 'Verify Member' : 'Verify Alumni';
   // Pengurus IA Lima only: appoint the member as Pengurus Angkatan (their year).
   const canAppointAngkatan = !!caps.appoint_pengurus && !isSelf && !!angkatan && !isPengurusAngkatan;
+  // Pengurus IA Lima only: appoint the member as Pengurus Komunitas (pick/create).
+  const canAppointKomunitas = !!caps.appoint_pengurus && !isSelf && !isPengurusKomunitas;
   // "I know this person" connection — shown on every profile but your own, for
   // all roles. Mutual ("Saling Kenal") once both have flagged.
   const mutual = iKnowThem && theyKnowMe;
@@ -258,6 +264,16 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
             </Pressable>
           )}
 
+          {canAppointKomunitas && (
+            <Pressable
+              style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => setShowAppointKomunitas(true)}
+              disabled={acting}
+            >
+              <Text style={styles.secondaryBtnText}>Jadikan Pengurus Komunitas</Text>
+            </Pressable>
+          )}
+
           {!isSelf && (
             <View>
               {recognizeCount > 0 && (
@@ -285,6 +301,20 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
           )}
         </ScrollView>
       ) : null}
+
+      <AppointKomunitasSheet
+        token={token}
+        targetId={memberId}
+        targetName={data?.name}
+        visible={showAppointKomunitas}
+        onClose={() => setShowAppointKomunitas(false)}
+        onDone={(name) => {
+          setShowAppointKomunitas(false);
+          setIsMember(true);
+          setIsPengurusKomunitas(true);
+          setNotice(`${data?.name || 'Alumni'} kini Pengurus Komunitas ${name}.`);
+        }}
+      />
     </View>
   );
 }

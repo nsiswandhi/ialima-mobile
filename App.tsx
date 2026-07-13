@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, Image, Pressable,
+  ActivityIndicator, FlatList, Image, Linking, Platform, Pressable,
   StatusBar, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,13 +8,22 @@ import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './src/config';
 import { colors, fonts } from './src/theme';
-import Header from './src/Header';
+import Header, { DrawerProfile, NavTarget } from './src/Header';
 import ProfileScreen from './src/ProfileScreen';
 import SignUpScreen from './src/SignUpScreen';
 import MemberDetailScreen from './src/MemberDetailScreen';
 import MarketplaceScreen from './src/MarketplaceScreen';
+import CommunityScreen from './src/community/CommunityScreen';
 import DashboardScreen from './src/DashboardScreen';
 import KeyboardAwareScroll from './src/KeyboardAwareScroll';
+import MyMarketplaceScreen from './src/marketplace/MyMarketplaceScreen';
+import MyKomunitasScreen from './src/community/MyKomunitasScreen';
+import ComingSoonScreen from './src/ComingSoonScreen';
+import StaticPageScreen from './src/StaticPageScreen';
+
+// Placeholder store IDs — swap in the real ones once the app is published.
+const APPLE_APP_ID = 'REPLACE_WITH_APPLE_APP_ID';
+const ANDROID_PACKAGE = 'REPLACE_WITH_ANDROID_PACKAGE';
 
 // Brand logo, downloaded from the WordPress site (wp-content/.../logo-apps.png).
 const logo = require('./assets/logo.png');
@@ -73,10 +82,18 @@ function AppInner() {
   // Which auth screen shows when logged out.
   const [authView, setAuthView] = useState<'login' | 'signup'>('login');
 
-  // Which authenticated tab is showing. Login lands on the Dashboard.
-  const [tab, setTab] = useState<'dashboard' | 'directory' | 'marketplace' | 'profile'>('dashboard');
+  // Which authenticated tab is showing. Login lands on the Dashboard. The
+  // browse tabs (directory/community/marketplace/event/article) live in the
+  // bottom pill bar; the rest are burger-only destinations.
+  type Tab =
+    | 'dashboard' | 'directory' | 'community' | 'marketplace' | 'profile'
+    | 'my-marketplace' | 'my-komunitas' | 'event' | 'article'
+    | 'about' | 'privacy' | 'terms';
+  const [tab, setTab] = useState<Tab>('dashboard');
   // A brand id to deep-link into on the Marketplace tab (e.g. from the Dashboard).
   const [marketplaceBrandId, setMarketplaceBrandId] = useState<number | null>(null);
+  // Profile card data for the burger drawer — fetched once after login.
+  const [meProfile, setMeProfile] = useState<DrawerProfile | undefined>(undefined);
 
   // Directory + UI state.
   const [members, setMembers] = useState<Member[]>([]);
@@ -132,9 +149,48 @@ function AppInner() {
     }
   }
 
+  // Feeds the burger drawer's profile card (avatar/angkatan/city/roles) — the
+  // same /member/{id} shape ProfileScreen already fetches for itself.
+  useEffect(() => {
+    if (!token || !user) return;
+    let alive = true;
+    fetch(`${API_BASE}/member/${user.id}`, { headers: { 'X-IA5-Token': token } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m) => {
+        if (!alive || !m) return;
+        setMeProfile({
+          name: m.name,
+          avatar: m.avatar,
+          angkatan: m.angkatan,
+          city: m.kota_dan_provinsi,
+          roles: m.roles,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [token, user?.id]);
+
+  // Routes a burger-menu tap to the right tab, or (Review App) straight to
+  // the platform store listing.
+  function handleNavigate(target: NavTarget) {
+    setSelectedMemberId(null);
+    setMarketplaceBrandId(null);
+    if (target === 'review') {
+      const url = Platform.OS === 'ios'
+        ? `itms-apps://itunes.apple.com/app/id${APPLE_APP_ID}?action=write-review`
+        : `market://details?id=${ANDROID_PACKAGE}`;
+      Linking.openURL(url).catch(() => {});
+      return;
+    }
+    setTab(target as Tab);
+  }
+
   function logout() {
     setToken(null);
     setUser(null);
+    setMeProfile(undefined);
     setMembers([]);
     setPhone('');
     setPassword('');
@@ -216,6 +272,8 @@ function AppInner() {
           onOpenBrand={(id) => { setMarketplaceBrandId(id); setTab('marketplace'); }}
           onOpenMember={(id) => { setSelectedMemberId(id); setTab('directory'); }}
           onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
         />
       ) : tab === 'profile' ? (
         <ProfileScreen
@@ -225,6 +283,8 @@ function AppInner() {
           onBackToDirectory={() => setTab('directory')}
           onNameUpdated={(name) => setUser((u) => (u ? { ...u, name } : u))}
           canManage={!!user?.caps?.manage_own_brand}
+          profile={meProfile}
+          onNavigate={handleNavigate}
         />
       ) : tab === 'marketplace' ? (
         <MarketplaceScreen
@@ -232,6 +292,73 @@ function AppInner() {
           viewerId={user!.id}
           onLogout={logout}
           initialBrandId={marketplaceBrandId}
+          profile={meProfile}
+          onNavigate={handleNavigate}
+        />
+      ) : tab === 'community' ? (
+        <CommunityScreen
+          token={token}
+          canManage={!!user?.caps?.manage_community}
+          onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
+        />
+      ) : tab === 'my-marketplace' ? (
+        <MyMarketplaceScreen
+          token={token}
+          viewerId={user!.id}
+          canManage={!!user?.caps?.manage_own_brand}
+          onBack={() => setTab('dashboard')}
+          onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
+        />
+      ) : tab === 'my-komunitas' ? (
+        <MyKomunitasScreen
+          token={token}
+          onBack={() => setTab('dashboard')}
+          onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
+        />
+      ) : tab === 'event' ? (
+        <ComingSoonScreen
+          title="Event"
+          icon="calendar-outline"
+          onBack={() => setTab('dashboard')}
+          onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
+        />
+      ) : tab === 'article' ? (
+        <ComingSoonScreen
+          title="Artikel"
+          icon="newspaper-outline"
+          onBack={() => setTab('dashboard')}
+          onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
+        />
+      ) : tab === 'about' ? (
+        <StaticPageScreen
+          slug="about-lima-circle"
+          fallbackTitle="About LIMA Circle"
+          onBack={() => setTab('dashboard')}
+          onLogout={logout}
+        />
+      ) : tab === 'privacy' ? (
+        <StaticPageScreen
+          slug="privacy-policy"
+          fallbackTitle="Privacy Policy"
+          onBack={() => setTab('dashboard')}
+          onLogout={logout}
+        />
+      ) : tab === 'terms' ? (
+        <StaticPageScreen
+          slug="terms-and-conditions"
+          fallbackTitle="Terms and Conditions"
+          onBack={() => setTab('dashboard')}
+          onLogout={logout}
         />
       ) : selectedMemberId ? (
         <MemberDetailScreen
@@ -243,7 +370,7 @@ function AppInner() {
         />
       ) : (
       <View style={styles.flex}>
-      <Header title="Directory" onLogout={logout} />
+      <Header title="Alumni" onLogout={logout} profile={meProfile} onNavigate={handleNavigate} />
 
       <View style={styles.searchRow}>
         <TextInput
@@ -305,34 +432,37 @@ function AppInner() {
       </View>
       )}
 
-      {/* Bottom tab bar — pad by the bottom inset so it clears the gesture nav. */}
-      <View style={[styles.tabBar, { paddingBottom: insets.bottom || 10 }]}>
-        {([
-          { key: 'dashboard', label: 'Dashboard', icon: 'grid' },
-          { key: 'directory', label: 'Directory', icon: 'people' },
-          { key: 'marketplace', label: 'Marketplace', icon: 'storefront' },
-          { key: 'profile', label: 'Profile', icon: 'person' },
-        ] as const).map((t) => {
-          const active = tab === t.key;
-          return (
-            <Pressable
-              key={t.key}
-              style={styles.tabItem}
-              onPress={() => {
-                setSelectedMemberId(null);
-                setMarketplaceBrandId(null);
-                setTab(t.key);
-              }}
-            >
-              <Ionicons
-                name={(active ? t.icon : `${t.icon}-outline`) as any}
-                size={22}
-                color={active ? colors.primary : colors.muted}
-              />
-              <Text style={[styles.tabLabel, active && styles.tabActive]}>{t.label}</Text>
-            </Pressable>
-          );
-        })}
+      {/* Bottom tab bar — floating icon-only pill, pad by the bottom inset so
+          it clears the gesture nav. */}
+      <View style={[styles.tabBarWrap, { paddingBottom: insets.bottom || 10 }]}>
+        <View style={styles.tabBar}>
+          {([
+            { key: 'directory', icon: 'people' },
+            { key: 'community', icon: 'people-circle' },
+            { key: 'marketplace', icon: 'storefront' },
+            { key: 'event', icon: 'calendar' },
+            { key: 'article', icon: 'newspaper' },
+          ] as const).map((t) => {
+            const active = tab === t.key;
+            return (
+              <Pressable
+                key={t.key}
+                style={[styles.tabItem, active && styles.tabItemActive]}
+                onPress={() => {
+                  setSelectedMemberId(null);
+                  setMarketplaceBrandId(null);
+                  setTab(t.key);
+                }}
+              >
+                <Ionicons
+                  name={(active ? t.icon : `${t.icon}-outline`) as any}
+                  size={24}
+                  color={active ? colors.white : colors.muted}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -352,14 +482,14 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { justifyContent: 'center', alignItems: 'center' },
 
-  // ---- Bottom tab bar ----
+  // ---- Bottom tab bar — floating icon-only pill ----
+  tabBarWrap: { paddingHorizontal: 12, backgroundColor: colors.bg },
   tabBar: {
-    flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border,
-    backgroundColor: colors.card,
+    flexDirection: 'row', height: 56, borderRadius: 24, overflow: 'hidden',
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
   },
-  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 8, gap: 3 },
-  tabLabel: { fontFamily: fonts.bodySemi, fontSize: 11, color: colors.muted },
-  tabActive: { color: colors.primary },
+  tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%' },
+  tabItemActive: { backgroundColor: colors.primary },
 
   // ---- Login ----
   loginScroll: { flexGrow: 1, justifyContent: 'center' },

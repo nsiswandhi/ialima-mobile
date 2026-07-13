@@ -6,7 +6,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
-import Header from './Header';
+import Header, { DrawerProfile, NavTarget } from './Header';
 import ProfileView, { ProfileViewData } from './ProfileView';
 import KeyboardAwareScroll from './KeyboardAwareScroll';
 import BrandFormScreen from './BrandFormScreen';
@@ -91,10 +91,12 @@ type Props = {
   onBackToDirectory: () => void;
   onNameUpdated?: (name: string) => void;
   canManage?: boolean;          // viewer can create/manage brands (member+)
+  profile?: DrawerProfile;
+  onNavigate?: (target: NavTarget) => void;
 };
 
 export default function ProfileScreen({
-  token, userId, onLogout, onBackToDirectory, onNameUpdated, canManage,
+  token, userId, onLogout, onBackToDirectory, onNameUpdated, canManage, profile, onNavigate,
 }: Props) {
   // Profile opens read-only; the Edit Profile button switches to the form.
   const [mode, setMode] = useState<'view' | 'edit'>('view');
@@ -134,7 +136,7 @@ export default function ProfileScreen({
       try {
         const [pRes, mRes, gRes] = await Promise.all([
           fetch(`${API_BASE}/profile`, { headers: authHeaders }),
-          fetch(`${API_BASE}/member/${userId}`),
+          fetch(`${API_BASE}/member/${userId}`, { headers: authHeaders }),
           fetch(`${API_BASE}/glossary/${INDUSTRY_GLOSSARY_ID}`),
         ]);
         const p = await pRes.json();
@@ -346,7 +348,7 @@ export default function ProfileScreen({
 
     return (
       <View style={styles.flex}>
-      <Header title="My Profile" onBack={onBackToDirectory} onLogout={onLogout} />
+      <Header title="My Profile" onBack={onBackToDirectory} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       <KeyboardAwareScroll style={styles.flex} contentContainerStyle={styles.content}>
         {/* Completion score — mirrors "SKOR KELENGKAPAN DATA". */}
         <Text style={styles.sectionHead}>SKOR KELENGKAPAN DATA</Text>

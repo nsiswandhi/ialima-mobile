@@ -3,7 +3,7 @@ import {
   ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { colors, fonts } from './theme';
-import Header from './Header';
+import Header, { DrawerProfile, NavTarget } from './Header';
 import BrandDetailScreen from './BrandDetailScreen';
 import BrandCard from './marketplace/BrandCard';
 import { BrandSummary, BrandType, mkApi, TYPE_LABELS } from './marketplace/api';
@@ -13,6 +13,8 @@ type Props = {
   viewerId: number;
   onLogout: () => void;
   initialBrandId?: number | null; // deep-link straight to a brand (e.g. from Dashboard)
+  profile?: DrawerProfile;
+  onNavigate?: (target: NavTarget) => void;
 };
 
 type Filter = 'all' | BrandType;
@@ -26,7 +28,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 // Marketplace directory: 2-column brand grid with type filter + search, and the
 // brand detail page. Brand management now lives in My Profile, so there is no
 // "Brand Saya" entry here anymore.
-export default function MarketplaceScreen({ token, viewerId, onLogout, initialBrandId }: Props) {
+export default function MarketplaceScreen({ token, viewerId, onLogout, initialBrandId, profile, onNavigate }: Props) {
   const [view, setView] = useState<'list' | 'detail'>(initialBrandId ? 'detail' : 'list');
   const [selectedId, setSelectedId] = useState<number | null>(initialBrandId ?? null);
 
@@ -74,7 +76,7 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
 
   return (
     <View style={styles.flex}>
-      <Header title="Marketplace" onLogout={onLogout} />
+      <Header title="Marketplace" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
 
       {/* Type filter tabs */}
       <View style={styles.filterRow}>

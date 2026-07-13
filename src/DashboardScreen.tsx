@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
-import Header from './Header';
+import Header, { DrawerProfile, NavTarget } from './Header';
 import BrandCard from './marketplace/BrandCard';
 import AlumniCard, { AlumniSummary } from './AlumniCard';
 import { BrandSummary, mkApi } from './marketplace/api';
@@ -13,6 +13,8 @@ type Props = {
   onOpenBrand: (id: number) => void;
   onOpenMember: (id: number) => void;
   onLogout: () => void;
+  profile?: DrawerProfile;
+  onNavigate?: (target: NavTarget) => void;
 };
 
 const WELCOME_MESSAGES = [
@@ -28,7 +30,7 @@ const CARD_W = 156;
 // Home screen shown right after login: a welcome banner, a "Brand Unggulan"
 // carousel (up to 10 brands) and an "Alumni Populer" carousel (up to 10 members,
 // already ranked by recognition on the server).
-export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMember, onLogout }: Props) {
+export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMember, onLogout, profile, onNavigate }: Props) {
   const [brands, setBrands] = useState<BrandSummary[]>([]);
   const [alumni, setAlumni] = useState<AlumniSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMe
 
   return (
     <View style={styles.flex}>
-      <Header title="Dashboard" onLogout={onLogout} />
+      <Header title="Dashboard" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.welcomeCard}>
           <Text style={styles.welcomeHi}>Hai {userName || 'Alumni'},</Text>
