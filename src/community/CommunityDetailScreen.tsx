@@ -174,20 +174,22 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
             </View>
           )}
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.joinBtn,
-              data.my_status === 'approved' && styles.leaveBtn,
-              data.my_status === 'pending' && styles.pendingBtn,
-              pressed && styles.pressed,
-            ]}
-            disabled={acting || data.my_status === 'pending'}
-            onPress={toggleMembership}
-          >
-            <Text style={[styles.joinText, data.my_status === 'pending' && styles.pendingText]}>
-              {joinLabel(data.my_status)}
-            </Text>
-          </Pressable>
+          {!data.is_manager && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.joinBtn,
+                data.my_status === 'approved' && styles.leaveBtn,
+                data.my_status === 'pending' && styles.pendingBtn,
+                pressed && styles.pressed,
+              ]}
+              disabled={acting || data.my_status === 'pending'}
+              onPress={toggleMembership}
+            >
+              <Text style={[styles.joinText, data.my_status === 'pending' && styles.pendingText]}>
+                {joinLabel(data.my_status)}
+              </Text>
+            </Pressable>
+          )}
 
           {data.is_manager && (
             <Pressable style={styles.manageBtn} onPress={() => onEdit?.(data.id)}>

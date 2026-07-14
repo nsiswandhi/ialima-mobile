@@ -19,16 +19,18 @@ type Props = {
   onNavigate?: (target: NavTarget) => void;
 };
 
-// Burger-menu destination for "My Komunitas" — mirrors MyMarketplaceScreen /
-// MyBrandsSection, but for communities the viewer founded/manages (`mine`).
-// "Kelola" opens CommunityDetailScreen (members + pending approvals + edit);
-// "Ubah" jumps straight to the edit form; "Hapus" deletes after confirming.
-// Pengurus IA Lima additionally sees every member's pending community with
-// Setujui/Hapus actions — the community-level approval gate (separate from
-// member-join approval, which stays inside CommunityDetailScreen).
+// Burger-menu destination for "My Komunitas" — three sections: "Kelola
+// Komunitas" (communities the viewer manages — founder or appointed manager,
+// via the membership table's approved 'manager' rows), "My Komunitas"
+// (communities the viewer has joined as an approved member, read-only), and
+// — Pengurus IA Lima only — "Persetujuan" (every member's community still
+// awaiting approval, with Setujui/Hapus and a tap-to-review popup). The
+// community-level approval gate here is separate from member-join approval,
+// which stays inside CommunityDetailScreen.
 export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, profile, onNavigate }: Props) {
   const [nav, setNav] = useState<ComNav>(null);
-  const [communities, setCommunities] = useState<CommunitySummary[]>([]);
+  const [managed, setManaged] = useState<CommunitySummary[]>([]);
+  const [joined, setJoined] = useState<CommunitySummary[]>([]);
   const [queue, setQueue] = useState<CommunitySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,11 +42,13 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
     setError(null);
     setLoading(true);
     try {
-      const [mine, pending] = await Promise.all([
-        commApi.list(token, { mine: true }),
+      const [manager, member, pending] = await Promise.all([
+        commApi.list(token, { role: 'manager' }),
+        commApi.list(token, { role: 'member' }),
         isIALima ? commApi.list(token, { status: 'pending' }) : Promise.resolve({ data: [] as CommunitySummary[] }),
       ]);
-      setCommunities(mine.data);
+      setManaged(manager.data);
+      setJoined(member.data);
       setQueue(pending.data);
     } catch (e: any) {
       setError(e.message);
@@ -135,47 +139,14 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
           <Text style={styles.error}>{error}</Text>
         ) : (
           <>
-            {isIALima && queue.length > 0 && (
-              <>
-                <Text style={styles.sectionHead}>PERLU PERSETUJUAN</Text>
-                {queue.map((item) => (
-                  <View style={styles.card} key={`queue-${item.id}`}>
-                    <Pressable style={styles.cardMain} onPress={() => setReviewId(item.id)}>
-                      {item.logo?.thumbnail ? (
-                        <Image source={{ uri: item.logo.thumbnail }} style={styles.logo} />
-                      ) : (
-                        <View style={[styles.logo, styles.logoFallback]}>
-                          <Text style={styles.logoLetter}>{item.name.charAt(0)}</Text>
-                        </View>
-                      )}
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.name}>{item.name}</Text>
-                        {!!item.community_type && <Text style={styles.metaLight}>{item.community_type}</Text>}
-                      </View>
-                      <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-                    </Pressable>
-                    <View style={styles.actions}>
-                      <Pressable style={styles.actionBtn} onPress={() => approveCommunity(item)}>
-                        <Text style={[styles.actionText, { color: '#3B6D11' }]}>Setujui</Text>
-                      </Pressable>
-                      <Pressable style={styles.actionBtn} onPress={() => confirmDelete(item)}>
-                        <Text style={[styles.actionText, { color: colors.danger }]}>Hapus</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                ))}
-                <Text style={[styles.sectionHead, { marginTop: 20 }]}>KOMUNITAS SAYA</Text>
-              </>
-            )}
-
-            {communities.length === 0 && (
+            <Text style={styles.sectionHead}>KELOLA KOMUNITAS</Text>
+            {managed.length === 0 && (
               <Text style={styles.empty}>
                 Kamu belum mengelola komunitas apa pun. Buat komunitas untuk mengumpulkan alumni dengan minat yang sama.
               </Text>
             )}
-
-            {communities.map((item) => (
-              <View style={styles.card} key={item.id}>
+            {managed.map((item) => (
+              <View style={styles.card} key={`managed-${item.id}`}>
                 <View style={styles.cardMain}>
                   {item.logo?.thumbnail ? (
                     <Image source={{ uri: item.logo.thumbnail }} style={styles.logo} />
@@ -209,10 +180,73 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
                 </View>
               </View>
             ))}
-
             <Pressable style={styles.createBtn} onPress={() => setNav({ kind: 'create' })}>
               <Text style={styles.createBtnText}>＋ Buat Komunitas Baru</Text>
             </Pressable>
+
+            <Text style={[styles.sectionHead, { marginTop: 24 }]}>MY KOMUNITAS</Text>
+            {joined.length === 0 ? (
+              <Text style={styles.empty}>Kamu belum bergabung dengan komunitas apa pun.</Text>
+            ) : (
+              joined.map((item) => (
+                <Pressable
+                  style={styles.card}
+                  key={`joined-${item.id}`}
+                  onPress={() => setNav({ kind: 'manage', id: item.id })}
+                >
+                  <View style={styles.cardMain}>
+                    {item.logo?.thumbnail ? (
+                      <Image source={{ uri: item.logo.thumbnail }} style={styles.logo} />
+                    ) : (
+                      <View style={[styles.logo, styles.logoFallback]}>
+                        <Text style={styles.logoLetter}>{item.name.charAt(0)}</Text>
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.name}>{item.name}</Text>
+                      <Text style={styles.metaLight}>{item.member_count} anggota</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+                  </View>
+                </Pressable>
+              ))
+            )}
+
+            {isIALima && (
+              <>
+                <Text style={[styles.sectionHead, { marginTop: 24 }]}>PERSETUJUAN</Text>
+                {queue.length === 0 ? (
+                  <Text style={styles.empty}>Tidak ada komunitas yang menunggu persetujuan.</Text>
+                ) : (
+                  queue.map((item) => (
+                    <View style={styles.card} key={`queue-${item.id}`}>
+                      <Pressable style={styles.cardMain} onPress={() => setReviewId(item.id)}>
+                        {item.logo?.thumbnail ? (
+                          <Image source={{ uri: item.logo.thumbnail }} style={styles.logo} />
+                        ) : (
+                          <View style={[styles.logo, styles.logoFallback]}>
+                            <Text style={styles.logoLetter}>{item.name.charAt(0)}</Text>
+                          </View>
+                        )}
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.name}>{item.name}</Text>
+                          {!!item.community_type && <Text style={styles.metaLight}>{item.community_type}</Text>}
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+                      </Pressable>
+                      <View style={styles.actions}>
+                        <Pressable style={styles.actionBtn} onPress={() => approveCommunity(item)}>
+                          <Text style={[styles.actionText, { color: '#3B6D11' }]}>Setujui</Text>
+                        </Pressable>
+                        <Pressable style={styles.actionBtn} onPress={() => confirmDelete(item)}>
+                          <Text style={[styles.actionText, { color: colors.danger }]}>Hapus</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))
+                )}
+              </>
+            )}
           </>
         )}
       </View>

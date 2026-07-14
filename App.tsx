@@ -92,6 +92,8 @@ function AppInner() {
   const [tab, setTab] = useState<Tab>('dashboard');
   // A brand id to deep-link into on the Marketplace tab (e.g. from the Dashboard).
   const [marketplaceBrandId, setMarketplaceBrandId] = useState<number | null>(null);
+  // A community id to deep-link into on the Komunitas tab (e.g. from the Dashboard).
+  const [communityDeepLinkId, setCommunityDeepLinkId] = useState<number | null>(null);
   // Profile card data for the burger drawer — fetched once after login.
   const [meProfile, setMeProfile] = useState<DrawerProfile | undefined>(undefined);
 
@@ -177,6 +179,7 @@ function AppInner() {
   function handleNavigate(target: NavTarget) {
     setSelectedMemberId(null);
     setMarketplaceBrandId(null);
+    setCommunityDeepLinkId(null);
     if (target === 'review') {
       const url = Platform.OS === 'ios'
         ? `itms-apps://itunes.apple.com/app/id${APPLE_APP_ID}?action=write-review`
@@ -271,6 +274,7 @@ function AppInner() {
           userName={user?.name}
           onOpenBrand={(id) => { setMarketplaceBrandId(id); setTab('marketplace'); }}
           onOpenMember={(id) => { setSelectedMemberId(id); setTab('directory'); }}
+          onOpenCommunity={(id) => { setCommunityDeepLinkId(id); setTab('community'); }}
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
@@ -282,7 +286,6 @@ function AppInner() {
           onLogout={logout}
           onBackToDirectory={() => setTab('directory')}
           onNameUpdated={(name) => setUser((u) => (u ? { ...u, name } : u))}
-          canManage={!!user?.caps?.manage_own_brand}
           profile={meProfile}
           onNavigate={handleNavigate}
         />
@@ -300,6 +303,7 @@ function AppInner() {
           token={token}
           canManage={!!user?.caps?.manage_community}
           onLogout={logout}
+          initialCommunityId={communityDeepLinkId}
           profile={meProfile}
           onNavigate={handleNavigate}
         />

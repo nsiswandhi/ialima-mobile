@@ -6,12 +6,15 @@ import Header, { DrawerProfile, NavTarget } from './Header';
 import BrandCard from './marketplace/BrandCard';
 import AlumniCard, { AlumniSummary } from './AlumniCard';
 import { BrandSummary, mkApi } from './marketplace/api';
+import CommunityCard from './community/CommunityCard';
+import { commApi, CommunitySummary } from './community/api';
 
 type Props = {
   token: string;
   userName?: string;
   onOpenBrand: (id: number) => void;
   onOpenMember: (id: number) => void;
+  onOpenCommunity: (id: number) => void;
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
@@ -30,9 +33,10 @@ const CARD_W = 156;
 // Home screen shown right after login: a welcome banner, a "Brand Unggulan"
 // carousel (up to 10 brands) and an "Alumni Populer" carousel (up to 10 members,
 // already ranked by recognition on the server).
-export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMember, onLogout, profile, onNavigate }: Props) {
+export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMember, onOpenCommunity, onLogout, profile, onNavigate }: Props) {
   const [brands, setBrands] = useState<BrandSummary[]>([]);
   const [alumni, setAlumni] = useState<AlumniSummary[]>([]);
+  const [communities, setCommunities] = useState<CommunitySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [welcome] = useState(() => WELCOME_MESSAGES[Math.floor(Math.random() * WELCOME_MESSAGES.length)]);
 
@@ -40,15 +44,17 @@ export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMe
     let alive = true;
     (async () => {
       try {
-        const [brandRes, memberRes] = await Promise.all([
+        const [brandRes, memberRes, communityRes] = await Promise.all([
           mkApi.list(token, { featured: true }).catch(() => ({ data: [] as BrandSummary[] })),
           fetch(`${API_BASE}/members?per_page=10`, { headers: { 'X-IA5-Token': token } })
             .then((r) => r.json())
             .catch(() => ({ data: [] })),
+          commApi.list(token, {}).catch(() => ({ data: [] as CommunitySummary[] })),
         ]);
         if (!alive) return;
         setBrands((brandRes.data || []).slice(0, 10));
         setAlumni((memberRes.data || []).slice(0, 10));
+        setCommunities((communityRes.data || []).slice(0, 10));
       } finally {
         if (alive) setLoading(false);
       }
@@ -80,6 +86,12 @@ export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMe
             <Section title="Alumni Populer" empty="Belum ada alumni." show={alumni.length > 0}>
               {alumni.map((m) => (
                 <AlumniCard key={m.id} member={m} onPress={() => onOpenMember(m.id)} style={{ width: CARD_W }} />
+              ))}
+            </Section>
+
+            <Section title="Komunitas Populer" empty="Belum ada komunitas." show={communities.length > 0}>
+              {communities.map((c) => (
+                <CommunityCard key={c.id} community={c} onPress={() => onOpenCommunity(c.id)} style={{ width: CARD_W }} />
               ))}
             </Section>
           </>

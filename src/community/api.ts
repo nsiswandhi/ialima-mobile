@@ -131,12 +131,14 @@ function form(fields: Record<string, unknown>) {
 export const commApi = {
   list(
     token: string,
-    opts: { community_type?: string; search?: string; mine?: boolean; status?: 'pending'; page?: number } = {},
+    opts: {
+      community_type?: string; search?: string; role?: 'manager' | 'member'; status?: 'pending'; page?: number;
+    } = {},
   ) {
     const q = new URLSearchParams({ per_page: '20', page: String(opts.page ?? 1) });
     if (opts.community_type) q.append('community_type', opts.community_type);
     if (opts.search) q.append('search', opts.search);
-    if (opts.mine) q.append('mine', '1');
+    if (opts.role) q.append('role', opts.role);
     if (opts.status) q.append('status', opts.status);
     return fetch(`${API_BASE}/communities?${q.toString()}`, { headers: headers(token) }).then(
       parse<Paged<CommunitySummary>>,

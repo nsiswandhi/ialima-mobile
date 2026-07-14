@@ -9,12 +9,6 @@ import { colors, fonts } from './theme';
 import Header, { DrawerProfile, NavTarget } from './Header';
 import ProfileView, { ProfileViewData } from './ProfileView';
 import KeyboardAwareScroll from './KeyboardAwareScroll';
-import BrandFormScreen from './BrandFormScreen';
-import ManageItemsScreen from './ManageItemsScreen';
-import MyBrandsSection from './marketplace/MyBrandsSection';
-
-// Brand-management sub-navigation within My Profile (replaces the "Brand Saya" screen).
-type BrandNav = null | { kind: 'create' } | { kind: 'edit'; id: number } | { kind: 'items'; id: number };
 
 // Field metadata, mirroring the WordPress "Update Alumni Profile" JetForm.
 // Keys are the real WP user-meta keys (confirmed against the DB); the labels
@@ -90,19 +84,15 @@ type Props = {
   onLogout: () => void;
   onBackToDirectory: () => void;
   onNameUpdated?: (name: string) => void;
-  canManage?: boolean;          // viewer can create/manage brands (member+)
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
 };
 
 export default function ProfileScreen({
-  token, userId, onLogout, onBackToDirectory, onNameUpdated, canManage, profile, onNavigate,
+  token, userId, onLogout, onBackToDirectory, onNameUpdated, profile, onNavigate,
 }: Props) {
   // Profile opens read-only; the Edit Profile button switches to the form.
   const [mode, setMode] = useState<'view' | 'edit'>('view');
-  // Brand management: when set, a full-screen brand form/items screen takes over.
-  const [brandNav, setBrandNav] = useState<BrandNav>(null);
-  const [brandRefresh, setBrandRefresh] = useState(0); // bump to reload the brands list
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -328,35 +318,6 @@ export default function ProfileScreen({
       },
     };
 
-    // Brand management takes over the whole screen when active.
-    if (brandNav) {
-      const back = () => setBrandNav(null);
-      const saved = () => { setBrandNav(null); setBrandRefresh((k) => k + 1); };
-      if (brandNav.kind === 'items') {
-        return (
-          <ManageItemsScreen
-            token={token}
-            brandId={brandNav.id}
-            onBack={back}
-            onLogout={onLogout}
-            profile={profile}
-            onNavigate={onNavigate}
-          />
-        );
-      }
-      return (
-        <BrandFormScreen
-          token={token}
-          brandId={brandNav.kind === 'edit' ? brandNav.id : undefined}
-          onBack={back}
-          onSaved={saved}
-          onLogout={onLogout}
-          profile={profile}
-          onNavigate={onNavigate}
-        />
-      );
-    }
-
     return (
       <View style={styles.flex}>
       <Header title="My Profile" onBack={onBackToDirectory} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
@@ -386,20 +347,6 @@ export default function ProfileScreen({
         >
           <Text style={styles.primaryBtnText}>Edit Profile</Text>
         </Pressable>
-
-        {canManage && (
-          <View style={styles.mpSection}>
-            <Text style={styles.sectionHead}>MARKETPLACE</Text>
-            <MyBrandsSection
-              key={brandRefresh}
-              token={token}
-              viewerId={userId}
-              onCreate={() => setBrandNav({ kind: 'create' })}
-              onEdit={(id) => setBrandNav({ kind: 'edit', id })}
-              onItems={(id) => setBrandNav({ kind: 'items', id })}
-            />
-          </View>
-        )}
 
         <Pressable style={styles.logoutBtn} onPress={onLogout}>
           <Text style={styles.logoutText}>Log out</Text>
@@ -639,7 +586,6 @@ const styles = StyleSheet.create({
   primaryBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginBottom: 24 },
   primaryBtnPressed: { backgroundColor: colors.accentDark },
   primaryBtnText: { color: colors.white, fontFamily: fonts.headingSemi, fontSize: 16 },
-  mpSection: { marginTop: -6, marginBottom: 20 },
 
   secondaryBtn: {
     borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 24,
