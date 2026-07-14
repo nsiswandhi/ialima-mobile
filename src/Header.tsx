@@ -70,12 +70,16 @@ export default function Header({ title, onBack, onLogout, profile, onNavigate }:
     // Pad the top by the status-bar inset so the bar isn't drawn under the
     // status bar (the app runs edge-to-edge on Android by default).
     <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-      {/* Logo overlaps the green bar, spilling onto the content below. */}
-      <Image
-        source={logo}
+      {/* Logo overlaps the green bar, spilling onto the content below. Tapping it
+          jumps back to Dashboard wherever a nav handler is available. */}
+      <Pressable
+        disabled={!onNavigate}
+        onPress={() => onNavigate?.('dashboard')}
         style={[styles.headerLogo, { top: insets.top + 8 }]}
-        resizeMode="contain"
-      />
+        hitSlop={8}
+      >
+        <Image source={logo} style={styles.headerLogoImg} resizeMode="contain" />
+      </Pressable>
 
       <View style={styles.headerRight}>
         {!!onBack && (
@@ -224,6 +228,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary, overflow: 'visible', zIndex: 10,
   },
   headerLogo: { position: 'absolute', left: 14, top: 8, width: 78, height: 78, zIndex: 11 },
+  headerLogoImg: { width: '100%', height: '100%' },
 
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12, flexShrink: 1, maxWidth: '82%' },
   backBtn: { paddingRight: 2 },
