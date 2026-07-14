@@ -20,6 +20,8 @@ import MyMarketplaceScreen from './src/marketplace/MyMarketplaceScreen';
 import MyKomunitasScreen from './src/community/MyKomunitasScreen';
 import ComingSoonScreen from './src/ComingSoonScreen';
 import StaticPageScreen from './src/StaticPageScreen';
+import EventScreen from './src/events/EventScreen';
+import MyEventScreen from './src/events/MyEventScreen';
 import { useAndroidBack } from './src/useAndroidBack';
 
 // Placeholder store IDs — swap in the real ones once the app is published.
@@ -38,6 +40,9 @@ type Caps = {
   appoint_pengurus: boolean;
   manage_community: boolean;
   manage_own_brand: boolean;
+  create_angkatan_event: boolean;
+  create_org_event: boolean;
+  create_community_event: boolean;
 };
 type User = {
   id: number;
@@ -88,13 +93,15 @@ function AppInner() {
   // bottom pill bar; the rest are burger-only destinations.
   type Tab =
     | 'dashboard' | 'directory' | 'community' | 'marketplace' | 'profile'
-    | 'my-marketplace' | 'my-komunitas' | 'event' | 'article'
+    | 'my-marketplace' | 'my-komunitas' | 'my-event' | 'event' | 'article'
     | 'about' | 'privacy' | 'terms';
   const [tab, setTab] = useState<Tab>('dashboard');
   // A brand id to deep-link into on the Marketplace tab (e.g. from the Dashboard).
   const [marketplaceBrandId, setMarketplaceBrandId] = useState<number | null>(null);
   // A community id to deep-link into on the Komunitas tab (e.g. from the Dashboard).
   const [communityDeepLinkId, setCommunityDeepLinkId] = useState<number | null>(null);
+  // An event id to deep-link into on the Event tab (e.g. from the Dashboard).
+  const [eventDeepLinkId, setEventDeepLinkId] = useState<number | null>(null);
   // Profile card data for the burger drawer — fetched once after login.
   const [meProfile, setMeProfile] = useState<DrawerProfile | undefined>(undefined);
 
@@ -181,6 +188,7 @@ function AppInner() {
     setSelectedMemberId(null);
     setMarketplaceBrandId(null);
     setCommunityDeepLinkId(null);
+    setEventDeepLinkId(null);
     if (target === 'review') {
       const url = Platform.OS === 'ios'
         ? `itms-apps://itunes.apple.com/app/id${APPLE_APP_ID}?action=write-review`
@@ -225,6 +233,10 @@ function AppInner() {
     }
     if (communityDeepLinkId != null) {
       setCommunityDeepLinkId(null);
+      return true;
+    }
+    if (eventDeepLinkId != null) {
+      setEventDeepLinkId(null);
       return true;
     }
     if (tab !== 'dashboard') {
@@ -308,6 +320,7 @@ function AppInner() {
           onOpenBrand={(id) => { setMarketplaceBrandId(id); setTab('marketplace'); }}
           onOpenMember={(id) => { setSelectedMemberId(id); setTab('directory'); }}
           onOpenCommunity={(id) => { setCommunityDeepLinkId(id); setTab('community'); }}
+          onOpenEvent={(id) => { setEventDeepLinkId(id); setTab('event'); }}
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
@@ -360,11 +373,22 @@ function AppInner() {
           onNavigate={handleNavigate}
         />
       ) : tab === 'event' ? (
-        <ComingSoonScreen
-          title="Event"
-          icon="calendar-outline"
+        <EventScreen
+          token={token}
+          canCreate={!!(user?.caps?.create_angkatan_event || user?.caps?.create_org_event || user?.caps?.create_community_event)}
+          onLogout={logout}
+          initialEventId={eventDeepLinkId}
+          profile={meProfile}
+          onNavigate={handleNavigate}
+        />
+      ) : tab === 'my-event' ? (
+        <MyEventScreen
+          token={token}
           onBack={() => setTab('dashboard')}
           onLogout={logout}
+          canCreate={!!(user?.caps?.create_angkatan_event || user?.caps?.create_org_event || user?.caps?.create_community_event)}
+          pickCommunity={!!(user?.caps?.create_community_event && !user?.caps?.create_org_event)}
+          isIALima={!!user?.caps?.appoint_pengurus}
           profile={meProfile}
           onNavigate={handleNavigate}
         />
@@ -497,6 +521,8 @@ function AppInner() {
                 onPress={() => {
                   setSelectedMemberId(null);
                   setMarketplaceBrandId(null);
+                  setCommunityDeepLinkId(null);
+                  setEventDeepLinkId(null);
                   setTab(t.key);
                 }}
               >
