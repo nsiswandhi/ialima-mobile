@@ -9,6 +9,8 @@ import { commApi, CommunitySummary } from './api';
 import CommunityCard from './CommunityCard';
 import CommunityDetailScreen from './CommunityDetailScreen';
 import CommunityFormScreen from './CommunityFormScreen';
+import NoticeBanner from '../NoticeBanner';
+import { useAndroidBack } from '../useAndroidBack';
 
 type Props = {
   token: string;
@@ -30,6 +32,19 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useAndroidBack(() => {
+    if (view === 'form') {
+      setView(editId ? 'detail' : 'list');
+      return true;
+    }
+    if (view === 'detail') {
+      setView('list');
+      return true;
+    }
+    return false;
+  });
 
   async function load() {
     setLoading(true);
@@ -71,10 +86,15 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
         token={token}
         communityId={editId}
         onBack={() => setView(editId ? 'detail' : 'list')}
-        onSaved={(id) => {
-          setSelectedId(id);
+        onSaved={() => {
+          const wasCreate = editId == null;
           setEditId(null);
-          setView('detail');
+          setView('list');
+          setNotice(
+            wasCreate
+              ? 'Komunitas berhasil dibuat. Menunggu persetujuan Pengurus IA Lima sebelum tampil publik.'
+              : 'Perubahan komunitas berhasil disimpan.',
+          );
         }}
         onLogout={onLogout}
         profile={profile}
@@ -86,6 +106,7 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
   return (
     <View style={styles.flex}>
       <Header title="Komunitas" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
 
       <View style={styles.searchRow}>
         <TextInput

@@ -7,6 +7,8 @@ import Header, { DrawerProfile, NavTarget } from './Header';
 import KeyboardAwareScroll from './KeyboardAwareScroll';
 import { BrandDetail, Item, mkApi } from './marketplace/api';
 import { pickAndUpload } from './marketplace/pickAndUpload';
+import NoticeBanner from './NoticeBanner';
+import { useAndroidBack } from './useAndroidBack';
 
 type Props = {
   token: string;
@@ -38,6 +40,15 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout, pr
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useAndroidBack(() => {
+    if (editingId !== null) {
+      setEditingId(null);
+      return true;
+    }
+    return false;
+  });
 
   const load = useCallback(async () => {
     setError(null);
@@ -58,11 +69,13 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout, pr
   const itemLabel = brand?.type === 'service' ? 'Layanan' : brand?.type === 'place' ? 'Menu' : 'Produk';
 
   const openNew = () => {
+    setNotice(null);
     setDraft(emptyDraft());
     setEditingId('new');
   };
 
   const openEdit = (it: Item) => {
+    setNotice(null);
     setDraft({
       name: it.name,
       price: it.price != null ? String(it.price) : '',
@@ -103,6 +116,7 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout, pr
       is_available: draft.is_available,
     };
     if (draft.imageId != null) fields.image_id = draft.imageId;
+    const wasNew = editingId === 'new';
     try {
       if (editingId === 'new') {
         await mkApi.createItem(token, brandId, fields);
@@ -111,6 +125,7 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout, pr
       }
       setEditingId(null);
       await load();
+      setNotice(wasNew ? `${itemLabel} berhasil ditambahkan.` : `${itemLabel} berhasil diperbarui.`);
     } catch (e: any) {
       if (e.code === 'quota_exceeded') {
         Alert.alert('Batas tercapai', `Paket ${e.tier || ''} dibatasi ${e.limit ?? ''} item per brand.`);
@@ -207,6 +222,7 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout, pr
   return (
     <View style={styles.flex}>
       <Header title={brand ? `${itemLabel} — ${brand.name}` : 'Item'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
 
       {loading ? (
         <View style={styles.center}>

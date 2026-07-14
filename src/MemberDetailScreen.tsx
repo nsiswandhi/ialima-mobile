@@ -10,6 +10,7 @@ import BrandCard from './marketplace/BrandCard';
 import BrandDetailScreen from './BrandDetailScreen';
 import { BrandSummary, mkApi } from './marketplace/api';
 import AppointKomunitasSheet from './community/AppointKomunitasSheet';
+import { useAndroidBack } from './useAndroidBack';
 
 const INDUSTRY_GLOSSARY_ID = 1;
 
@@ -60,6 +61,14 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   const [recognizeCount, setRecognizeCount] = useState(0); // how many people know this member
   const [acting, setActing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
+  useAndroidBack(() => {
+    if (openBrandId != null) {
+      setOpenBrandId(null);
+      return true;
+    }
+    return false;
+  });
 
   const authHeaders = { 'X-IA5-Token': token };
 

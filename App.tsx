@@ -20,6 +20,7 @@ import MyMarketplaceScreen from './src/marketplace/MyMarketplaceScreen';
 import MyKomunitasScreen from './src/community/MyKomunitasScreen';
 import ComingSoonScreen from './src/ComingSoonScreen';
 import StaticPageScreen from './src/StaticPageScreen';
+import { useAndroidBack } from './src/useAndroidBack';
 
 // Placeholder store IDs — swap in the real ones once the app is published.
 const APPLE_APP_ID = 'REPLACE_WITH_APPLE_APP_ID';
@@ -200,6 +201,38 @@ function AppInner() {
     setSelectedMemberId(null);
     setTab('dashboard');
   }
+
+  // Android hardware back: pop the outermost level of nav state (a deep-link
+  // detail overlay, then the active tab back to Dashboard). Nested screens
+  // (CommunityScreen, MarketplaceScreen, etc.) register their own handler for
+  // their internal list/detail/form state and this one only fires once those
+  // report "not handled" — see useAndroidBack.ts.
+  useAndroidBack(() => {
+    if (!token) {
+      if (authView === 'signup') {
+        setAuthView('login');
+        return true;
+      }
+      return false;
+    }
+    if (selectedMemberId != null) {
+      setSelectedMemberId(null);
+      return true;
+    }
+    if (marketplaceBrandId != null) {
+      setMarketplaceBrandId(null);
+      return true;
+    }
+    if (communityDeepLinkId != null) {
+      setCommunityDeepLinkId(null);
+      return true;
+    }
+    if (tab !== 'dashboard') {
+      setTab('dashboard');
+      return true;
+    }
+    return false;
+  });
 
   // Hold rendering until fonts are ready (keeps the brand look consistent).
   if (!fontsLoaded) {

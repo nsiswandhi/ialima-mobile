@@ -9,6 +9,7 @@ import { colors, fonts } from './theme';
 import Header, { DrawerProfile, NavTarget } from './Header';
 import ProfileView, { ProfileViewData } from './ProfileView';
 import KeyboardAwareScroll from './KeyboardAwareScroll';
+import { useAndroidBack } from './useAndroidBack';
 
 // Field metadata, mirroring the WordPress "Update Alumni Profile" JetForm.
 // Keys are the real WP user-meta keys (confirmed against the DB); the labels
@@ -110,6 +111,14 @@ export default function ProfileScreen({
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [pwSaving, setPwSaving] = useState(false);
+
+  useAndroidBack(() => {
+    if (mode === 'edit') {
+      setMode('view');
+      return true;
+    }
+    return false;
+  });
 
   // JWT rides in a custom header (not Authorization) so it can coexist with the
   // Live Link tunnel's Basic auth. The server accepts both X-IA5-Token and Bearer.

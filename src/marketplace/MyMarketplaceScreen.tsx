@@ -5,6 +5,8 @@ import Header, { DrawerProfile, NavTarget } from '../Header';
 import BrandFormScreen from '../BrandFormScreen';
 import ManageItemsScreen from '../ManageItemsScreen';
 import MyBrandsSection from './MyBrandsSection';
+import NoticeBanner from '../NoticeBanner';
+import { useAndroidBack } from '../useAndroidBack';
 
 type BrandNav = null | { kind: 'create' } | { kind: 'edit'; id: number } | { kind: 'items'; id: number };
 
@@ -24,10 +26,24 @@ type Props = {
 export default function MyMarketplaceScreen({ token, viewerId, canManage, onBack, onLogout, profile, onNavigate }: Props) {
   const [brandNav, setBrandNav] = useState<BrandNav>(null);
   const [refresh, setRefresh] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useAndroidBack(() => {
+    if (brandNav !== null) {
+      setBrandNav(null);
+      return true;
+    }
+    return false;
+  });
 
   if (brandNav) {
     const back = () => setBrandNav(null);
-    const saved = () => { setBrandNav(null); setRefresh((k) => k + 1); };
+    const saved = () => {
+      const wasCreate = brandNav.kind === 'create';
+      setBrandNav(null);
+      setRefresh((k) => k + 1);
+      setNotice(wasCreate ? 'Brand berhasil dibuat.' : 'Perubahan brand berhasil disimpan.');
+    };
     if (brandNav.kind === 'items') {
       return (
         <ManageItemsScreen
@@ -56,6 +72,7 @@ export default function MyMarketplaceScreen({ token, viewerId, canManage, onBack
   return (
     <View style={styles.flex}>
       <Header title="My Marketplace" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
       <View style={styles.content}>
         {canManage ? (
           <MyBrandsSection

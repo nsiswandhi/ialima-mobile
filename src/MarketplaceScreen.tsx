@@ -7,6 +7,7 @@ import Header, { DrawerProfile, NavTarget } from './Header';
 import BrandDetailScreen from './BrandDetailScreen';
 import BrandCard from './marketplace/BrandCard';
 import { BrandSummary, BrandType, mkApi, TYPE_LABELS } from './marketplace/api';
+import { useAndroidBack } from './useAndroidBack';
 
 type Props = {
   token: string;
@@ -37,6 +38,14 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
   const [brands, setBrands] = useState<BrandSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useAndroidBack(() => {
+    if (view === 'detail') {
+      setView('list');
+      return true;
+    }
+    return false;
+  });
 
   const load = useCallback(
     async (f: Filter, q: string) => {

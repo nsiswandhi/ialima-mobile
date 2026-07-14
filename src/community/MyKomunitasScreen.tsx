@@ -7,6 +7,7 @@ import { renderBlock } from '../Blocks';
 import { commApi, CommunityDetail, CommunitySummary, contactChannel, contactOpenUrl, hariLabel } from './api';
 import CommunityFormScreen from './CommunityFormScreen';
 import CommunityDetailScreen from './CommunityDetailScreen';
+import { useAndroidBack } from '../useAndroidBack';
 
 type ComNav = null | { kind: 'create' } | { kind: 'edit'; id: number } | { kind: 'manage'; id: number };
 
@@ -37,6 +38,14 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
   const [notice, setNotice] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
   const [reviewId, setReviewId] = useState<number | null>(null);
+
+  useAndroidBack(() => {
+    if (nav !== null) {
+      setNav(null);
+      return true;
+    }
+    return false;
+  });
 
   const load = useCallback(async () => {
     setError(null);
