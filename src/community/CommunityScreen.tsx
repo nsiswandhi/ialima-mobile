@@ -108,11 +108,14 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
       <FlatList
         data={items}
         keyExtractor={(c) => String(c.id)}
-        contentContainerStyle={{ padding: 12 }}
+        numColumns={2}
+        columnWrapperStyle={styles.column}
+        contentContainerStyle={styles.grid}
         ListEmptyComponent={!loading ? <Text style={styles.empty}>Belum ada komunitas.</Text> : null}
         renderItem={({ item }) => (
           <CommunityCard
             community={item}
+            style={styles.gridItem}
             onPress={() => {
               setSelectedId(item.id);
               setView('detail');
@@ -148,6 +151,9 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85 },
   empty: { textAlign: 'center', color: colors.muted, marginTop: 40, fontFamily: fonts.body },
   error: { color: colors.danger, textAlign: 'center', marginTop: 14, fontFamily: fonts.bodyMedium },
+  grid: { padding: 12, gap: 12 },
+  column: { gap: 12 },
+  gridItem: { flex: 1, maxWidth: '48%' },
   fab: {
     position: 'absolute', right: 20, bottom: 20, width: 56, height: 56, borderRadius: 28,
     backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
