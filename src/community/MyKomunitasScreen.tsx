@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
 import Header, { DrawerProfile, NavTarget } from '../Header';
-import { commApi, CommunitySummary } from './api';
+import { renderBlock } from '../Blocks';
+import { commApi, CommunityDetail, CommunitySummary, contactChannel, contactOpenUrl, hariLabel } from './api';
 import CommunityFormScreen from './CommunityFormScreen';
 import CommunityDetailScreen from './CommunityDetailScreen';
 
@@ -32,6 +34,7 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
+  const [reviewId, setReviewId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -54,7 +57,7 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
     load();
   }, [load, refresh]);
 
-  const confirmDelete = (c: CommunitySummary) => {
+  const confirmDelete = (c: { id: number; name: string }) => {
     Alert.alert('Hapus komunitas?', `"${c.name}" akan dihapus permanen.`, [
       { text: 'Batal', style: 'cancel' },
       {
@@ -63,6 +66,7 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
         onPress: async () => {
           try {
             await commApi.remove(token, c.id);
+            setReviewId(null);
             setRefresh((k) => k + 1);
           } catch (e: any) {
             Alert.alert('Gagal', e.message);
@@ -72,9 +76,10 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
     ]);
   };
 
-  const approveCommunity = async (c: CommunitySummary) => {
+  const approveCommunity = async (c: { id: number }) => {
     try {
       await commApi.approveCommunity(token, c.id);
+      setReviewId(null);
       setRefresh((k) => k + 1);
     } catch (e: any) {
       Alert.alert('Gagal', e.message);
@@ -135,7 +140,7 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
                 <Text style={styles.sectionHead}>PERLU PERSETUJUAN</Text>
                 {queue.map((item) => (
                   <View style={styles.card} key={`queue-${item.id}`}>
-                    <View style={styles.cardMain}>
+                    <Pressable style={styles.cardMain} onPress={() => setReviewId(item.id)}>
                       {item.logo?.thumbnail ? (
                         <Image source={{ uri: item.logo.thumbnail }} style={styles.logo} />
                       ) : (
@@ -147,7 +152,8 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
                         <Text style={styles.name}>{item.name}</Text>
                         {!!item.community_type && <Text style={styles.metaLight}>{item.community_type}</Text>}
                       </View>
-                    </View>
+                      <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+                    </Pressable>
                     <View style={styles.actions}>
                       <Pressable style={styles.actionBtn} onPress={() => approveCommunity(item)}>
                         <Text style={[styles.actionText, { color: '#3B6D11' }]}>Setujui</Text>
@@ -210,6 +216,178 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
           </>
         )}
       </View>
+
+      <CommunityReviewModal
+        token={token}
+        communityId={reviewId}
+        onClose={() => setReviewId(null)}
+        onApprove={(id) => approveCommunity({ id })}
+        onDelete={(id, name) => confirmDelete({ id, name })}
+      />
+    </View>
+  );
+}
+
+// Full read-only review of everything a member submitted, so Pengurus IA Lima
+// can approve wisely — opened by tapping a "PERLU PERSETUJUAN" row.
+function CommunityReviewModal({ token, communityId, onClose, onApprove, onDelete }: {
+  token: string;
+  communityId: number | null;
+  onClose: () => void;
+  onApprove: (id: number) => void;
+  onDelete: (id: number, name: string) => void;
+}) {
+  const [data, setData] = useState<CommunityDetail | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (communityId == null) {
+      setData(null);
+      return;
+    }
+    let alive = true;
+    setLoading(true);
+    setError(null);
+    commApi
+      .detail(token, communityId)
+      .then((d) => alive && setData(d))
+      .catch((e) => alive && setError(e.message))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [communityId]);
+
+  const infoSections = data
+    ? [
+        { label: 'Tentang Kami', blocks: data.tentang_kami },
+        { label: 'Syarat Bergabung', blocks: data.syarat_bergabung },
+        { label: 'Cara Bergabung', blocks: data.cara_bergabung },
+      ].filter((s) => s.blocks?.length > 0)
+    : [];
+
+  return (
+    <Modal visible={communityId != null} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.reviewBackdrop}>
+        <View style={styles.reviewSheet}>
+          <View style={styles.reviewHead}>
+            <Text style={styles.reviewTitle} numberOfLines={1}>{data?.name || 'Tinjau Komunitas'}</Text>
+            <Pressable onPress={onClose} hitSlop={10}>
+              <Ionicons name="close" size={24} color={colors.heading} />
+            </Pressable>
+          </View>
+
+          {loading ? (
+            <ActivityIndicator color={colors.primary} style={{ marginVertical: 30 }} />
+          ) : error ? (
+            <Text style={styles.error}>{error}</Text>
+          ) : data ? (
+            <ScrollView contentContainerStyle={styles.reviewContent}>
+              {data.cover?.full && <Image source={{ uri: data.cover.full }} style={styles.reviewCover} />}
+              <View style={styles.reviewHeadRow}>
+                {data.logo?.thumbnail ? (
+                  <Image source={{ uri: data.logo.thumbnail }} style={styles.reviewLogo} />
+                ) : (
+                  <View style={[styles.reviewLogo, styles.logoFallback]}>
+                    <Text style={styles.logoLetter}>{data.name.charAt(0)}</Text>
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name}>{data.name}</Text>
+                  <Text style={styles.metaLight}>oleh {data.owner_name}</Text>
+                </View>
+              </View>
+
+              <View style={styles.reviewFieldsBlock}>
+                <ReviewField label="Tipe Komunitas" value={data.community_type} />
+                <ReviewField label="Berdiri Sejak" value={data.berdiri_sejak} />
+                <ReviewField label="Status Komunitas" value={data.status_komunitas} />
+                <ReviewField label="Status Keanggotaan" value={data.status_keanggotaan} />
+              </View>
+
+              {!!data.introduction && (
+                <View style={styles.reviewSection}>
+                  <Text style={styles.reviewSectionHead}>PENGENALAN SINGKAT</Text>
+                  <Text style={styles.reviewText}>{data.introduction}</Text>
+                </View>
+              )}
+
+              {infoSections.map((s) => (
+                <View style={styles.reviewSection} key={s.label}>
+                  <Text style={styles.reviewSectionHead}>{s.label.toUpperCase()}</Text>
+                  {s.blocks.map(renderBlock)}
+                </View>
+              ))}
+
+              {data.informasi_kontak.length > 0 && (
+                <View style={styles.reviewSection}>
+                  <Text style={styles.reviewSectionHead}>INFORMASI KONTAK</Text>
+                  {data.informasi_kontak.map((row, i) => {
+                    const p = contactChannel(row.channel);
+                    return (
+                      <Pressable
+                        key={i}
+                        style={styles.reviewContactRow}
+                        onPress={() => Linking.openURL(contactOpenUrl(row))}
+                      >
+                        <Ionicons name={(p?.icon || 'link') as any} size={17} color={p?.color || colors.primary} />
+                        <Text style={styles.reviewText} numberOfLines={1}>{p?.label || row.channel}: {row.url}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+
+              {data.kegiatan_rutin.length > 0 && (
+                <View style={styles.reviewSection}>
+                  <Text style={styles.reviewSectionHead}>KEGIATAN RUTIN</Text>
+                  {data.kegiatan_rutin.map((a, i) => (
+                    <View style={styles.activityCard} key={i}>
+                      <Text style={styles.name}>{a.nama_kegiatan}</Text>
+                      <Text style={styles.metaLight}>
+                        {[hariLabel(a.hari), a.jam, a.lokasi].filter(Boolean).join(' · ')}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {data.image_gallery.length > 0 && (
+                <View style={styles.reviewSection}>
+                  <Text style={styles.reviewSectionHead}>GALERI FOTO</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {data.image_gallery.map((g) => (
+                      <Image key={g.id} source={{ uri: g.thumbnail || g.full }} style={styles.reviewGalleryImg} />
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </ScrollView>
+          ) : null}
+
+          {data && (
+            <View style={styles.reviewFooter}>
+              <Pressable style={styles.reviewApproveBtn} onPress={() => onApprove(data.id)}>
+                <Text style={styles.reviewApproveText}>Setujui</Text>
+              </Pressable>
+              <Pressable style={styles.reviewDeleteBtn} onPress={() => onDelete(data.id, data.name)}>
+                <Text style={styles.reviewDeleteText}>Hapus</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function ReviewField({ label, value }: { label: string; value?: string }) {
+  if (!value) return null;
+  return (
+    <View style={styles.reviewFieldRow}>
+      <Text style={styles.reviewFieldLabel}>{label}</Text>
+      <Text style={styles.reviewFieldValue}>{value}</Text>
     </View>
   );
 }
@@ -239,4 +417,34 @@ const styles = StyleSheet.create({
 
   createBtn: { borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 2, borderWidth: 1.5, borderColor: colors.primary },
   createBtnText: { color: colors.primary, fontFamily: fonts.headingSemi, fontSize: 15 },
+
+  reviewBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  reviewSheet: { backgroundColor: colors.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%' },
+  reviewHead: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16,
+    borderBottomWidth: 1, borderBottomColor: colors.border,
+  },
+  reviewTitle: { fontFamily: fonts.heading, fontSize: 17, color: colors.heading, flex: 1, marginRight: 12 },
+  reviewContent: { padding: 16, paddingBottom: 24 },
+  reviewCover: { width: '100%', height: 130, borderRadius: 12, backgroundColor: colors.bgAlt, marginBottom: 14 },
+  reviewHeadRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+  reviewLogo: { width: 56, height: 56, borderRadius: 12, backgroundColor: colors.bgAlt },
+
+  reviewFieldsBlock: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, marginBottom: 14 },
+  reviewFieldRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, gap: 10 },
+  reviewFieldLabel: { fontFamily: fonts.body, fontSize: 12.5, color: colors.muted },
+  reviewFieldValue: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.heading, flexShrink: 1, textAlign: 'right' },
+
+  activityCard: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, marginBottom: 8 },
+  reviewSection: { marginBottom: 18 },
+  reviewSectionHead: { fontFamily: fonts.bodySemi, fontSize: 11, color: colors.muted, letterSpacing: 0.5, marginBottom: 8 },
+  reviewText: { fontFamily: fonts.body, fontSize: 13.5, color: colors.text, lineHeight: 20, flex: 1 },
+  reviewContactRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+  reviewGalleryImg: { width: 96, height: 96, borderRadius: 10, backgroundColor: colors.bgAlt, marginRight: 10 },
+
+  reviewFooter: { flexDirection: 'row', gap: 10, padding: 16, borderTopWidth: 1, borderTopColor: colors.border },
+  reviewApproveBtn: { flex: 1, backgroundColor: '#3B6D11', borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
+  reviewApproveText: { fontFamily: fonts.headingSemi, fontSize: 15, color: colors.white },
+  reviewDeleteBtn: { flex: 1, borderWidth: 1.5, borderColor: colors.danger, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
+  reviewDeleteText: { fontFamily: fonts.headingSemi, fontSize: 15, color: colors.danger },
 });
