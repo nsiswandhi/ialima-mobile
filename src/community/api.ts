@@ -3,34 +3,52 @@
 // carries the JWT in the X-IA5-Token header (see config.ts for the Live Link
 // Basic-auth wrapper).
 import { API_BASE } from '../config';
+import { Block } from '../Blocks';
 
 export type Img = { full: string; thumbnail: string } | null;
 
 // Membership status of the viewer relative to a community.
 export type MyStatus = 'none' | 'pending' | 'approved';
 
+// Whether the community itself has been approved by Pengurus IA Lima yet.
+export type ApprovalStatus = 'pending' | 'approved';
+
+export type ContactRow = { channel: string; url: string };
+export type ActivityRow = { nama_kegiatan: string; hari: string; jam: string; lokasi: string };
+export type GalleryImage = { id: number; full: string; thumbnail: string };
+
 // Directory card shape (GET /communities).
 export type CommunitySummary = {
   id: number;
   name: string;
-  category: string;
-  city: string;
+  community_type: string;
   logo: Img;
-  cover: Img;
+  berdiri_sejak: string;
+  status_komunitas: string;
+  introduction: string;
   member_count: number;
+  view_count: number;
   owner_id: number;
-  is_featured?: boolean;
+  approval_status: ApprovalStatus;
 };
 
 // Full community (GET /community/{id}).
 export type CommunityDetail = {
   id: number;
   name: string;
-  description: string;
-  category: string;
-  city: string;
+  community_type: string;
   logo: Img;
   cover: Img;
+  introduction: string;
+  tentang_kami: Block[];
+  berdiri_sejak: string;
+  status_komunitas: string;
+  informasi_kontak: ContactRow[];
+  status_keanggotaan: string;
+  syarat_bergabung: Block[];
+  cara_bergabung: Block[];
+  kegiatan_rutin: ActivityRow[];
+  image_gallery: GalleryImage[];
   owner_id: number;
   owner_name: string;
   created_at: string;
@@ -38,6 +56,7 @@ export type CommunityDetail = {
   member_count: number;
   my_status: MyStatus;
   is_manager: boolean;
+  approval_status: ApprovalStatus;
 };
 
 // A person row in GET /community/{id}/members.
@@ -56,6 +75,8 @@ export type MemberList = {
   is_manager: boolean;
   member_count: number;
 };
+
+export type CommunityType = { slug: string; label: string; parent: number };
 
 export type Paged<T> = {
   data: T[];
@@ -110,15 +131,22 @@ function form(fields: Record<string, unknown>) {
 export const commApi = {
   list(
     token: string,
-    opts: { category?: string; search?: string; mine?: boolean; featured?: boolean; page?: number } = {},
+    opts: { community_type?: string; search?: string; mine?: boolean; status?: 'pending'; page?: number } = {},
   ) {
     const q = new URLSearchParams({ per_page: '20', page: String(opts.page ?? 1) });
-    if (opts.category) q.append('category', opts.category);
+    if (opts.community_type) q.append('community_type', opts.community_type);
     if (opts.search) q.append('search', opts.search);
     if (opts.mine) q.append('mine', '1');
-    if (opts.featured) q.append('featured', '1');
+    if (opts.status) q.append('status', opts.status);
     return fetch(`${API_BASE}/communities?${q.toString()}`, { headers: headers(token) }).then(
       parse<Paged<CommunitySummary>>,
+    );
+  },
+
+  // Public: community_type taxonomy terms, for the create form + browse filter.
+  listTypes(token: string) {
+    return fetch(`${API_BASE}/community-types`, { headers: headers(token) }).then(
+      parse<{ data: CommunityType[] }>,
     );
   },
 
@@ -126,9 +154,16 @@ export const commApi = {
     return fetch(`${API_BASE}/community/${id}`, { headers: headers(token) }).then(parse<CommunityDetail>);
   },
 
-  // Fire-and-forget view increment. Ignore failures.
+  // Fire-and-forget view increment (also the list's default sort key). Ignore failures.
   trackView(token: string, id: number) {
     fetch(`${API_BASE}/community/${id}/view`, { method: 'POST', headers: headers(token) }).catch(() => {});
+  },
+
+  // Pengurus IA Lima: publish a pending community.
+  approveCommunity(token: string, id: number) {
+    return fetch(`${API_BASE}/community/${id}/approve`, { method: 'POST', headers: headers(token) }).then(
+      parse<{ success: boolean; approval_status: ApprovalStatus }>,
+    );
   },
 
   members(token: string, id: number, status?: 'pending' | 'approved' | 'all') {
@@ -197,10 +232,10 @@ export const commApi = {
   },
 
   // Pengurus IA Lima: appoint a member as Pengurus Komunitas, picking an existing
-  // community (community_id) or creating one (name + optional category/description).
+  // community (community_id) or creating one (name + optional community_type).
   appointKomunitas(
     token: string,
-    fields: { target_id: number; community_id?: number; name?: string; category?: string; description?: string },
+    fields: { target_id: number; community_id?: number; name?: string; community_type?: string },
   ) {
     return fetch(`${API_BASE}/appoint-pengurus-komunitas`, {
       method: 'POST',
@@ -209,3 +244,40 @@ export const commApi = {
     }).then(parse<{ success: boolean; community: { id: number; name: string }; roles: string[] }>);
   },
 };
+
+// Contact-channel platforms → an Ionicons name + brand colour, matching the
+// slugs the backend whitelists (class-ia5-community.php CONTACT_CHANNELS).
+export const CONTACT_CHANNELS: { key: string; label: string; icon: string; color: string }[] = [
+  { key: 'email', label: 'Email', icon: 'mail-outline', color: '#6A7A73' },
+  { key: 'whatsapp_admin', label: 'Admin WhatsApp', icon: 'logo-whatsapp', color: '#25D366' },
+  { key: 'website', label: 'Website', icon: 'globe-outline', color: '#0A7EA4' },
+  { key: 'instagram', label: 'Instagram', icon: 'logo-instagram', color: '#E4405F' },
+  { key: 'facebook', label: 'Facebook', icon: 'logo-facebook', color: '#1877F2' },
+  { key: 'whatsapp_group', label: 'Grup WhatsApp', icon: 'logo-whatsapp', color: '#25D366' },
+];
+
+export function contactChannel(key: string) {
+  return CONTACT_CHANNELS.find((c) => c.key === (key || '').toLowerCase());
+}
+
+// Resolve a contact row to an openable URL: mailto: for email, wa.me for a
+// bare WhatsApp number, https:// prefix for bare domains, otherwise as-is.
+export function contactOpenUrl(row: ContactRow) {
+  const raw = (row.url || '').trim();
+  if (row.channel === 'email') return raw.startsWith('mailto:') ? raw : `mailto:${raw}`;
+  if (row.channel === 'whatsapp_admin' || row.channel === 'whatsapp_group') {
+    const digits = raw.replace(/[^\d]/g, '');
+    if (digits && !/^https?:\/\//i.test(raw)) return `https://wa.me/${digits}`;
+  }
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
+// Day-of-week labels for kegiatan_rutin.hari, mirrors BrandDetailScreen's
+// operating-hours DAY_LABELS convention.
+export const HARI_LABELS: [string, string][] = [
+  ['mon', 'Sen'], ['tue', 'Sel'], ['wed', 'Rab'], ['thu', 'Kam'],
+  ['fri', 'Jum'], ['sat', 'Sab'], ['sun', 'Min'],
+];
+export function hariLabel(key: string) {
+  return HARI_LABELS.find(([k]) => k === key)?.[1] || key;
+}

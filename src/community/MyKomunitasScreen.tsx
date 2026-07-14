@@ -12,6 +12,7 @@ type Props = {
   token: string;
   onBack: () => void;
   onLogout: () => void;
+  isIALima?: boolean; // holds ia5_appoint_pengurus — sees the moderation queue too
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
 };
@@ -20,9 +21,13 @@ type Props = {
 // MyBrandsSection, but for communities the viewer founded/manages (`mine`).
 // "Kelola" opens CommunityDetailScreen (members + pending approvals + edit);
 // "Ubah" jumps straight to the edit form; "Hapus" deletes after confirming.
-export default function MyKomunitasScreen({ token, onBack, onLogout, profile, onNavigate }: Props) {
+// Pengurus IA Lima additionally sees every member's pending community with
+// Setujui/Hapus actions — the community-level approval gate (separate from
+// member-join approval, which stays inside CommunityDetailScreen).
+export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, profile, onNavigate }: Props) {
   const [nav, setNav] = useState<ComNav>(null);
   const [communities, setCommunities] = useState<CommunitySummary[]>([]);
+  const [queue, setQueue] = useState<CommunitySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
@@ -31,14 +36,18 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, profile, on
     setError(null);
     setLoading(true);
     try {
-      const res = await commApi.list(token, { mine: true });
-      setCommunities(res.data);
+      const [mine, pending] = await Promise.all([
+        commApi.list(token, { mine: true }),
+        isIALima ? commApi.list(token, { status: 'pending' }) : Promise.resolve({ data: [] as CommunitySummary[] }),
+      ]);
+      setCommunities(mine.data);
+      setQueue(pending.data);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, isIALima]);
 
   useEffect(() => {
     load();
@@ -60,6 +69,15 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, profile, on
         },
       },
     ]);
+  };
+
+  const approveCommunity = async (c: CommunitySummary) => {
+    try {
+      await commApi.approveCommunity(token, c.id);
+      setRefresh((k) => k + 1);
+    } catch (e: any) {
+      Alert.alert('Gagal', e.message);
+    }
   };
 
   if (nav?.kind === 'manage') {
@@ -99,6 +117,38 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, profile, on
           <Text style={styles.error}>{error}</Text>
         ) : (
           <>
+            {isIALima && queue.length > 0 && (
+              <>
+                <Text style={styles.sectionHead}>PERLU PERSETUJUAN</Text>
+                {queue.map((item) => (
+                  <View style={styles.card} key={`queue-${item.id}`}>
+                    <View style={styles.cardMain}>
+                      {item.logo?.thumbnail ? (
+                        <Image source={{ uri: item.logo.thumbnail }} style={styles.logo} />
+                      ) : (
+                        <View style={[styles.logo, styles.logoFallback]}>
+                          <Text style={styles.logoLetter}>{item.name.charAt(0)}</Text>
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.name}>{item.name}</Text>
+                        {!!item.community_type && <Text style={styles.metaLight}>{item.community_type}</Text>}
+                      </View>
+                    </View>
+                    <View style={styles.actions}>
+                      <Pressable style={styles.actionBtn} onPress={() => approveCommunity(item)}>
+                        <Text style={[styles.actionText, { color: '#3B6D11' }]}>Setujui</Text>
+                      </Pressable>
+                      <Pressable style={styles.actionBtn} onPress={() => confirmDelete(item)}>
+                        <Text style={[styles.actionText, { color: colors.danger }]}>Hapus</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))}
+                <Text style={[styles.sectionHead, { marginTop: 20 }]}>KOMUNITAS SAYA</Text>
+              </>
+            )}
+
             {communities.length === 0 && (
               <Text style={styles.empty}>
                 Kamu belum mengelola komunitas apa pun. Buat komunitas untuk mengumpulkan alumni dengan minat yang sama.
@@ -117,7 +167,14 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, profile, on
                   )}
                   <View style={{ flex: 1 }}>
                     <Text style={styles.name}>{item.name}</Text>
-                    <Text style={styles.metaLight}>{item.member_count} anggota</Text>
+                    <View style={styles.metaRow}>
+                      <Text style={styles.metaLight}>{item.member_count} anggota</Text>
+                      {item.approval_status === 'pending' && (
+                        <View style={styles.pendingPill}>
+                          <Text style={styles.pendingPillText}>Menunggu Persetujuan</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                 </View>
                 <View style={styles.actions}>
@@ -149,6 +206,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, padding: 16 },
   error: { color: colors.danger, fontFamily: fonts.bodyMedium, marginVertical: 12 },
   empty: { fontFamily: fonts.body, fontSize: 13.5, color: colors.muted, lineHeight: 20, marginBottom: 12 },
+  sectionHead: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.muted, letterSpacing: 0.5, marginBottom: 10 },
 
   card: { backgroundColor: colors.card, borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   cardMain: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14 },
@@ -156,7 +214,10 @@ const styles = StyleSheet.create({
   logoFallback: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary },
   logoLetter: { fontFamily: fonts.heading, fontSize: 20, color: colors.white },
   name: { fontFamily: fonts.headingSemi, fontSize: 16, color: colors.heading },
-  metaLight: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' },
+  metaLight: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+  pendingPill: { backgroundColor: '#FAEEDA', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
+  pendingPillText: { fontFamily: fonts.bodyMedium, fontSize: 10, color: '#854F0B' },
   actions: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border },
   actionBtn: { flex: 1, paddingVertical: 11, alignItems: 'center' },
   actionText: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.primary },

@@ -25,14 +25,14 @@ export default function AppointKomunitasSheet({ token, targetId, targetName, vis
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('');
+  const [communityType, setCommunityType] = useState('');
 
   useEffect(() => {
     if (!visible) return;
     setMode('pick');
     setError(null);
     setName('');
-    setCategory('');
+    setCommunityType('');
     setLoading(true);
     commApi
       .list(token, {})
@@ -41,7 +41,7 @@ export default function AppointKomunitasSheet({ token, targetId, targetName, vis
       .finally(() => setLoading(false));
   }, [visible]);
 
-  async function appoint(fields: { community_id?: number; name?: string; category?: string }) {
+  async function appoint(fields: { community_id?: number; name?: string; community_type?: string }) {
     setSubmitting(true);
     setError(null);
     try {
@@ -106,16 +106,16 @@ export default function AppointKomunitasSheet({ token, targetId, targetName, vis
               />
               <TextInput
                 style={styles.input}
-                placeholder="Kategori (opsional)"
+                placeholder="Tipe komunitas (opsional)"
                 placeholderTextColor={colors.muted}
-                value={category}
-                onChangeText={setCategory}
+                value={communityType}
+                onChangeText={setCommunityType}
                 autoCapitalize="none"
               />
               <Pressable
                 style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
                 disabled={submitting || name.trim() === ''}
-                onPress={() => appoint({ name, category })}
+                onPress={() => appoint({ name, community_type: communityType })}
               >
                 <Text style={styles.primaryText}>{submitting ? 'Memproses…' : 'Buat & Angkat'}</Text>
               </Pressable>

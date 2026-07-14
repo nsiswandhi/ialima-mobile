@@ -318,6 +318,7 @@ function AppInner() {
           token={token}
           onBack={() => setTab('dashboard')}
           onLogout={logout}
+          isIALima={!!user?.caps?.appoint_pengurus}
           profile={meProfile}
           onNavigate={handleNavigate}
         />
