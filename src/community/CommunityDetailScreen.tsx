@@ -185,7 +185,13 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
               disabled={acting || data.my_status === 'pending'}
               onPress={toggleMembership}
             >
-              <Text style={[styles.joinText, data.my_status === 'pending' && styles.pendingText]}>
+              <Text
+                style={[
+                  styles.joinText,
+                  data.my_status === 'approved' && styles.leaveText,
+                  data.my_status === 'pending' && styles.pendingText,
+                ]}
+              >
                 {joinLabel(data.my_status)}
               </Text>
             </Pressable>
@@ -337,10 +343,11 @@ const styles = StyleSheet.create({
   linkBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.bgAlt, alignItems: 'center', justifyContent: 'center' },
 
   joinBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 16, marginHorizontal: 16 },
-  leaveBtn: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-  pendingBtn: { backgroundColor: colors.bgAlt },
+  leaveBtn: { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.danger },
+  pendingBtn: { backgroundColor: colors.bgAlt, borderWidth: 1, borderColor: colors.border },
   pressed: { opacity: 0.85 },
   joinText: { fontFamily: fonts.headingSemi, fontSize: 15, color: colors.white },
+  leaveText: { color: colors.danger },
   pendingText: { color: colors.muted },
 
   manageBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, marginTop: 8 },
