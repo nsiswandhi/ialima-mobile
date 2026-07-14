@@ -317,13 +317,7 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
                 compact
               />
               <View style={styles.activityInlineRow}>
-                <TextInput
-                  style={[styles.input, styles.activityHalf]}
-                  value={a.jam}
-                  onChangeText={(v) => setActivity(idx, { jam: v })}
-                  placeholder="Jam, cth 08:00"
-                  placeholderTextColor={colors.muted}
-                />
+                <TimeInput value={a.jam} onChange={(v) => setActivity(idx, { jam: v })} />
                 <TextInput
                   style={[styles.input, styles.activityHalf]}
                   value={a.lokasi}
@@ -455,6 +449,64 @@ function ChipPicker({ options, labels, value, onChange, compact }: {
   );
 }
 
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+
+// Pure-JS time picker (no native module, so it runs in Expo Go). Mirrors
+// BrandFormScreen's TimeInput exactly — a bottom sheet with scrollable hour +
+// minute columns, keeping the "HH:MM" string contract.
+function TimeInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [show, setShow] = useState(false);
+  const [h, setH] = useState('08');
+  const [m, setM] = useState('00');
+
+  const open = () => {
+    const [hh, mm] = (value || '08:00').split(':');
+    setH(hh || '08');
+    setM(mm || '00');
+    setShow(true);
+  };
+  const done = () => {
+    onChange(`${h}:${m}`);
+    setShow(false);
+  };
+
+  return (
+    <>
+      <Pressable style={styles.timeInput} onPress={open}>
+        <Text style={styles.timeText}>{value || '--:--'}</Text>
+      </Pressable>
+      <Modal visible={show} transparent animationType="fade" onRequestClose={() => setShow(false)}>
+        <Pressable style={styles.pickerBackdrop} onPress={() => setShow(false)}>
+          <Pressable style={styles.timePickerSheet} onPress={() => {}}>
+            <Text style={styles.pickerTime}>{h}:{m}</Text>
+            <View style={styles.pickerCols}>
+              <ScrollView style={styles.pickerCol} showsVerticalScrollIndicator={false}>
+                {HOURS.map((x) => (
+                  <Pressable key={x} style={[styles.pickerOpt, x === h && styles.pickerOptSel]} onPress={() => setH(x)}>
+                    <Text style={[styles.pickerOptText, x === h && styles.pickerOptTextSel]}>{x}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+              <Text style={styles.pickerColon}>:</Text>
+              <ScrollView style={styles.pickerCol} showsVerticalScrollIndicator={false}>
+                {MINUTES.map((x) => (
+                  <Pressable key={x} style={[styles.pickerOpt, x === m && styles.pickerOptSel]} onPress={() => setM(x)}>
+                    <Text style={[styles.pickerOptText, x === m && styles.pickerOptTextSel]}>{x}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+            <Pressable style={styles.pickerDone} onPress={done}>
+              <Text style={styles.pickerDoneText}>Selesai</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
 function blocksToPlainText(blocks: { type: string; text?: string; items?: string[] }[]): string {
   return (blocks || [])
     .map((b) => (b.type === 'ul' || b.type === 'ol' ? (b.items || []).join('\n') : b.text || ''))
@@ -515,12 +567,29 @@ const styles = StyleSheet.create({
   linkPickerTitle: { fontFamily: fonts.heading, fontSize: 18, color: colors.heading, marginBottom: 14 },
   linkPickerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
   linkPickerOpt: { width: '31%', alignItems: 'center', paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, gap: 6, marginBottom: 6 },
-  linkPickerLabel: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.heading },
+  linkPickerLabel: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.heading, textAlign: 'center' },
 
   activityRow: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, marginBottom: 10, gap: 8 },
-  activityInlineRow: { flexDirection: 'row', gap: 8 },
+  activityInlineRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   activityHalf: { flex: 1 },
   removeActivityBtn: { alignSelf: 'flex-end', paddingVertical: 4 },
+
+  timeInput: {
+    flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 12, alignItems: 'center', justifyContent: 'center',
+  },
+  timeText: { fontSize: 14, fontFamily: fonts.bodySemi, color: colors.heading },
+  timePickerSheet: { backgroundColor: colors.card, borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingTop: 16, paddingBottom: 24, paddingHorizontal: 16 },
+  pickerTime: { fontFamily: fonts.heading, fontSize: 22, color: colors.heading, textAlign: 'center', marginBottom: 10 },
+  pickerCols: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', height: 200, gap: 8 },
+  pickerCol: { flex: 1, maxWidth: 120 },
+  pickerColon: { fontFamily: fonts.heading, fontSize: 22, color: colors.muted },
+  pickerOpt: { paddingVertical: 11, alignItems: 'center', borderRadius: 10 },
+  pickerOptSel: { backgroundColor: colors.primary },
+  pickerOptText: { fontFamily: fonts.bodySemi, fontSize: 18, color: colors.text },
+  pickerOptTextSel: { color: colors.white },
+  pickerDone: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 12 },
+  pickerDoneText: { color: colors.white, fontFamily: fonts.headingSemi, fontSize: 15 },
 
   galleryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   galleryItem: { width: 84, height: 84, borderRadius: 12, overflow: 'hidden' },

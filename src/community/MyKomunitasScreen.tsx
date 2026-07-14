@@ -30,6 +30,7 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
   const [queue, setQueue] = useState<CommunitySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
 
   const load = useCallback(async () => {
@@ -99,7 +100,14 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
         token={token}
         communityId={nav.kind === 'edit' ? nav.id : undefined}
         onBack={() => setNav(null)}
-        onSaved={() => { setNav(null); setRefresh((k) => k + 1); }}
+        onSaved={() => {
+          const wasCreate = nav?.kind === 'create';
+          setNav(null);
+          setRefresh((k) => k + 1);
+          if (wasCreate) {
+            setNotice('Komunitas berhasil dibuat. Menunggu persetujuan Pengurus IA Lima sebelum tampil publik.');
+          }
+        }}
         onLogout={onLogout}
         profile={profile}
         onNavigate={onNavigate}
@@ -111,6 +119,11 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
     <View style={styles.flex}>
       <Header title="My Komunitas" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       <View style={styles.content}>
+        {!!notice && (
+          <Pressable style={styles.noticeBanner} onPress={() => setNotice(null)}>
+            <Text style={styles.noticeText}>{notice}</Text>
+          </Pressable>
+        )}
         {loading ? (
           <ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} />
         ) : error ? (
@@ -206,6 +219,8 @@ const styles = StyleSheet.create({
   content: { flex: 1, padding: 16 },
   error: { color: colors.danger, fontFamily: fonts.bodyMedium, marginVertical: 12 },
   empty: { fontFamily: fonts.body, fontSize: 13.5, color: colors.muted, lineHeight: 20, marginBottom: 12 },
+  noticeBanner: { backgroundColor: '#EAF3DE', borderRadius: 12, padding: 14, marginBottom: 14 },
+  noticeText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: '#3B6D11', lineHeight: 19 },
   sectionHead: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.muted, letterSpacing: 0.5, marginBottom: 10 },
 
   card: { backgroundColor: colors.card, borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
