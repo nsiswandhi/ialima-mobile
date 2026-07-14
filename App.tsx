@@ -376,6 +376,9 @@ function AppInner() {
         <EventScreen
           token={token}
           canCreate={!!(user?.caps?.create_angkatan_event || user?.caps?.create_org_event || user?.caps?.create_community_event)}
+          canOrg={!!user?.caps?.create_org_event}
+          canKomunitas={!!user?.caps?.create_community_event}
+          canAngkatan={!!user?.caps?.create_angkatan_event}
           onLogout={logout}
           initialEventId={eventDeepLinkId}
           profile={meProfile}
@@ -387,7 +390,9 @@ function AppInner() {
           onBack={() => setTab('dashboard')}
           onLogout={logout}
           canCreate={!!(user?.caps?.create_angkatan_event || user?.caps?.create_org_event || user?.caps?.create_community_event)}
-          pickCommunity={!!(user?.caps?.create_community_event && !user?.caps?.create_org_event)}
+          canOrg={!!user?.caps?.create_org_event}
+          canKomunitas={!!user?.caps?.create_community_event}
+          canAngkatan={!!user?.caps?.create_angkatan_event}
           isIALima={!!user?.caps?.appoint_pengurus}
           profile={meProfile}
           onNavigate={handleNavigate}

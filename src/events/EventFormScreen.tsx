@@ -18,7 +18,10 @@ import { commApi, CommunitySummary } from '../community/api';
 type Props = {
   token: string;
   eventId?: number | null; // null/undefined = create
-  pickCommunity?: boolean;  // creator is Pengurus Komunitas — show community picker
+  // Which organizer roles the creator holds — drives the organizer chooser.
+  canOrg?: boolean;        // Pengurus IA Lima — always organizes as IA Lima
+  canKomunitas?: boolean;  // Pengurus Komunitas
+  canAngkatan?: boolean;   // Pengurus Angkatan
   onBack: () => void;
   onSaved: (id: number) => void;
   onLogout: () => void;
@@ -27,9 +30,13 @@ type Props = {
 };
 
 export default function EventFormScreen({
-  token, eventId, pickCommunity, onBack, onSaved, onLogout, profile, onNavigate,
+  token, eventId, canOrg, canKomunitas, canAngkatan, onBack, onSaved, onLogout, profile, onNavigate,
 }: Props) {
   const editing = !!eventId;
+  // When the creator holds BOTH the Angkatan and Komunitas caps they must pick
+  // which hat they're wearing; with only one, it's preselected. Not used in
+  // edit mode or for IA Lima (organizer is fixed server-side).
+  const bothRoles = !canOrg && !!canKomunitas && !!canAngkatan;
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +73,9 @@ export default function EventFormScreen({
   const [communities, setCommunities] = useState<CommunitySummary[]>([]);
   const [communityId, setCommunityId] = useState<number | null>(null);
   const [commPickerOpen, setCommPickerOpen] = useState(false);
+  const [organizerMode, setOrganizerMode] = useState<'' | 'Angkatan' | 'Komunitas'>(
+    canOrg ? '' : (canKomunitas && !canAngkatan) ? 'Komunitas' : (canAngkatan && !canKomunitas) ? 'Angkatan' : '',
+  );
 
   const [bannerIds, setBannerIds] = useState<number[]>([]);
   const [bannerPreviews, setBannerPreviews] = useState<string[]>([]);
@@ -73,7 +83,7 @@ export default function EventFormScreen({
 
   useEffect(() => {
     evApi.listCategories(token).then((r) => setCats(r.data)).catch(() => {});
-    if (pickCommunity && !editing) {
+    if (!editing && canKomunitas) {
       commApi.list(token, { role: 'manager' }).then((r) => setCommunities(r.data)).catch(() => {});
     }
   }, []);
@@ -181,9 +191,15 @@ export default function EventFormScreen({
       setError('Tanggal selesai harus setelah tanggal mulai.');
       return;
     }
-    if (pickCommunity && !editing && !communityId) {
-      setError('Pilih komunitas penyelenggara.');
-      return;
+    if (!editing && !canOrg) {
+      if (bothRoles && !organizerMode) {
+        setError('Pilih dulu: event ini untuk Angkatan atau Komunitas?');
+        return;
+      }
+      if (organizerMode === 'Komunitas' && !communityId) {
+        setError('Pilih komunitas penyelenggara.');
+        return;
+      }
     }
     setSaving(true);
     setError(null);
@@ -210,7 +226,8 @@ export default function EventFormScreen({
       };
       if (logo && logo.id) fields.event_logo = logo.id;
       if (cover && cover.id) fields.cover_image = cover.id;
-      if (pickCommunity && !editing && communityId) fields.community_id = communityId;
+      if (!editing && !canOrg && organizerMode) fields.organizer = organizerMode;
+      if (!editing && organizerMode === 'Komunitas' && communityId) fields.community_id = communityId;
       const saved = editing
         ? await evApi.update(token, eventId!, fields)
         : await evApi.create(token, fields);
@@ -253,7 +270,20 @@ export default function EventFormScreen({
           </Pressable>
         </Field>
 
-        {pickCommunity && !editing && (
+        {!editing && bothRoles && (
+          <Field label="Event ini untuk *">
+            <ChipPicker
+              options={['Angkatan', 'Komunitas']}
+              value={organizerMode}
+              onChange={(v) => {
+                setOrganizerMode(v as 'Angkatan' | 'Komunitas');
+                if (v !== 'Komunitas') setCommunityId(null);
+              }}
+            />
+          </Field>
+        )}
+
+        {!editing && organizerMode === 'Komunitas' && (
           <Field label="Komunitas Penyelenggara *">
             <Pressable style={styles.pickerBtn} onPress={() => setCommPickerOpen(true)}>
               <Text style={commName ? styles.pickerBtnText : styles.pickerBtnPlaceholder}>{commName || 'Pilih komunitas'}</Text>

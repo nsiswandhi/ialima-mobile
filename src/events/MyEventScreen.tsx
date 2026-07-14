@@ -23,14 +23,16 @@ type Props = {
   onBack: () => void;
   onLogout: () => void;
   canCreate?: boolean;      // holds any ia5_create_*_event cap
-  pickCommunity?: boolean;  // create-as Pengurus Komunitas
+  canOrg?: boolean;         // Pengurus IA Lima
+  canKomunitas?: boolean;   // Pengurus Komunitas
+  canAngkatan?: boolean;    // Pengurus Angkatan
   isIALima?: boolean;       // holds ia5_appoint_pengurus — sees the moderation queue
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
 };
 
 export default function MyEventScreen({
-  token, onBack, onLogout, canCreate, pickCommunity, isIALima, profile, onNavigate,
+  token, onBack, onLogout, canCreate, canOrg, canKomunitas, canAngkatan, isIALima, profile, onNavigate,
 }: Props) {
   const [nav, setNav] = useState<EvNav>(null);
   const [mine, setMine] = useState<EventSummary[]>([]);
@@ -120,7 +122,9 @@ export default function MyEventScreen({
       <EventFormScreen
         token={token}
         eventId={nav.kind === 'edit' ? nav.id : undefined}
-        pickCommunity={pickCommunity}
+        canOrg={canOrg}
+        canKomunitas={canKomunitas}
+        canAngkatan={canAngkatan}
         onBack={() => setNav(null)}
         onSaved={() => {
           const wasCreate = nav?.kind === 'create';

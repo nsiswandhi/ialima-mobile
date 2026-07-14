@@ -16,6 +16,9 @@ import { useAndroidBack } from '../useAndroidBack';
 type Props = {
   token: string;
   canCreate?: boolean; // viewer holds any ia5_create_*_event cap
+  canOrg?: boolean;
+  canKomunitas?: boolean;
+  canAngkatan?: boolean;
   onLogout: () => void;
   initialEventId?: number | null;
   profile?: DrawerProfile;
@@ -25,7 +28,7 @@ type Props = {
 type View3 = 'list' | 'detail' | 'form';
 type When = 'upcoming' | 'past';
 
-export default function EventScreen({ token, canCreate, onLogout, initialEventId, profile, onNavigate }: Props) {
+export default function EventScreen({ token, canCreate, canOrg, canKomunitas, canAngkatan, onLogout, initialEventId, profile, onNavigate }: Props) {
   const [view, setView] = useState<View3>(initialEventId ? 'detail' : 'list');
   const [selectedId, setSelectedId] = useState<number | null>(initialEventId ?? null);
   const [editId, setEditId] = useState<number | null>(null);
@@ -89,6 +92,9 @@ export default function EventScreen({ token, canCreate, onLogout, initialEventId
       <EventFormScreen
         token={token}
         eventId={editId}
+        canOrg={canOrg}
+        canKomunitas={canKomunitas}
+        canAngkatan={canAngkatan}
         onBack={() => setView(editId ? 'detail' : 'list')}
         onSaved={() => {
           const wasCreate = editId == null;
