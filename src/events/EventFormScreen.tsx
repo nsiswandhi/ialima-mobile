@@ -11,6 +11,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import KeyboardAwareScroll from '../KeyboardAwareScroll';
+import RichTextEditor from '../RichTextEditor';
+import { blocksToHtml } from '../Blocks';
 import { colors, fonts } from '../theme';
 import { evApi, EventCategory, EventDetail, JENIS_EVENT, ONLINE_PLATFORMS, showsOffline, showsOnline } from './api';
 import { commApi, CommunitySummary } from '../community/api';
@@ -101,7 +103,7 @@ export default function EventFormScreen({
         if (d.logo?.full) setLogo({ id: 0, full: d.logo.full });
         if (d.cover?.full) setCover({ id: 0, full: d.cover.full });
         setIntroduction(d.introduction);
-        setTentangEvent(blocksToPlainText(d.tentang_event));
+        setTentangEvent(blocksToHtml(d.tentang_event));
         setJenis(d.jenis_event);
         setOnlinePlatform(d.online_platform);
         setMeetingUrl(d.meeting_url);
@@ -311,7 +313,12 @@ export default function EventFormScreen({
         </Field>
 
         <Field label="Tentang Event">
-          <TextInput style={[styles.input, styles.textarea]} value={tentangEvent} onChangeText={setTentangEvent} placeholder="Deskripsi lengkap event…" placeholderTextColor={colors.muted} multiline />
+          <RichTextEditor
+            defaultValue={tentangEvent}
+            onChangeHtml={setTentangEvent}
+            placeholder="Deskripsi lengkap event…"
+            onUploadImage={async (uri) => (await evApi.uploadImage(token, uri)).full}
+          />
         </Field>
 
         <Field label="Jenis Event">
@@ -552,13 +559,6 @@ function ChipPicker({ options, value, onChange }: {
   );
 }
 
-function blocksToPlainText(blocks: { type: string; text?: string; items?: string[] }[]): string {
-  return (blocks || [])
-    .map((b) => (b.type === 'ul' || b.type === 'ol' ? (b.items || []).join('\n') : b.text || ''))
-    .join('\n\n')
-    .replace(/<a href="[^"]*">(.*?)<\/a>/gi, '$1');
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -569,7 +569,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: fonts.body, color: colors.heading,
   },
-  textarea: { height: 100, textAlignVertical: 'top' },
   textareaSmall: { height: 64, textAlignVertical: 'top' },
   row: { flexDirection: 'row', gap: 12 },
 

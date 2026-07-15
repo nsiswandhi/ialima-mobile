@@ -54,13 +54,13 @@ export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMe
             .then((r) => r.json())
             .catch(() => ({ data: [] })),
           commApi.list(token, {}).catch(() => ({ data: [] as CommunitySummary[] })),
-          evApi.list(token, { when: 'upcoming', per_page: 10 }).catch(() => ({ data: [] as EventSummary[] })),
+          evApi.list(token, { when: 'upcoming', per_page: 3 }).catch(() => ({ data: [] as EventSummary[] })),
         ]);
         if (!alive) return;
         setBrands((brandRes.data || []).slice(0, 10));
         setAlumni((memberRes.data || []).slice(0, 10));
         setCommunities((communityRes.data || []).slice(0, 10));
-        setEvents((eventRes.data || []).slice(0, 10));
+        setEvents((eventRes.data || []).slice(0, 3));
       } finally {
         if (alive) setLoading(false);
       }

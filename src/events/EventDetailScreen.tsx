@@ -11,7 +11,7 @@ import * as Clipboard from 'expo-clipboard';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import { colors, fonts } from '../theme';
 import { renderBlock } from '../Blocks';
-import { directionsUrl, evApi, EventDetail, showsOffline, showsOnline } from './api';
+import { directionsUrl, evApi, EventDetail, EventFollower, showsOffline, showsOnline } from './api';
 import { wibDateTime } from './datetime';
 import { useAndroidBack } from '../useAndroidBack';
 
@@ -32,6 +32,8 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [followers, setFollowers] = useState<EventFollower[]>([]);
+  const [following, setFollowing] = useState(false);
 
   useAndroidBack(() => {
     if (lightbox) {
@@ -49,11 +51,30 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
       .then((d) => alive && setData(d))
       .catch((e) => alive && setError(e.message))
       .finally(() => alive && setLoading(false));
+    evApi
+      .followers(token, eventId)
+      .then((r) => alive && setFollowers(r.data))
+      .catch(() => {});
     evApi.trackView(token, eventId);
     return () => {
       alive = false;
     };
   }, [eventId]);
+
+  const toggleFollow = async () => {
+    if (!data || following) return;
+    setFollowing(true);
+    try {
+      const r = data.is_following ? await evApi.unfollow(token, eventId) : await evApi.follow(token, eventId);
+      setData({ ...data, is_following: r.is_following, follower_count: r.follower_count });
+      const list = await evApi.followers(token, eventId);
+      setFollowers(list.data);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setFollowing(false);
+    }
+  };
 
   const openLoc = () => {
     if (!data) return;
@@ -131,12 +152,26 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
             </View>
           )}
 
-          {!!data.link_registrasi && (
+          {data.link_registrasi ? (
             <Pressable
               style={({ pressed }) => [styles.registerBtn, pressed && styles.pressed]}
               onPress={() => Linking.openURL(data.link_registrasi)}
             >
               <Text style={styles.registerText}>Daftar Event</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [
+                styles.registerBtn,
+                data.is_following && styles.followingBtn,
+                pressed && styles.pressed,
+              ]}
+              disabled={following}
+              onPress={toggleFollow}
+            >
+              <Text style={[styles.registerText, data.is_following && styles.followingText]}>
+                {data.is_following ? 'Mengikuti' : 'Ikuti Event'}
+              </Text>
             </Pressable>
           )}
 
@@ -234,6 +269,33 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
               </ScrollView>
             </View>
           )}
+
+          {!data.link_registrasi && (
+            <View style={styles.section}>
+              <Text style={styles.sectionHead}>PENGIKUT EVENT{data.follower_count ? ` (${data.follower_count})` : ''}</Text>
+              {followers.length === 0 ? (
+                <Text style={styles.empty}>Belum ada pengikut.</Text>
+              ) : (
+                followers.map((m) => (
+                  <View key={m.id} style={styles.personRow}>
+                    {m.avatar?.thumbnail ? (
+                      <Image source={{ uri: m.avatar.thumbnail }} style={styles.personAvatar} />
+                    ) : (
+                      <View style={[styles.personAvatar, styles.logoFallback]}>
+                        <Text style={styles.personLetter}>{m.name?.charAt(0) || '?'}</Text>
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.personName}>{m.name}</Text>
+                      <Text style={styles.personMeta}>
+                        {[m.angkatan ? `Angkatan ${m.angkatan}` : null, m.job_title].filter(Boolean).join(' · ')}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+          )}
         </ScrollView>
       ) : null}
 
@@ -284,8 +346,10 @@ const styles = StyleSheet.create({
   pendingBannerText: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: '#854F0B', flex: 1 },
 
   registerBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 16, marginHorizontal: 16 },
+  followingBtn: { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.primary },
   pressed: { opacity: 0.85 },
   registerText: { fontFamily: fonts.headingSemi, fontSize: 15, color: colors.white },
+  followingText: { color: colors.primary },
 
   manageBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, marginTop: 8 },
   manageText: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.primary },
@@ -315,6 +379,13 @@ const styles = StyleSheet.create({
   galleryImg: { width: 112, height: 112, borderRadius: 12, backgroundColor: colors.bgAlt },
   lightboxBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
   lightboxImg: { width: '100%', height: '100%' },
+
+  empty: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
+  personRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
+  personAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.bgAlt },
+  personLetter: { fontFamily: fonts.heading, fontSize: 16, color: colors.primary },
+  personName: { fontFamily: fonts.headingSemi, fontSize: 15, color: colors.heading },
+  personMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2 },
 
   error: { color: colors.danger, textAlign: 'center', marginTop: 12, fontFamily: fonts.bodyMedium },
 });

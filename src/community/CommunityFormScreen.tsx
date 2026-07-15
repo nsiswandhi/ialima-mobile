@@ -10,6 +10,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import KeyboardAwareScroll from '../KeyboardAwareScroll';
+import RichTextEditor from '../RichTextEditor';
+import { blocksToHtml } from '../Blocks';
 import { colors, fonts } from '../theme';
 import {
   ActivityRow, commApi, CommunityDetail, CommunityType, ContactRow, CONTACT_CHANNELS, HARI_LABELS,
@@ -86,9 +88,9 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
         setGalleryPreviews(d.image_gallery.map((g) => g.thumbnail || g.full));
         // WYSIWYG fields arrive as blocks; re-editing as plain text collapses
         // formatting to its plain-text runs, which the user can re-type if needed.
-        setTentangKami(blocksToPlainText(d.tentang_kami));
-        setSyaratBergabung(blocksToPlainText(d.syarat_bergabung));
-        setCaraBergabung(blocksToPlainText(d.cara_bergabung));
+        setTentangKami(blocksToHtml(d.tentang_kami));
+        setSyaratBergabung(blocksToHtml(d.syarat_bergabung));
+        setCaraBergabung(blocksToHtml(d.cara_bergabung));
       })
       .catch((e) => alive && setError(e.message))
       .finally(() => alive && setLoading(false));
@@ -260,15 +262,30 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
         </Field>
 
         <Field label="Tentang Kami">
-          <TextInput style={[styles.input, styles.textarea]} value={tentangKami} onChangeText={setTentangKami} placeholder="Ceritakan tentang komunitas ini…" placeholderTextColor={colors.muted} multiline />
+          <RichTextEditor
+            defaultValue={tentangKami}
+            onChangeHtml={setTentangKami}
+            placeholder="Ceritakan tentang komunitas ini…"
+            onUploadImage={async (uri) => (await commApi.uploadImage(token, uri)).full}
+          />
         </Field>
 
         <Field label="Syarat Bergabung">
-          <TextInput style={[styles.input, styles.textarea]} value={syaratBergabung} onChangeText={setSyaratBergabung} placeholder="Siapa yang bisa bergabung?" placeholderTextColor={colors.muted} multiline />
+          <RichTextEditor
+            defaultValue={syaratBergabung}
+            onChangeHtml={setSyaratBergabung}
+            placeholder="Siapa yang bisa bergabung?"
+            onUploadImage={async (uri) => (await commApi.uploadImage(token, uri)).full}
+          />
         </Field>
 
         <Field label="Cara Bergabung">
-          <TextInput style={[styles.input, styles.textarea]} value={caraBergabung} onChangeText={setCaraBergabung} placeholder="Langkah-langkah bergabung…" placeholderTextColor={colors.muted} multiline />
+          <RichTextEditor
+            defaultValue={caraBergabung}
+            onChangeHtml={setCaraBergabung}
+            placeholder="Langkah-langkah bergabung…"
+            onUploadImage={async (uri) => (await commApi.uploadImage(token, uri)).full}
+          />
         </Field>
 
         <Field label="Informasi Kontak">
@@ -507,13 +524,6 @@ function TimeInput({ value, onChange }: { value: string; onChange: (v: string) =
   );
 }
 
-function blocksToPlainText(blocks: { type: string; text?: string; items?: string[] }[]): string {
-  return (blocks || [])
-    .map((b) => (b.type === 'ul' || b.type === 'ol' ? (b.items || []).join('\n') : b.text || ''))
-    .join('\n\n')
-    .replace(/<a href="[^"]*">(.*?)<\/a>/gi, '$1');
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -524,7 +534,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: fonts.body, color: colors.heading,
   },
-  textarea: { height: 100, textAlignVertical: 'top' },
   textareaSmall: { height: 64, textAlignVertical: 'top' },
 
   pickerBtn: {

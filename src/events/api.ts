@@ -52,6 +52,17 @@ export type EventDetail = EventSummary & {
   owner_name: string;
   created_at: string;
   is_owner: boolean;
+  is_following: boolean;
+  follower_count: number;
+};
+
+// A person row in GET /event/{id}/followers ("Pengikut Event").
+export type EventFollower = {
+  id: number;
+  name: string;
+  avatar: Img;
+  angkatan: string;
+  job_title: string;
 };
 
 export type Paged<T> = {
@@ -181,6 +192,25 @@ export const evApi = {
   remove(token: string, id: number) {
     return fetch(`${API_BASE}/event/${id}`, { method: 'DELETE', headers: headers(token) }).then(
       parse<{ success: boolean }>,
+    );
+  },
+
+  // "Ikuti Event" — offered instead of "Daftar Event" when link_registrasi is empty.
+  follow(token: string, id: number) {
+    return fetch(`${API_BASE}/event/${id}/follow`, { method: 'POST', headers: headers(token) }).then(
+      parse<{ success: boolean; is_following: boolean; follower_count: number }>,
+    );
+  },
+
+  unfollow(token: string, id: number) {
+    return fetch(`${API_BASE}/event/${id}/follow`, { method: 'DELETE', headers: headers(token) }).then(
+      parse<{ success: boolean; is_following: boolean; follower_count: number }>,
+    );
+  },
+
+  followers(token: string, id: number) {
+    return fetch(`${API_BASE}/event/${id}/followers`, { headers: headers(token) }).then(
+      parse<{ data: EventFollower[]; total: number }>,
     );
   },
 };
