@@ -18,6 +18,7 @@ export type DrawerProfile = {
 
 export type NavTarget =
   | 'dashboard' | 'profile' | 'my-marketplace' | 'my-komunitas' | 'my-event' | 'my-artikel'
+  | 'chat' | 'notifications'
   | 'about' | 'review' | 'privacy' | 'terms';
 
 type Props = {
@@ -37,6 +38,8 @@ const PROFILE_ROWS: MenuRow[] = [
   { icon: 'people-circle-outline', label: 'My Komunitas', target: 'my-komunitas' },
   { icon: 'calendar-outline', label: 'My Event', target: 'my-event' },
   { icon: 'newspaper-outline', label: 'My Artikel', target: 'my-artikel' },
+  { icon: 'chatbubbles-outline', label: 'Pesan', target: 'chat' },
+  { icon: 'notifications-outline', label: 'Notifikasi', target: 'notifications' },
 ];
 
 const APP_ROWS: MenuRow[] = [

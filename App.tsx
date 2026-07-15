@@ -23,6 +23,9 @@ import EventScreen from './src/events/EventScreen';
 import MyEventScreen from './src/events/MyEventScreen';
 import ArtikelScreen from './src/artikel/ArtikelScreen';
 import MyArtikelScreen from './src/artikel/MyArtikelScreen';
+import ChatInboxScreen from './src/chat/ChatInboxScreen';
+import ChatThreadScreen from './src/chat/ChatThreadScreen';
+import { ChatThread } from './src/chat/api';
 import { useAndroidBack } from './src/useAndroidBack';
 
 // Placeholder store IDs — swap in the real ones once the app is published.
@@ -95,6 +98,7 @@ function AppInner() {
   type Tab =
     | 'dashboard' | 'directory' | 'community' | 'marketplace' | 'profile'
     | 'my-marketplace' | 'my-komunitas' | 'my-event' | 'event' | 'article' | 'my-artikel'
+    | 'chat' | 'notifications'
     | 'about' | 'privacy' | 'terms';
   const [tab, setTab] = useState<Tab>('dashboard');
   // A brand id to deep-link into on the Marketplace tab (e.g. from the Dashboard).
@@ -105,6 +109,9 @@ function AppInner() {
   const [eventDeepLinkId, setEventDeepLinkId] = useState<number | null>(null);
   // An article id to deep-link into on the Artikel tab (e.g. from the Dashboard).
   const [artikelDeepLinkId, setArtikelDeepLinkId] = useState<number | null>(null);
+  // The chat thread to open when the 'chat' tab is showing (set by tapping a
+  // thread in the inbox, or by MemberDetailScreen's "Kirim Pesan" button).
+  const [openChatThread, setOpenChatThread] = useState<ChatThread | null>(null);
   // Profile card data for the burger drawer — fetched once after login.
   const [meProfile, setMeProfile] = useState<DrawerProfile | undefined>(undefined);
 
@@ -193,6 +200,7 @@ function AppInner() {
     setCommunityDeepLinkId(null);
     setEventDeepLinkId(null);
     setArtikelDeepLinkId(null);
+    setOpenChatThread(null);
     if (target === 'review') {
       const url = Platform.OS === 'ios'
         ? `itms-apps://itunes.apple.com/app/id${APPLE_APP_ID}?action=write-review`
@@ -421,6 +429,25 @@ function AppInner() {
           <Header title="My Artikel" onBack={() => setTab('dashboard')} onLogout={logout} profile={meProfile} onNavigate={handleNavigate} />
           <MyArtikelScreen token={token} isIALima={!!user?.caps?.appoint_pengurus} />
         </View>
+      ) : tab === 'chat' ? (
+        openChatThread ? (
+          <ChatThreadScreen
+            token={token}
+            thread={openChatThread}
+            onBack={() => setOpenChatThread(null)}
+            onLogout={logout}
+            profile={meProfile}
+            onNavigate={handleNavigate}
+          />
+        ) : (
+          <ChatInboxScreen
+            token={token}
+            onOpenThread={setOpenChatThread}
+            onLogout={logout}
+            profile={meProfile}
+            onNavigate={handleNavigate}
+          />
+        )
       ) : tab === 'about' ? (
         <StaticPageScreen
           slug="about-lima-circle"
