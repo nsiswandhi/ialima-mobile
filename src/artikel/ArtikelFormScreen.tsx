@@ -4,12 +4,13 @@
 // changing status; "Kirim untuk Review" (or "Publish" for IA Lima staff)
 // persists then calls artikelApi.submit to move it out of draft.
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, fonts } from '../theme';
 import { artikelApi, ArtikelCategory, ArtikelDetail } from './api';
 import RichTextEditor from '../RichTextEditor';
 import { blocksToHtml } from '../Blocks';
+import KeyboardAwareScroll from '../KeyboardAwareScroll';
 
 type Props = {
   token: string;
@@ -124,7 +125,7 @@ export default function ArtikelFormScreen({ token, articleId, isIALima, onDone, 
   if (loading) return <ActivityIndicator style={styles.loading} color={colors.primary} />;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAwareScroll style={styles.container} contentContainerStyle={styles.content}>
       {!!rejectReason && (
         <View style={styles.rejectBanner}>
           <Text style={styles.rejectText}>Ditolak: {rejectReason}</Text>
@@ -184,7 +185,7 @@ export default function ArtikelFormScreen({ token, articleId, isIALima, onDone, 
       <Pressable onPress={onCancel} style={styles.cancelBtn}>
         <Text style={styles.cancelText}>Batal</Text>
       </Pressable>
-    </ScrollView>
+    </KeyboardAwareScroll>
   );
 }
 
