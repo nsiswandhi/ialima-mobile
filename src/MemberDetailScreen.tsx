@@ -11,6 +11,7 @@ import BrandDetailScreen from './BrandDetailScreen';
 import { BrandSummary, mkApi } from './marketplace/api';
 import AppointKomunitasSheet from './community/AppointKomunitasSheet';
 import { useAndroidBack } from './useAndroidBack';
+import { chatApi, ChatThread } from './chat/api';
 
 const INDUSTRY_GLOSSARY_ID = 1;
 
@@ -34,12 +35,13 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  onOpenThread: (thread: ChatThread) => void;
 };
 
 // Read-only detail for a member tapped in the directory. Fetches the
 // (auth-gated) /member/{id} payload and resolves the industry label. Pengurus
 // see a Verify button for eligible subscribers; members see a Recognize button.
-export default function MemberDetailScreen({ memberId, token, viewer, onBack, onLogout, profile, onNavigate }: Props) {
+export default function MemberDetailScreen({ memberId, token, viewer, onBack, onLogout, profile, onNavigate, onOpenThread }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ProfileViewData | null>(null);
@@ -61,6 +63,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   const [recognizeCount, setRecognizeCount] = useState(0); // how many people know this member
   const [acting, setActing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [messaging, setMessaging] = useState(false);
 
   useAndroidBack(() => {
     if (openBrandId != null) {
@@ -200,6 +203,19 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
     }
   }
 
+  async function startChat() {
+    setMessaging(true);
+    setError(null);
+    try {
+      const thread = await chatApi.startThread(token, memberId);
+      onOpenThread(thread);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setMessaging(false);
+    }
+  }
+
   const doAppointAngkatan = () =>
     act(
       '/appoint-pengurus-angkatan',
@@ -284,6 +300,16 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
               disabled={acting}
             >
               <Text style={styles.secondaryBtnText}>Jadikan Pengurus Komunitas</Text>
+            </Pressable>
+          )}
+
+          {!isSelf && mutual && (
+            <Pressable
+              style={({ pressed }) => [styles.primaryBtn, pressed && styles.primaryBtnPressed]}
+              onPress={startChat}
+              disabled={messaging}
+            >
+              <Text style={styles.primaryBtnText}>{messaging ? 'Membuka…' : 'Kirim Pesan'}</Text>
             </Pressable>
           )}
 

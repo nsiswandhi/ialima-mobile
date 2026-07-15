@@ -484,6 +484,11 @@ function AppInner() {
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
+          onOpenThread={(thread) => {
+            setSelectedMemberId(null);
+            setOpenChatThread(thread);
+            setTab('chat');
+          }}
         />
       ) : (
       <View style={styles.flex}>
