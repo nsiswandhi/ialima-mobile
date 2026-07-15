@@ -27,6 +27,7 @@ type Props = {
   onLogout?: () => void; // shows the burger menu when provided
   profile?: DrawerProfile;      // when set (with onNavigate), the full drawer renders
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;  // shows a red badge on the burger icon when > 0
 };
 
 type MenuRow = { icon: keyof typeof Ionicons.glyphMap; label: string; target?: NavTarget; comingSoon?: boolean };
@@ -56,7 +57,7 @@ const APP_ROWS: MenuRow[] = [
 // full drawer (profile card + nav links + app links + log out). Otherwise it
 // falls back to a bare "Log out" panel, unchanged from before — every detail /
 // form screen keeps that simpler behavior with no code changes on their end.
-export default function Header({ title, onBack, onLogout, profile, onNavigate }: Props) {
+export default function Header({ title, onBack, onLogout, profile, onNavigate, unreadCount }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -98,6 +99,11 @@ export default function Header({ title, onBack, onLogout, profile, onNavigate }:
             <View style={styles.burgerLine} />
             <View style={styles.burgerLine} />
             <View style={styles.burgerLine} />
+            {!!unreadCount && unreadCount > 0 && (
+              <View style={styles.burgerBadge}>
+                <Text style={styles.burgerBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            )}
           </Pressable>
         )}
       </View>
@@ -240,6 +246,8 @@ const styles = StyleSheet.create({
 
   burger: { width: 26, height: 20, justifyContent: 'space-between', paddingVertical: 2 },
   burgerLine: { height: 2.5, borderRadius: 2, backgroundColor: colors.white },
+  burgerBadge: { position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  burgerBadgeText: { fontFamily: fonts.bodySemi, fontSize: 9, color: colors.white },
 
   // ---- Simple fallback drawer (detail/form screens — unchanged from before) ----
   menuBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', flexDirection: 'row', justifyContent: 'flex-end' },

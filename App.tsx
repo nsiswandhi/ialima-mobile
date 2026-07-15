@@ -26,7 +26,8 @@ import MyArtikelScreen from './src/artikel/MyArtikelScreen';
 import ChatInboxScreen from './src/chat/ChatInboxScreen';
 import ChatThreadScreen from './src/chat/ChatThreadScreen';
 import BroadcastComposerScreen from './src/chat/BroadcastComposerScreen';
-import { ChatThread } from './src/chat/api';
+import NotificationsScreen from './src/chat/NotificationsScreen';
+import { chatApi, ChatThread } from './src/chat/api';
 import { useAndroidBack } from './src/useAndroidBack';
 
 // Placeholder store IDs — swap in the real ones once the app is published.
@@ -118,6 +119,8 @@ function AppInner() {
   const [openChatThread, setOpenChatThread] = useState<ChatThread | null>(null);
   // Profile card data for the burger drawer — fetched once after login.
   const [meProfile, setMeProfile] = useState<DrawerProfile | undefined>(undefined);
+  // Unread notification count for the header burger badge — polled while logged in.
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Directory + UI state.
   const [members, setMembers] = useState<Member[]>([]);
@@ -196,6 +199,27 @@ function AppInner() {
     };
   }, [token, user?.id]);
 
+  // Poll the unread notification count while logged in — cheap single GET,
+  // same 8-10s cadence as the chat thread poll.
+  useEffect(() => {
+    if (!token) return;
+    let alive = true;
+    async function tick() {
+      try {
+        const res = await chatApi.notifications(token!);
+        if (alive) setUnreadCount(res.unread_count);
+      } catch {
+        // Silent — next tick retries.
+      }
+    }
+    tick();
+    const id = setInterval(tick, 15000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [token]);
+
   // Routes a burger-menu tap to the right tab, or (Review App) straight to
   // the platform store listing.
   function handleNavigate(target: NavTarget) {
@@ -219,6 +243,7 @@ function AppInner() {
     setToken(null);
     setUser(null);
     setMeProfile(undefined);
+    setUnreadCount(0);
     setMembers([]);
     setPhone('');
     setPassword('');
@@ -422,7 +447,7 @@ function AppInner() {
         />
       ) : tab === 'article' ? (
         <View style={styles.flex}>
-          <Header title="Artikel" onLogout={logout} profile={meProfile} onNavigate={handleNavigate} />
+          <Header title="Artikel" onLogout={logout} profile={meProfile} onNavigate={handleNavigate} unreadCount={unreadCount} />
           <ArtikelScreen
             token={token}
             canCreate={true}
@@ -432,7 +457,7 @@ function AppInner() {
         </View>
       ) : tab === 'my-artikel' ? (
         <View style={styles.flex}>
-          <Header title="My Artikel" onBack={() => setTab('dashboard')} onLogout={logout} profile={meProfile} onNavigate={handleNavigate} />
+          <Header title="My Artikel" onBack={() => setTab('dashboard')} onLogout={logout} profile={meProfile} onNavigate={handleNavigate} unreadCount={unreadCount} />
           <MyArtikelScreen token={token} isIALima={!!user?.caps?.appoint_pengurus} />
         </View>
       ) : tab === 'chat' ? (
@@ -462,6 +487,25 @@ function AppInner() {
           canMessageKomunitas={!!user?.caps?.message_komunitas}
           canMessageAll={!!user?.caps?.message_all}
           onBack={() => setTab('dashboard')}
+          onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
+        />
+      ) : tab === 'notifications' ? (
+        <NotificationsScreen
+          token={token!}
+          onOpenThread={(threadId) => {
+            // The inbox already fetched this thread's shape once; re-derive it
+            // via a fresh threads() call so ChatThreadScreen gets full data.
+            chatApi.threads(token!).then((res) => {
+              const t = res.data.find((x) => x.id === threadId);
+              if (t) {
+                setOpenChatThread(t);
+                setTab('chat');
+              }
+            });
+          }}
+          onRead={() => setUnreadCount(0)}
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
@@ -510,7 +554,7 @@ function AppInner() {
         />
       ) : (
       <View style={styles.flex}>
-      <Header title="Alumni" onLogout={logout} profile={meProfile} onNavigate={handleNavigate} />
+      <Header title="Alumni" onLogout={logout} profile={meProfile} onNavigate={handleNavigate} unreadCount={unreadCount} />
 
       <View style={styles.searchRow}>
         <TextInput
