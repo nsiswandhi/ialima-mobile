@@ -6,15 +6,13 @@ import { Image, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from '
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
 import { EventSummary } from './api';
+import { BULAN, HARI, pad2, wibParts, wibTime } from './datetime';
 
 type Props = {
   event: EventSummary;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
 };
-
-const HARI = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
 // Left-stripe accent by event type. Soft, brand-aligned.
 const STRIPE: Record<string, string> = {
@@ -23,15 +21,14 @@ const STRIPE: Record<string, string> = {
   Hybrid: '#C98A2E',            // warm gold
 };
 
-const two = (n: number) => String(n).padStart(2, '0');
-
 export default function EventListCard({ event, onPress, style }: Props) {
-  const start = event.start_date ? new Date(event.start_date * 1000) : null;
-  const end = event.end_date ? new Date(event.end_date * 1000) : null;
-  const multiDay = !!(start && end && (start.getDate() !== end.getDate() || start.getMonth() !== end.getMonth()));
+  // All event times are rendered in WIB (GMT+7), regardless of device tz.
+  const start = event.start_date ? wibParts(event.start_date) : null;
+  const end = event.end_date ? wibParts(event.end_date) : null;
+  const multiDay = !!(start && end && (start.day !== end.day || start.month !== end.month));
 
-  const timeRange = start
-    ? `${two(start.getHours())}:${two(start.getMinutes())}` + (end ? ` - ${two(end.getHours())}:${two(end.getMinutes())}` : '')
+  const timeRange = event.start_date
+    ? wibTime(event.start_date) + (event.end_date ? ` - ${wibTime(event.end_date)}` : '')
     : '';
 
   const stripe = STRIPE[event.jenis_event] || colors.secondary;
@@ -44,13 +41,13 @@ export default function EventListCard({ event, onPress, style }: Props) {
       <View style={styles.dateCol}>
         {!!start && (
           <>
-            <Text style={styles.weekday}>{HARI[start.getDay()]}</Text>
+            <Text style={styles.weekday}>{HARI[start.weekday]}</Text>
             <View style={styles.dayRow}>
-              <Text style={styles.day}>{two(start.getDate())}</Text>
-              {multiDay && end && <Text style={styles.dayEnd}>-{two(end.getDate())}</Text>}
+              <Text style={styles.day}>{pad2(start.day)}</Text>
+              {multiDay && end && <Text style={styles.dayEnd}>-{pad2(end.day)}</Text>}
             </View>
-            <Text style={styles.month}>{BULAN[start.getMonth()]}{multiDay && end && start.getMonth() !== end.getMonth() ? ` / ${BULAN[end.getMonth()]}` : ''}</Text>
-            <Text style={styles.year}>{start.getFullYear()}</Text>
+            <Text style={styles.month}>{BULAN[start.month]}{multiDay && end && start.month !== end.month ? ` / ${BULAN[end.month]}` : ''}</Text>
+            <Text style={styles.year}>{start.year}</Text>
           </>
         )}
       </View>

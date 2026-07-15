@@ -12,6 +12,7 @@ import { colors, fonts } from '../theme';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import { renderBlock } from '../Blocks';
 import { evApi, EventDetail, EventSummary } from './api';
+import { wibDateTime } from './datetime';
 import EventFormScreen from './EventFormScreen';
 import EventDetailScreen from './EventDetailScreen';
 import { useAndroidBack } from '../useAndroidBack';
@@ -156,7 +157,7 @@ export default function MyEventScreen({
         <View style={{ flex: 1 }}>
           <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
           <View style={styles.metaRow}>
-            {!!item.start_date_display && <Text style={styles.metaLight}>{item.start_date_display}</Text>}
+            {!!item.start_date && <Text style={styles.metaLight}>{wibDateTime(item.start_date)}</Text>}
             {showPending && item.approval_status === 'pending' && (
               <View style={styles.pendingPill}>
                 <Text style={styles.pendingPillText}>Menunggu Persetujuan</Text>
@@ -319,8 +320,8 @@ function EventReviewModal({ token, eventId, onClose, onApprove, onDelete }: {
               <View style={styles.reviewFieldsBlock}>
                 <ReviewField label="Kategori" value={data.event_category} />
                 <ReviewField label="Jenis" value={data.jenis_event} />
-                <ReviewField label="Mulai" value={data.start_date_display} />
-                <ReviewField label="Selesai" value={data.end_date_display} />
+                <ReviewField label="Mulai" value={data.start_date ? wibDateTime(data.start_date) : ''} />
+                <ReviewField label="Selesai" value={data.end_date ? wibDateTime(data.end_date) : ''} />
                 <ReviewField label="Platform" value={data.online_platform} />
                 <ReviewField label="Lokasi" value={data.nama_lokasi} />
                 <ReviewField label="Alamat" value={data.alamat} />

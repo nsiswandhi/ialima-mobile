@@ -6,6 +6,7 @@ import { Image, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from '
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
 import { EventSummary } from './api';
+import { wibDateTime } from './datetime';
 
 type Props = {
   event: EventSummary;
@@ -35,10 +36,10 @@ export default function EventCard({ event, onPress, style }: Props) {
             ))}
           </View>
         )}
-        {!!event.start_date_display && (
+        {!!event.start_date && (
           <View style={styles.dateRow}>
             <Ionicons name="calendar-outline" size={12} color={colors.muted} />
-            <Text style={styles.dateText} numberOfLines={1}>{event.start_date_display}</Text>
+            <Text style={styles.dateText} numberOfLines={1}>{wibDateTime(event.start_date)}</Text>
           </View>
         )}
       </View>

@@ -14,6 +14,7 @@ import KeyboardAwareScroll from '../KeyboardAwareScroll';
 import { colors, fonts } from '../theme';
 import { evApi, EventCategory, EventDetail, JENIS_EVENT, ONLINE_PLATFORMS, showsOffline, showsOnline } from './api';
 import { commApi, CommunitySummary } from '../community/api';
+import { tsToWibLocalDate, wibDateTime, wibLocalDateToTs } from './datetime';
 
 type Props = {
   token: string;
@@ -421,16 +422,14 @@ export default function EventFormScreen({
 function DateTimeInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [show, setShow] = useState(false);
   const [mode, setMode] = useState<'date' | 'time'>('date');
-  const [temp, setTemp] = useState<Date>(value ? new Date(value * 1000) : new Date());
+  // Work in WIB: `temp` is a local-tz Date carrying the WIB wall-clock numbers,
+  // so the native picker shows WIB, and we convert back to a UTC epoch on commit.
+  const [temp, setTemp] = useState<Date>(tsToWibLocalDate(value || Math.floor(Date.now() / 1000)));
 
-  const label = value
-    ? new Date(value * 1000).toLocaleString('id-ID', {
-        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-      })
-    : '--';
+  const label = value ? wibDateTime(value) : '--';
 
   const openPicker = () => {
-    setTemp(value ? new Date(value * 1000) : new Date());
+    setTemp(tsToWibLocalDate(value || Math.floor(Date.now() / 1000)));
     setMode('date');
     setShow(true);
   };
@@ -450,7 +449,7 @@ function DateTimeInput({ value, onChange }: { value: number; onChange: (v: numbe
     const d = new Date(temp);
     d.setHours(selected.getHours(), selected.getMinutes(), 0, 0);
     setShow(false);
-    onChange(Math.floor(d.getTime() / 1000));
+    onChange(wibLocalDateToTs(d));
   };
 
   const onIosChange = (_event: any, selected?: Date) => {
@@ -458,7 +457,7 @@ function DateTimeInput({ value, onChange }: { value: number; onChange: (v: numbe
   };
   const iosDone = () => {
     setShow(false);
-    onChange(Math.floor(temp.getTime() / 1000));
+    onChange(wibLocalDateToTs(temp));
   };
 
   return (

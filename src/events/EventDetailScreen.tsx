@@ -12,6 +12,7 @@ import Header, { DrawerProfile, NavTarget } from '../Header';
 import { colors, fonts } from '../theme';
 import { renderBlock } from '../Blocks';
 import { directionsUrl, evApi, EventDetail, showsOffline, showsOnline } from './api';
+import { wibDateTime } from './datetime';
 import { useAndroidBack } from '../useAndroidBack';
 
 type Props = {
@@ -108,12 +109,12 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
                   <View style={styles.badge}><Text style={styles.badgeText}>{data.jenis_event}</Text></View>
                 )}
               </View>
-              {!!data.start_date_display && (
+              {!!data.start_date && (
                 <View style={styles.dateRow}>
                   <Ionicons name="calendar-outline" size={14} color={colors.primary} />
                   <Text style={styles.dateText}>
-                    {data.start_date_display}
-                    {data.end_date_display ? ` – ${data.end_date_display}` : ''}
+                    {wibDateTime(data.start_date)}
+                    {data.end_date ? ` – ${wibDateTime(data.end_date)}` : ''}
                   </Text>
                 </View>
               )}
