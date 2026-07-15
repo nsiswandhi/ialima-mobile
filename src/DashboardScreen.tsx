@@ -8,7 +8,7 @@ import AlumniCard, { AlumniSummary } from './AlumniCard';
 import { BrandSummary, mkApi } from './marketplace/api';
 import CommunityCard from './community/CommunityCard';
 import { commApi, CommunitySummary } from './community/api';
-import EventCard from './events/EventCard';
+import EventListCard from './events/EventListCard';
 import { evApi, EventSummary } from './events/api';
 
 type Props = {
@@ -101,11 +101,19 @@ export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMe
               ))}
             </Section>
 
-            <Section title="Kegiatan Akan Datang" empty="Belum ada kegiatan." show={events.length > 0}>
-              {events.map((e) => (
-                <EventCard key={e.id} event={e} onPress={() => onOpenEvent(e.id)} style={{ width: CARD_W }} />
-              ))}
-            </Section>
+            <View style={styles.section}>
+              <View style={styles.sectionBar} />
+              <Text style={styles.sectionTitle}>Kegiatan Akan Datang</Text>
+              {events.length > 0 ? (
+                <View style={styles.eventList}>
+                  {events.map((e) => (
+                    <EventListCard key={e.id} event={e} onPress={() => onOpenEvent(e.id)} />
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.empty}>Belum ada kegiatan.</Text>
+              )}
+            </View>
           </>
         )}
       </ScrollView>
@@ -154,4 +162,5 @@ const styles = StyleSheet.create({
   sectionTitle: { fontFamily: fonts.heading, fontSize: 18, color: colors.heading, marginLeft: 24, marginBottom: 12 },
   row: { paddingHorizontal: 12, gap: 12, paddingBottom: 4 },
   empty: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginLeft: 24 },
+  eventList: { paddingHorizontal: 12 },
 });

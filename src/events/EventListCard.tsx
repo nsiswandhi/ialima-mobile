@@ -1,8 +1,8 @@
-// Full-width event row for the Events tab list — soft, light card with a thin
-// left stripe colored by jenis_event, laid out in three columns:
-//   date | event info | logo   (EventON-style, adapted to the app's palette).
+// Full-width event row — soft, light card with a thin left stripe colored by
+// jenis_event, laid out as date | event info | chevron (EventON-style, adapted
+// to the app's palette). Used on both the Events tab list and the Dashboard.
 import React from 'react';
-import { Image, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
 import { EventSummary } from './api';
@@ -84,23 +84,16 @@ export default function EventListCard({ event, onPress, style }: Props) {
         )}
       </View>
 
-      {/* Logo column */}
-      {event.logo?.thumbnail ? (
-        <Image source={{ uri: event.logo.thumbnail }} style={styles.logo} />
-      ) : (
-        <View style={[styles.logo, styles.logoFallback]}>
-          <Text style={styles.logoLetter}>{event.name?.charAt(0) || '?'}</Text>
-        </View>
-      )}
+      <Ionicons name="chevron-forward" size={18} color={colors.muted} style={styles.chevron} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.border,
-    paddingVertical: 14, paddingRight: 14, paddingLeft: 18, marginBottom: 10, overflow: 'hidden',
+    paddingVertical: 14, paddingRight: 12, paddingLeft: 18, marginBottom: 10, overflow: 'hidden',
     shadowColor: colors.primaryDark, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   pressed: { backgroundColor: colors.bgAlt },
@@ -126,7 +119,5 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 },
   metaText: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, flex: 1 },
 
-  logo: { width: 62, height: 62, borderRadius: 12, backgroundColor: colors.bgAlt },
-  logoFallback: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  logoLetter: { fontFamily: fonts.heading, fontSize: 24, color: colors.primary },
+  chevron: { alignSelf: 'center' },
 });
