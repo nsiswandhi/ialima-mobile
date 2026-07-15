@@ -10,6 +10,8 @@ import CommunityCard from './community/CommunityCard';
 import { commApi, CommunitySummary } from './community/api';
 import EventListCard from './events/EventListCard';
 import { evApi, EventSummary } from './events/api';
+import DashboardArtikelCard from './artikel/DashboardArtikelCard';
+import { artikelApi, ArtikelSummary } from './artikel/api';
 
 type Props = {
   token: string;
@@ -18,6 +20,7 @@ type Props = {
   onOpenMember: (id: number) => void;
   onOpenCommunity: (id: number) => void;
   onOpenEvent: (id: number) => void;
+  onOpenArtikel: (id: number) => void;
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
@@ -36,11 +39,12 @@ const CARD_W = 156;
 // Home screen shown right after login: a welcome banner, a "Brand Unggulan"
 // carousel (up to 10 brands) and an "Alumni Populer" carousel (up to 10 members,
 // already ranked by recognition on the server).
-export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMember, onOpenCommunity, onOpenEvent, onLogout, profile, onNavigate }: Props) {
+export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMember, onOpenCommunity, onOpenEvent, onOpenArtikel, onLogout, profile, onNavigate }: Props) {
   const [brands, setBrands] = useState<BrandSummary[]>([]);
   const [alumni, setAlumni] = useState<AlumniSummary[]>([]);
   const [communities, setCommunities] = useState<CommunitySummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
+  const [articles, setArticles] = useState<ArtikelSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [welcome] = useState(() => WELCOME_MESSAGES[Math.floor(Math.random() * WELCOME_MESSAGES.length)]);
 
@@ -48,19 +52,21 @@ export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMe
     let alive = true;
     (async () => {
       try {
-        const [brandRes, memberRes, communityRes, eventRes] = await Promise.all([
+        const [brandRes, memberRes, communityRes, eventRes, articleRes] = await Promise.all([
           mkApi.list(token, { featured: true }).catch(() => ({ data: [] as BrandSummary[] })),
           fetch(`${API_BASE}/members?per_page=10`, { headers: { 'X-IA5-Token': token } })
             .then((r) => r.json())
             .catch(() => ({ data: [] })),
           commApi.list(token, {}).catch(() => ({ data: [] as CommunitySummary[] })),
           evApi.list(token, { when: 'upcoming', per_page: 3 }).catch(() => ({ data: [] as EventSummary[] })),
+          artikelApi.list(token, { per_page: 3 }).catch(() => ({ data: [] as ArtikelSummary[] })),
         ]);
         if (!alive) return;
         setBrands((brandRes.data || []).slice(0, 10));
         setAlumni((memberRes.data || []).slice(0, 10));
         setCommunities((communityRes.data || []).slice(0, 10));
         setEvents((eventRes.data || []).slice(0, 3));
+        setArticles((articleRes.data || []).slice(0, 3));
       } finally {
         if (alive) setLoading(false);
       }
@@ -112,6 +118,20 @@ export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMe
                 </View>
               ) : (
                 <Text style={styles.empty}>Belum ada kegiatan.</Text>
+              )}
+            </View>
+
+            <View style={styles.section}>
+              <View style={styles.sectionBar} />
+              <Text style={styles.sectionTitle}>Artikel Terbaru</Text>
+              {articles.length > 0 ? (
+                <View style={styles.eventList}>
+                  {articles.map((a) => (
+                    <DashboardArtikelCard key={a.id} article={a} onPress={() => onOpenArtikel(a.id)} />
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.empty}>Belum ada artikel.</Text>
               )}
             </View>
           </>

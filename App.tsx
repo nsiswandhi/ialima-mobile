@@ -18,10 +18,11 @@ import DashboardScreen from './src/DashboardScreen';
 import KeyboardAwareScroll from './src/KeyboardAwareScroll';
 import MyMarketplaceScreen from './src/marketplace/MyMarketplaceScreen';
 import MyKomunitasScreen from './src/community/MyKomunitasScreen';
-import ComingSoonScreen from './src/ComingSoonScreen';
 import StaticPageScreen from './src/StaticPageScreen';
 import EventScreen from './src/events/EventScreen';
 import MyEventScreen from './src/events/MyEventScreen';
+import ArtikelScreen from './src/artikel/ArtikelScreen';
+import MyArtikelScreen from './src/artikel/MyArtikelScreen';
 import { useAndroidBack } from './src/useAndroidBack';
 
 // Placeholder store IDs — swap in the real ones once the app is published.
@@ -93,7 +94,7 @@ function AppInner() {
   // bottom pill bar; the rest are burger-only destinations.
   type Tab =
     | 'dashboard' | 'directory' | 'community' | 'marketplace' | 'profile'
-    | 'my-marketplace' | 'my-komunitas' | 'my-event' | 'event' | 'article'
+    | 'my-marketplace' | 'my-komunitas' | 'my-event' | 'event' | 'article' | 'my-artikel'
     | 'about' | 'privacy' | 'terms';
   const [tab, setTab] = useState<Tab>('dashboard');
   // A brand id to deep-link into on the Marketplace tab (e.g. from the Dashboard).
@@ -102,6 +103,8 @@ function AppInner() {
   const [communityDeepLinkId, setCommunityDeepLinkId] = useState<number | null>(null);
   // An event id to deep-link into on the Event tab (e.g. from the Dashboard).
   const [eventDeepLinkId, setEventDeepLinkId] = useState<number | null>(null);
+  // An article id to deep-link into on the Artikel tab (e.g. from the Dashboard).
+  const [artikelDeepLinkId, setArtikelDeepLinkId] = useState<number | null>(null);
   // Profile card data for the burger drawer — fetched once after login.
   const [meProfile, setMeProfile] = useState<DrawerProfile | undefined>(undefined);
 
@@ -189,6 +192,7 @@ function AppInner() {
     setMarketplaceBrandId(null);
     setCommunityDeepLinkId(null);
     setEventDeepLinkId(null);
+    setArtikelDeepLinkId(null);
     if (target === 'review') {
       const url = Platform.OS === 'ios'
         ? `itms-apps://itunes.apple.com/app/id${APPLE_APP_ID}?action=write-review`
@@ -237,6 +241,10 @@ function AppInner() {
     }
     if (eventDeepLinkId != null) {
       setEventDeepLinkId(null);
+      return true;
+    }
+    if (artikelDeepLinkId != null) {
+      setArtikelDeepLinkId(null);
       return true;
     }
     if (tab !== 'dashboard') {
@@ -321,6 +329,7 @@ function AppInner() {
           onOpenMember={(id) => { setSelectedMemberId(id); setTab('directory'); }}
           onOpenCommunity={(id) => { setCommunityDeepLinkId(id); setTab('community'); }}
           onOpenEvent={(id) => { setEventDeepLinkId(id); setTab('event'); }}
+          onOpenArtikel={(id) => { setArtikelDeepLinkId(id); setTab('article'); }}
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
@@ -398,14 +407,20 @@ function AppInner() {
           onNavigate={handleNavigate}
         />
       ) : tab === 'article' ? (
-        <ComingSoonScreen
-          title="Artikel"
-          icon="newspaper-outline"
-          onBack={() => setTab('dashboard')}
-          onLogout={logout}
-          profile={meProfile}
-          onNavigate={handleNavigate}
-        />
+        <View style={styles.flex}>
+          <Header title="Artikel" onLogout={logout} profile={meProfile} onNavigate={handleNavigate} />
+          <ArtikelScreen
+            token={token}
+            canCreate={true}
+            isIALima={!!user?.caps?.appoint_pengurus}
+            initialArtikelId={artikelDeepLinkId}
+          />
+        </View>
+      ) : tab === 'my-artikel' ? (
+        <View style={styles.flex}>
+          <Header title="My Artikel" onBack={() => setTab('dashboard')} onLogout={logout} profile={meProfile} onNavigate={handleNavigate} />
+          <MyArtikelScreen token={token} isIALima={!!user?.caps?.appoint_pengurus} />
+        </View>
       ) : tab === 'about' ? (
         <StaticPageScreen
           slug="about-lima-circle"
@@ -528,6 +543,7 @@ function AppInner() {
                   setMarketplaceBrandId(null);
                   setCommunityDeepLinkId(null);
                   setEventDeepLinkId(null);
+                  setArtikelDeepLinkId(null);
                   setTab(t.key);
                 }}
               >
