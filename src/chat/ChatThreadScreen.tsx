@@ -56,6 +56,9 @@ export default function ChatThreadScreen({ token, thread, onBack, onLogout, prof
   }
 
   useEffect(() => {
+    setBlocked(thread.is_blocked);
+    setError(null);
+    setDraft('');
     loadInitial();
     const id = setInterval(poll, POLL_MS);
     return () => clearInterval(id);
