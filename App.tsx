@@ -25,6 +25,7 @@ import ArtikelScreen from './src/artikel/ArtikelScreen';
 import MyArtikelScreen from './src/artikel/MyArtikelScreen';
 import ChatInboxScreen from './src/chat/ChatInboxScreen';
 import ChatThreadScreen from './src/chat/ChatThreadScreen';
+import BroadcastComposerScreen from './src/chat/BroadcastComposerScreen';
 import { ChatThread } from './src/chat/api';
 import { useAndroidBack } from './src/useAndroidBack';
 
@@ -47,6 +48,9 @@ type Caps = {
   create_angkatan_event: boolean;
   create_org_event: boolean;
   create_community_event: boolean;
+  message_angkatan: boolean;
+  message_komunitas: boolean;
+  message_all: boolean;
 };
 type User = {
   id: number;
@@ -98,7 +102,7 @@ function AppInner() {
   type Tab =
     | 'dashboard' | 'directory' | 'community' | 'marketplace' | 'profile'
     | 'my-marketplace' | 'my-komunitas' | 'my-event' | 'event' | 'article' | 'my-artikel'
-    | 'chat' | 'notifications'
+    | 'chat' | 'notifications' | 'broadcast'
     | 'about' | 'privacy' | 'terms';
   const [tab, setTab] = useState<Tab>('dashboard');
   // A brand id to deep-link into on the Marketplace tab (e.g. from the Dashboard).
@@ -338,6 +342,8 @@ function AppInner() {
           onOpenCommunity={(id) => { setCommunityDeepLinkId(id); setTab('community'); }}
           onOpenEvent={(id) => { setEventDeepLinkId(id); setTab('event'); }}
           onOpenArtikel={(id) => { setArtikelDeepLinkId(id); setTab('article'); }}
+          onOpenBroadcast={() => setTab('broadcast')}
+          canBroadcast={!!(user?.caps?.message_angkatan || user?.caps?.message_komunitas || user?.caps?.message_all)}
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
@@ -448,6 +454,18 @@ function AppInner() {
             onNavigate={handleNavigate}
           />
         )
+      ) : tab === 'broadcast' ? (
+        <BroadcastComposerScreen
+          token={token}
+          angkatan={user?.angkatan}
+          canMessageAngkatan={!!user?.caps?.message_angkatan}
+          canMessageKomunitas={!!user?.caps?.message_komunitas}
+          canMessageAll={!!user?.caps?.message_all}
+          onBack={() => setTab('dashboard')}
+          onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
+        />
       ) : tab === 'about' ? (
         <StaticPageScreen
           slug="about-lima-circle"

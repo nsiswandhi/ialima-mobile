@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
 import Header, { DrawerProfile, NavTarget } from './Header';
@@ -21,6 +22,8 @@ type Props = {
   onOpenCommunity: (id: number) => void;
   onOpenEvent: (id: number) => void;
   onOpenArtikel: (id: number) => void;
+  onOpenBroadcast: () => void;
+  canBroadcast: boolean;
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
@@ -39,7 +42,7 @@ const CARD_W = 156;
 // Home screen shown right after login: a welcome banner, a "Brand Unggulan"
 // carousel (up to 10 brands) and an "Alumni Populer" carousel (up to 10 members,
 // already ranked by recognition on the server).
-export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMember, onOpenCommunity, onOpenEvent, onOpenArtikel, onLogout, profile, onNavigate }: Props) {
+export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMember, onOpenCommunity, onOpenEvent, onOpenArtikel, onOpenBroadcast, canBroadcast, onLogout, profile, onNavigate }: Props) {
   const [brands, setBrands] = useState<BrandSummary[]>([]);
   const [alumni, setAlumni] = useState<AlumniSummary[]>([]);
   const [communities, setCommunities] = useState<CommunitySummary[]>([]);
@@ -84,6 +87,17 @@ export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMe
           <Text style={styles.welcomeHi}>Hai {userName || 'Alumni'},</Text>
           <Text style={styles.welcomeMsg}>{welcome}</Text>
         </View>
+
+        {canBroadcast && (
+          <Pressable
+            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            onPress={onOpenBroadcast}
+          >
+            <Ionicons name="megaphone-outline" size={20} color={colors.primary} />
+            <Text style={styles.cardTitle}>Buat Pengumuman</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          </Pressable>
+        )}
 
         {loading ? (
           <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
@@ -174,6 +188,15 @@ const styles = StyleSheet.create({
   },
   welcomeHi: { fontFamily: fonts.heading, fontSize: 20, color: colors.heading },
   welcomeMsg: { fontFamily: fonts.body, fontSize: 14, color: colors.text, marginTop: 4, lineHeight: 20 },
+
+  card: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    marginHorizontal: 12, marginTop: 12, backgroundColor: colors.card,
+    borderRadius: 14, borderWidth: 1, borderColor: colors.border,
+    paddingVertical: 14, paddingHorizontal: 16,
+  },
+  cardPressed: { backgroundColor: colors.bg },
+  cardTitle: { flex: 1, fontFamily: fonts.bodySemi, fontSize: 14, color: colors.heading },
 
   section: { marginTop: 26 },
   sectionBar: {
