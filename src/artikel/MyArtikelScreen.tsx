@@ -8,6 +8,7 @@ import { artikelApi, ArtikelSummary } from './api';
 import ArtikelDetailScreen from './ArtikelDetailScreen';
 import ArtikelFormScreen from './ArtikelFormScreen';
 import ArtikelReviewModal from './ArtikelReviewModal';
+import { useAndroidBack } from '../useAndroidBack';
 
 type Props = { token: string; isIALima: boolean };
 type View3 = 'list' | 'detail' | 'form';
@@ -40,6 +41,14 @@ export default function MyArtikelScreen({ token, isIALima }: Props) {
   }, [token, isIALima]);
 
   useEffect(() => { load(); }, [load]);
+
+  useAndroidBack(() => {
+    if (view !== 'list') {
+      setView('list');
+      return true;
+    }
+    return false;
+  });
 
   const drafts = mine.filter((a) => a.status === 'draft');
   const submitted = mine.filter((a) => a.status !== 'draft');

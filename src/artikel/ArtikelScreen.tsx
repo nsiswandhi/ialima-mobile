@@ -10,6 +10,7 @@ import ArtikelCard from './ArtikelCard';
 import ArtikelCategoryModal from './ArtikelCategoryModal';
 import ArtikelDetailScreen from './ArtikelDetailScreen';
 import ArtikelFormScreen from './ArtikelFormScreen';
+import { useAndroidBack } from '../useAndroidBack';
 
 const VISIBLE_CATEGORY_COUNT = 5;
 
@@ -50,6 +51,18 @@ export default function ArtikelScreen({ token, canCreate, isIALima, initialArtik
   useEffect(() => {
     if (initialArtikelId) { setActiveId(initialArtikelId); setView('detail'); }
   }, [initialArtikelId]);
+
+  useAndroidBack(() => {
+    if (view === 'form') {
+      setView(activeId ? 'detail' : 'list');
+      return true;
+    }
+    if (view === 'detail') {
+      setView('list');
+      return true;
+    }
+    return false;
+  });
 
   if (view === 'detail' && activeId) {
     return (
