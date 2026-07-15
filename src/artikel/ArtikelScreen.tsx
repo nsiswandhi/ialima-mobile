@@ -151,7 +151,7 @@ export default function ArtikelScreen({ token, canCreate, isIALima, initialArtik
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  searchRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 12, gap: 8 },
+  searchRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 46, gap: 8 },
   searchInput: { flex: 1, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 14, paddingVertical: 10, fontFamily: fonts.body, fontSize: 14, color: colors.heading },
   searchBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center' },
   searchBtnText: { color: colors.white, fontFamily: fonts.bodyMedium, fontSize: 13 },
