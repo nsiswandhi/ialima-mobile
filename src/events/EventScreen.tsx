@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import { colors, fonts } from '../theme';
 import { evApi, EventSummary } from './api';
-import EventCard from './EventCard';
+import EventListCard from './EventListCard';
 import EventDetailScreen from './EventDetailScreen';
 import EventFormScreen from './EventFormScreen';
 import NoticeBanner from '../NoticeBanner';
@@ -154,9 +154,7 @@ export default function EventScreen({ token, canCreate, canOrg, canKomunitas, ca
       <FlatList
         data={items}
         keyExtractor={(e) => String(e.id)}
-        numColumns={2}
-        columnWrapperStyle={styles.column}
-        contentContainerStyle={styles.grid}
+        contentContainerStyle={styles.list}
         ListEmptyComponent={
           !loading ? (
             <Text style={styles.empty}>
@@ -165,9 +163,8 @@ export default function EventScreen({ token, canCreate, canOrg, canKomunitas, ca
           ) : null
         }
         renderItem={({ item }) => (
-          <EventCard
+          <EventListCard
             event={item}
-            style={styles.gridItem}
             onPress={() => {
               setSelectedId(item.id);
               setView('detail');
@@ -209,9 +206,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85 },
   empty: { textAlign: 'center', color: colors.muted, marginTop: 40, fontFamily: fonts.body },
   error: { color: colors.danger, textAlign: 'center', marginTop: 14, fontFamily: fonts.bodyMedium },
-  grid: { padding: 12, gap: 12 },
-  column: { gap: 12 },
-  gridItem: { flex: 1, maxWidth: '48%' },
+  list: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 24 },
   fab: {
     position: 'absolute', right: 20, bottom: 20, width: 56, height: 56, borderRadius: 28,
     backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',

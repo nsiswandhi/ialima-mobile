@@ -19,6 +19,8 @@ export type EventSummary = {
   name: string;
   event_category: string;
   logo: Img;
+  introduction: string;
+  nama_lokasi: string;
   organizer: string;        // 'IA Lima' | 'Angkatan' | 'Komunitas'
   organizer_label: string;  // resolved display text ("Angkatan 1996", community title, …)
   event_angkatan: string;
@@ -36,13 +38,11 @@ export type EventSummary = {
 // Full event (GET /event/{id}).
 export type EventDetail = EventSummary & {
   cover: Img;
-  introduction: string;
   tentang_event: Block[];
   online_platform: string;
   meeting_url: string;
   meeting_id: string;
   password: string;
-  nama_lokasi: string;
   alamat: string;
   google_maps_url: string;
   latitude: string;
