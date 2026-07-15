@@ -35,7 +35,6 @@ export default function EventListCard({ event, onPress, style }: Props) {
     : '';
 
   const stripe = STRIPE[event.jenis_event] || colors.secondary;
-  const showLoc = event.jenis_event !== 'Online' && !!event.nama_lokasi;
 
   return (
     <Pressable style={({ pressed }) => [styles.card, style, pressed && styles.pressed]} onPress={onPress}>
@@ -73,18 +72,11 @@ export default function EventListCard({ event, onPress, style }: Props) {
         </View>
 
         <Text style={styles.title} numberOfLines={2}>{event.name}</Text>
-        {!!event.introduction && <Text style={styles.subtitle} numberOfLines={2}>{event.introduction}</Text>}
 
         {!!timeRange && (
           <View style={styles.metaRow}>
             <Ionicons name="time-outline" size={13} color={colors.muted} />
             <Text style={styles.metaText}>{timeRange}</Text>
-          </View>
-        )}
-        {showLoc && (
-          <View style={styles.metaRow}>
-            <Ionicons name="location-outline" size={13} color={colors.muted} />
-            <Text style={styles.metaText} numberOfLines={1}>{event.nama_lokasi}</Text>
           </View>
         )}
         {!!event.organizer_label && (
