@@ -80,7 +80,7 @@ export default function ArtikelScreen({ token, canCreate, isIALima, initialArtik
         token={token}
         articleId={activeId}
         isIALima={isIALima}
-        onDone={() => { setView('detail'); }}
+        onDone={() => { setActiveId(null); setView('list'); load(); }}
         onCancel={() => setView(activeId ? 'detail' : 'list')}
       />
     );
