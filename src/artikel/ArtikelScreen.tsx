@@ -19,7 +19,6 @@ type Props = {
   token: string;
   canCreate: boolean;
   isIALima: boolean;
-  onOpenArtikel?: (id: number) => void;
   initialArtikelId?: number | null;
 };
 
