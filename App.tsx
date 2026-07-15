@@ -29,10 +29,23 @@ import BroadcastComposerScreen from './src/chat/BroadcastComposerScreen';
 import NotificationsScreen from './src/chat/NotificationsScreen';
 import { chatApi, ChatThread } from './src/chat/api';
 import { useAndroidBack } from './src/useAndroidBack';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 
 // Placeholder store IDs — swap in the real ones once the app is published.
 const APPLE_APP_ID = 'REPLACE_WITH_APPLE_APP_ID';
 const ANDROID_PACKAGE = 'REPLACE_WITH_ANDROID_PACKAGE';
+
+// Controls how a push notification is presented while the app is foregrounded.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
 // Brand logo, downloaded from the WordPress site (wp-content/.../logo-apps.png).
 const logo = require('./assets/logo.png');
@@ -218,6 +231,57 @@ function AppInner() {
       alive = false;
       clearInterval(id);
     };
+  }, [token]);
+
+  // Register this device's Expo push token once per login. Requires a
+  // physical device — the Expo Go simulator/emulator cannot receive push.
+  useEffect(() => {
+    if (!token) return;
+    let alive = true;
+    (async () => {
+      try {
+        const { status: existing } = await Notifications.getPermissionsAsync();
+        let status = existing;
+        if (status !== 'granted') {
+          const req = await Notifications.requestPermissionsAsync();
+          status = req.status;
+        }
+        if (status !== 'granted') return;
+
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+        const tokenResponse = await Notifications.getExpoPushTokenAsync(
+          projectId ? { projectId } : undefined,
+        );
+        const deviceId = Constants.sessionId || Constants.deviceName || 'unknown-device';
+        if (alive) {
+          await chatApi.registerPushToken(token!, tokenResponse.data, String(deviceId));
+        }
+      } catch {
+        // Non-fatal — in-app polling still delivers new messages/notifications.
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [token]);
+
+  // Tapping a delivered notification deep-links into Chat or Notifications.
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as { type?: string; thread_id?: number };
+      if (data?.type === 'chat_message' && data.thread_id) {
+        chatApi.threads(token || '').then((res) => {
+          const t = res.data.find((x) => x.id === data.thread_id);
+          if (t) {
+            setOpenChatThread(t);
+            setTab('chat');
+          }
+        }).catch(() => {});
+      } else if (data?.type === 'broadcast') {
+        setTab('notifications');
+      }
+    });
+    return () => sub.remove();
   }, [token]);
 
   // Routes a burger-menu tap to the right tab, or (Review App) straight to
