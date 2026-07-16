@@ -31,6 +31,7 @@ export type EventSummary = {
   view_count: number;
   owner_id: number;
   approval_status: ApprovalStatus;
+  follower_count?: number;
 };
 
 // Full event (GET /event/{id}).

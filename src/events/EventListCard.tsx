@@ -82,6 +82,12 @@ export default function EventListCard({ event, onPress, style }: Props) {
             <Text style={styles.metaText} numberOfLines={1}>{event.organizer_label}</Text>
           </View>
         )}
+        {typeof event.follower_count === 'number' && (
+          <View style={styles.metaRow}>
+            <Ionicons name="person-outline" size={13} color={colors.muted} />
+            <Text style={styles.metaText} numberOfLines={1}>{event.follower_count} Pengikut Event</Text>
+          </View>
+        )}
       </View>
 
       <Ionicons name="chevron-forward" size={18} color={colors.muted} style={styles.chevron} />
