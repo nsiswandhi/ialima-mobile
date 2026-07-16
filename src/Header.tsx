@@ -19,7 +19,7 @@ export type DrawerProfile = {
 export type NavTarget =
   | 'dashboard' | 'profile' | 'my-marketplace' | 'my-komunitas' | 'my-event' | 'my-artikel'
   | 'chat' | 'notifications'
-  | 'about' | 'review' | 'privacy' | 'terms';
+  | 'about' | 'review' | 'privacy' | 'terms' | 'delete-account';
 
 type Props = {
   title: string;
@@ -214,6 +214,13 @@ export default function Header({ title, onBack, onLogout, profile, onNavigate, u
                     <Ionicons name="log-out-outline" size={19} color={colors.accent} />
                     <Text style={styles.logoutText}>Log out</Text>
                   </Pressable>
+                  <Pressable
+                    style={styles.menuRow}
+                    onPress={() => navigate('delete-account')}
+                  >
+                    <Ionicons name="trash-outline" size={19} color={colors.danger} />
+                    <Text style={styles.deleteAccountText}>Delete Account</Text>
+                  </Pressable>
                 </View>
               </View>
             </View>
@@ -284,7 +291,7 @@ const styles = StyleSheet.create({
   profileBadgeText: { fontFamily: fonts.bodyMedium, fontSize: 10, color: colors.white },
   profileCity: { fontFamily: fonts.body, fontSize: 11, color: 'rgba(255,255,255,0.75)' },
   profileRoleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
-  profileRolePill: { backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
+  profileRolePill: { backgroundColor: colors.secondary, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
   profileRolePillText: { fontFamily: fonts.bodyMedium, fontSize: 10, color: colors.white },
 
   sectionLabel: { color: 'rgba(255,255,255,0.5)', fontFamily: fonts.bodySemi, fontSize: 10, letterSpacing: 0.6, marginHorizontal: 10, marginBottom: 6, marginTop: 4 },
@@ -297,4 +304,5 @@ const styles = StyleSheet.create({
 
   logoutRow: { paddingHorizontal: 10, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.15)' },
   logoutText: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.accent, flex: 1 },
+  deleteAccountText: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.danger, flex: 1 },
 });

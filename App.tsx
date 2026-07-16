@@ -10,6 +10,7 @@ import { API_BASE } from './src/config';
 import { colors, fonts } from './src/theme';
 import Header, { DrawerProfile, NavTarget } from './src/Header';
 import FilterPopover from './src/FilterPopover';
+import DeleteAccountScreen from './src/DeleteAccountScreen';
 import ProfileScreen from './src/ProfileScreen';
 import SignUpScreen from './src/SignUpScreen';
 import MemberDetailScreen from './src/MemberDetailScreen';
@@ -119,7 +120,7 @@ function AppInner() {
     | 'dashboard' | 'directory' | 'community' | 'marketplace' | 'profile'
     | 'my-marketplace' | 'my-komunitas' | 'my-event' | 'event' | 'article' | 'my-artikel'
     | 'chat' | 'notifications' | 'broadcast'
-    | 'about' | 'privacy' | 'terms';
+    | 'about' | 'privacy' | 'terms' | 'delete-account';
   const [tab, setTab] = useState<Tab>('dashboard');
   // A brand id to deep-link into on the Marketplace tab (e.g. from the Dashboard).
   const [marketplaceBrandId, setMarketplaceBrandId] = useState<number | null>(null);
@@ -644,6 +645,15 @@ function AppInner() {
           fallbackTitle="Terms and Conditions"
           onBack={() => setTab('dashboard')}
           onLogout={logout}
+          profile={meProfile}
+          onNavigate={handleNavigate}
+        />
+      ) : tab === 'delete-account' ? (
+        <DeleteAccountScreen
+          token={token!}
+          onBack={() => setTab('dashboard')}
+          onLogout={logout}
+          onDeleted={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
         />
