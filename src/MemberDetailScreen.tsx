@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
 import Header, { DrawerProfile, NavTarget } from './Header';
-import ProfileView, { ProfileViewData } from './ProfileView';
+import ProfileView, { CareerSection, ProfileViewData } from './ProfileView';
 import BrandCard from './marketplace/BrandCard';
 import BrandDetailScreen from './BrandDetailScreen';
 import { BrandSummary, mkApi } from './marketplace/api';
@@ -307,7 +307,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
         <Text style={styles.error}>{error}</Text>
       ) : data ? (
         <ScrollView contentContainerStyle={styles.content}>
-          <ProfileView data={data} />
+          <ProfileView data={data} showCareer={false} />
 
           {!isSelf && (
             <View style={styles.knowSection}>
@@ -352,6 +352,8 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
               )}
             </View>
           )}
+
+          <CareerSection data={data} />
 
           {memberBrands.length > 0 && (
             <View style={styles.mpSection}>
@@ -470,7 +472,7 @@ const styles = StyleSheet.create({
   // Kenal/dikenal counts + Saya Kenal Dia/Saling Kenal + Kirim Pesan, shown
   // right after the social links (ProfileView).
   knowSection: { marginTop: 20 },
-  knowStatsRow: { flexDirection: 'row', gap: 20, marginBottom: 4 },
+  knowStatsRow: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 4 },
   knowStat: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   knowStatText: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.muted },
 

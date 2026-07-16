@@ -189,8 +189,12 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
                 </View>
               </View>
             ))}
-            <Pressable style={styles.createBtn} onPress={() => setNav({ kind: 'create' })}>
-              <Text style={styles.createBtnText}>＋ Buat Komunitas Baru</Text>
+            <Pressable
+              style={[styles.createBtn, managed.length >= 1 && styles.createBtnDisabled]}
+              onPress={() => setNav({ kind: 'create' })}
+              disabled={managed.length >= 1}
+            >
+              <Text style={[styles.createBtnText, managed.length >= 1 && styles.createBtnTextDisabled]}>＋ Buat Komunitas Baru</Text>
             </Pressable>
             <View style={styles.limitAlert}>
               <Text style={styles.limitAlertText}>Akun kamu hanya boleh membuat 1 komunitas.</Text>
@@ -465,6 +469,8 @@ const styles = StyleSheet.create({
 
   createBtn: { borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 2, borderWidth: 1.5, borderColor: colors.primary },
   createBtnText: { color: colors.primary, fontFamily: fonts.headingSemi, fontSize: 15 },
+  createBtnDisabled: { borderColor: colors.border, backgroundColor: colors.bgAlt },
+  createBtnTextDisabled: { color: colors.muted },
 
   reviewBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   reviewSheet: { backgroundColor: colors.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%' },

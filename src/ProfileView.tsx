@@ -41,20 +41,39 @@ const filled = (v?: string) => !!(v || '').trim();
 // Some stored values are bare handles rather than full URLs; make them openable.
 const toUrl = (v: string) => (/^https?:\/\//i.test(v.trim()) ? v.trim() : `https://${v.trim()}`);
 
-export default function ProfileView({ data }: { data: ProfileViewData }) {
+const InfoRow = ({ label, value }: { label: string; value?: string }) =>
+  filled(value) ? (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
+  ) : null;
+
+export const hasCareerData = (data: ProfileViewData) =>
+  filled(data.job_title) || filled(data.company) || filled(data.industryLabel);
+
+// Exported so Member Detail can render Career in a different position
+// (right above the Marketplace carousel) instead of inline here.
+export function CareerSection({ data }: { data: ProfileViewData }) {
+  if (!hasCareerData(data)) return null;
+  return (
+    <>
+      <Text style={styles.sectionHead}>KARIR DATA</Text>
+      <View style={styles.cardSection}>
+        <InfoRow label="JOB TITLE" value={data.job_title} />
+        <InfoRow label="COMPANY" value={data.company} />
+        <InfoRow label="INDUSTRY" value={data.industryLabel} />
+      </View>
+    </>
+  );
+}
+
+export default function ProfileView({ data, showCareer = true }: { data: ProfileViewData; showCareer?: boolean }) {
   const avatarUri = data.avatar?.full || data.avatar?.thumbnail || null;
   const initial = (data.name || '?').charAt(0).toUpperCase();
   const socials = SOCIALS.filter((s) => filled(data.social?.[s.key]));
-  const hasCareer = filled(data.job_title) || filled(data.company) || filled(data.industryLabel);
+  const hasCareer = hasCareerData(data);
   const hasContact = filled(data.email) || filled(data.phone);
-
-  const InfoRow = ({ label, value }: { label: string; value?: string }) =>
-    filled(value) ? (
-      <View style={styles.infoRow}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value}</Text>
-      </View>
-    ) : null;
 
   return (
     <View>
@@ -128,16 +147,7 @@ export default function ProfileView({ data }: { data: ProfileViewData }) {
       )}
 
       {/* Career */}
-      {hasCareer && (
-        <>
-          <Text style={styles.sectionHead}>KARIR DATA</Text>
-          <View style={styles.cardSection}>
-            <InfoRow label="JOB TITLE" value={data.job_title} />
-            <InfoRow label="COMPANY" value={data.company} />
-            <InfoRow label="INDUSTRY" value={data.industryLabel} />
-          </View>
-        </>
-      )}
+      {showCareer && <CareerSection data={data} />}
 
       {!hasCareer && socials.length === 0 && !hasContact && (
         <Text style={styles.emptyNote}>No additional details yet.</Text>

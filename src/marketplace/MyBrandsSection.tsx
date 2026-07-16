@@ -97,8 +97,12 @@ export default function MyBrandsSection({ token, viewerId, onCreate, onEdit, onI
             </View>
           ))}
 
-          <Pressable style={styles.createBtn} onPress={onCreate}>
-            <Text style={styles.createBtnText}>＋ Buat Brand Baru</Text>
+          <Pressable
+            style={[styles.createBtn, brands.length >= 1 && styles.createBtnDisabled]}
+            onPress={onCreate}
+            disabled={brands.length >= 1}
+          >
+            <Text style={[styles.createBtnText, brands.length >= 1 && styles.createBtnTextDisabled]}>＋ Buat Brand Baru</Text>
           </Pressable>
           <View style={styles.limitAlert}>
             <Text style={styles.limitAlertText}>Akun kamu hanya boleh membuat 1 brand</Text>
@@ -128,4 +132,6 @@ const styles = StyleSheet.create({
 
   createBtn: { borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 2, borderWidth: 1.5, borderColor: colors.primary },
   createBtnText: { color: colors.primary, fontFamily: fonts.headingSemi, fontSize: 15 },
+  createBtnDisabled: { borderColor: colors.border, backgroundColor: colors.bgAlt },
+  createBtnTextDisabled: { color: colors.muted },
 });
