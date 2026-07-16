@@ -137,6 +137,11 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
               <Text style={styles.name}>{data.name}</Text>
               <View style={styles.metaRow}>
                 {!!data.berdiri_sejak && <Text style={styles.metaLight}>Sejak {data.berdiri_sejak}</Text>}
+                {!!data.community_type && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{data.community_type}</Text>
+                  </View>
+                )}
                 {!!data.status_komunitas && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{data.status_komunitas}</Text>
@@ -153,7 +158,10 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
             </View>
           )}
 
-          <Text style={styles.views}>{data.view_count} kali dilihat</Text>
+          <View style={styles.viewsRow}>
+            <Text style={styles.views}>{data.view_count} kali dilihat</Text>
+            <Text style={styles.views}>{data.member_count} Anggota</Text>
+          </View>
 
           {!!data.introduction && <Text style={styles.desc}>{data.introduction}</Text>}
 
@@ -336,7 +344,8 @@ const styles = StyleSheet.create({
   },
   pendingBannerText: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: '#854F0B', flex: 1 },
 
-  views: { fontFamily: fonts.body, fontSize: 12.5, color: colors.muted, paddingHorizontal: 16, marginTop: 10 },
+  viewsRow: { flexDirection: 'row', gap: 14, paddingHorizontal: 16, marginTop: 10 },
+  views: { fontFamily: fonts.body, fontSize: 12.5, color: colors.muted },
   desc: { fontFamily: fonts.body, fontSize: 14, color: colors.text, lineHeight: 21, paddingHorizontal: 16, marginTop: 8 },
 
   linksRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 16, marginTop: 14, alignItems: 'center' },
