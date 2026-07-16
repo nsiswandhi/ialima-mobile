@@ -34,16 +34,21 @@ export default function CommunityCard({ community, onPress, style }: Props) {
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>{community.name}</Text>
         {!!community.berdiri_sejak && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>Sejak {community.berdiri_sejak}</Text>
-          </View>
+          <Text style={styles.sejakText}>Sejak {community.berdiri_sejak}</Text>
         )}
-        {!!community.status_komunitas && (
-          <View style={styles.statusRow}>
-            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-            <Text style={styles.statusText} numberOfLines={1}>{community.status_komunitas}</Text>
-          </View>
-        )}
+        <View style={styles.metaRow}>
+          {!!community.community_type && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText} numberOfLines={1}>{community.community_type}</Text>
+            </View>
+          )}
+          {!!community.status_komunitas && (
+            <View style={styles.statusRow}>
+              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+              <Text style={styles.statusText} numberOfLines={1}>{community.status_komunitas}</Text>
+            </View>
+          )}
+        </View>
       </View>
     </Pressable>
   );
@@ -61,9 +66,11 @@ const styles = StyleSheet.create({
   letter: { fontFamily: fonts.heading, fontSize: 40, color: colors.white },
   body: { padding: 11 },
   name: { fontFamily: fonts.headingSemi, fontSize: 15, color: colors.heading },
-  badge: { alignSelf: 'flex-start', backgroundColor: colors.bgAlt, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3, marginTop: 6 },
+  sejakText: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 4 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginTop: 6 },
+  badge: { alignSelf: 'flex-start', backgroundColor: colors.bgAlt, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3, flexShrink: 1 },
   badgeText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primary },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
 });
