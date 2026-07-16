@@ -87,6 +87,7 @@ export const artikelApi = {
       status?: 'pending';
       page?: number;
       per_page?: number;
+      author_id?: number;
     } = {},
   ) {
     const q = new URLSearchParams({
@@ -98,6 +99,7 @@ export const artikelApi = {
     if (opts.sort) q.append('sort', opts.sort);
     if (opts.role) q.append('role', opts.role);
     if (opts.status) q.append('status', opts.status);
+    if (opts.author_id) q.append('author_id', String(opts.author_id));
     return fetch(`${API_BASE}/articles?${q.toString()}`, { headers: headers(token) }).then(
       parse<Paged<ArtikelSummary>>,
     );

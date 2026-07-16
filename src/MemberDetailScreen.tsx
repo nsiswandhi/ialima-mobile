@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
 import Header, { DrawerProfile, NavTarget } from './Header';
@@ -9,9 +10,17 @@ import ProfileView, { ProfileViewData } from './ProfileView';
 import BrandCard from './marketplace/BrandCard';
 import BrandDetailScreen from './BrandDetailScreen';
 import { BrandSummary, mkApi } from './marketplace/api';
+import CommunityCard from './community/CommunityCard';
+import CommunityDetailScreen from './community/CommunityDetailScreen';
+import { commApi, CommunitySummary } from './community/api';
+import DashboardArtikelCard from './artikel/DashboardArtikelCard';
+import ArtikelDetailScreen from './artikel/ArtikelDetailScreen';
+import { artikelApi, ArtikelSummary } from './artikel/api';
 import AppointKomunitasSheet from './community/AppointKomunitasSheet';
 import { useAndroidBack } from './useAndroidBack';
 import { chatApi, ChatThread } from './chat/api';
+
+const CARD_W = 156;
 
 const INDUSTRY_GLOSSARY_ID = 1;
 
@@ -46,9 +55,13 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ProfileViewData | null>(null);
 
-  // This member's brands (shown in the MARKETPLACE section) + detail overlay.
+  // This member's brands/communities/articles (carousels) + detail overlays.
   const [memberBrands, setMemberBrands] = useState<BrandSummary[]>([]);
   const [openBrandId, setOpenBrandId] = useState<number | null>(null);
+  const [memberCommunities, setMemberCommunities] = useState<CommunitySummary[]>([]);
+  const [openCommunityId, setOpenCommunityId] = useState<number | null>(null);
+  const [memberArticles, setMemberArticles] = useState<ArtikelSummary[]>([]);
+  const [openArtikelId, setOpenArtikelId] = useState<number | null>(null);
 
   // Promotion state for this target.
   const [isMember, setIsMember] = useState(true); // assume member until told otherwise
@@ -60,7 +73,8 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   // "I know this person" mutual connection state (viewer -> this member).
   const [iKnowThem, setIKnowThem] = useState(false);
   const [theyKnowMe, setTheyKnowMe] = useState(false);
-  const [recognizeCount, setRecognizeCount] = useState(0); // how many people know this member
+  const [recognizeCount, setRecognizeCount] = useState(0); // how many people know this member (dikenal)
+  const [outboundCount, setOutboundCount] = useState(0); // how many people this member knows (kenal)
   const [acting, setActing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [messaging, setMessaging] = useState(false);
@@ -68,6 +82,14 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
   useAndroidBack(() => {
     if (openBrandId != null) {
       setOpenBrandId(null);
+      return true;
+    }
+    if (openCommunityId != null) {
+      setOpenCommunityId(null);
+      return true;
+    }
+    if (openArtikelId != null) {
+      setOpenArtikelId(null);
       return true;
     }
     return false;
@@ -99,6 +121,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
         setIKnowThem(!!m.i_know_them);
         setTheyKnowMe(!!m.they_know_me);
         setRecognizeCount(Number(m.recognize_count) || 0);
+        setOutboundCount(Number(m.recognized_count) || 0);
         setData({
           name: m.name,
           avatar: m.avatar,
@@ -130,12 +153,20 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
     };
   }, [memberId]);
 
-  // Load this member's brands for the MARKETPLACE section.
+  // Load this member's brands/communities/articles for the carousel sections.
   useEffect(() => {
     let alive = true;
     mkApi
       .list(token, { owner: memberId })
       .then((r) => { if (alive) setMemberBrands(r.data); })
+      .catch(() => {});
+    commApi
+      .list(token, { role: 'member', member_id: memberId })
+      .then((r) => { if (alive) setMemberCommunities(r.data); })
+      .catch(() => {});
+    artikelApi
+      .list(token, { author_id: memberId })
+      .then((r) => { if (alive) setMemberArticles(r.data); })
       .catch(() => {});
     return () => {
       alive = false;
@@ -240,6 +271,30 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
     );
   }
 
+  if (openCommunityId != null) {
+    return (
+      <CommunityDetailScreen
+        communityId={openCommunityId}
+        token={token}
+        onBack={() => setOpenCommunityId(null)}
+        onLogout={onLogout}
+        profile={profile}
+        onNavigate={onNavigate}
+      />
+    );
+  }
+
+  if (openArtikelId != null) {
+    return (
+      <ArtikelDetailScreen
+        token={token}
+        articleId={openArtikelId}
+        onBack={() => setOpenArtikelId(null)}
+        onEdit={() => {}}
+      />
+    );
+  }
+
   return (
     <View style={styles.flex}>
       <Header title={data?.name || 'Profile'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
@@ -254,15 +309,87 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
         <ScrollView contentContainerStyle={styles.content}>
           <ProfileView data={data} />
 
+          {!isSelf && (
+            <View style={styles.knowSection}>
+              <View style={styles.knowStatsRow}>
+                <View style={styles.knowStat}>
+                  <Ionicons name="person-outline" size={14} color={colors.muted} />
+                  <Text style={styles.knowStatText}>{outboundCount} kenal</Text>
+                </View>
+                <View style={styles.knowStat}>
+                  <Ionicons name="person-outline" size={14} color={colors.muted} />
+                  <Text style={styles.knowStatText}>{recognizeCount} dikenal</Text>
+                </View>
+              </View>
+
+              <Pressable
+                style={({ pressed }) => [
+                  mutual ? styles.knowMutualBtn : iKnowThem ? styles.knowActiveBtn : styles.secondaryBtn,
+                  pressed && { opacity: 0.85 },
+                ]}
+                onPress={toggleKnow}
+                disabled={acting}
+              >
+                <Text style={mutual ? styles.knowMutualText : styles.secondaryBtnText}>
+                  {acting
+                    ? 'Working…'
+                    : mutual
+                    ? 'Saling Kenal 🤝'
+                    : iKnowThem
+                    ? 'Saya Kenal Dia ✓'
+                    : 'Saya Kenal Dia'}
+                </Text>
+              </Pressable>
+
+              {mutual && (
+                <Pressable
+                  style={({ pressed }) => [styles.primaryBtn, pressed && styles.primaryBtnPressed]}
+                  onPress={startChat}
+                  disabled={messaging}
+                >
+                  <Text style={styles.primaryBtnText}>{messaging ? 'Membuka…' : 'Kirim Pesan'}</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+
           {memberBrands.length > 0 && (
             <View style={styles.mpSection}>
               <View style={styles.mpHeadRow}>
                 <View style={styles.mpBar} />
                 <Text style={styles.mpHead}>MARKETPLACE</Text>
               </View>
-              <View style={styles.grid}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselRow}>
                 {memberBrands.map((b) => (
-                  <BrandCard key={b.id} brand={b} style={styles.gridItem} onPress={() => setOpenBrandId(b.id)} />
+                  <BrandCard key={b.id} brand={b} style={{ width: CARD_W }} onPress={() => setOpenBrandId(b.id)} />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {memberCommunities.length > 0 && (
+            <View style={styles.mpSection}>
+              <View style={styles.mpHeadRow}>
+                <View style={styles.mpBar} />
+                <Text style={styles.mpHead}>KOMUNITAS</Text>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselRow}>
+                {memberCommunities.map((c) => (
+                  <CommunityCard key={c.id} community={c} style={{ width: CARD_W }} onPress={() => setOpenCommunityId(c.id)} />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {memberArticles.length > 0 && (
+            <View style={styles.mpSection}>
+              <View style={styles.mpHeadRow}>
+                <View style={styles.mpBar} />
+                <Text style={styles.mpHead}>ARTIKEL</Text>
+              </View>
+              <View style={styles.artikelList}>
+                {memberArticles.map((a) => (
+                  <DashboardArtikelCard key={a.id} article={a} onPress={() => setOpenArtikelId(a.id)} />
                 ))}
               </View>
             </View>
@@ -302,42 +429,6 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
               <Text style={styles.secondaryBtnText}>Jadikan Pengurus Komunitas</Text>
             </Pressable>
           )}
-
-          {!isSelf && mutual && (
-            <Pressable
-              style={({ pressed }) => [styles.primaryBtn, pressed && styles.primaryBtnPressed]}
-              onPress={startChat}
-              disabled={messaging}
-            >
-              <Text style={styles.primaryBtnText}>{messaging ? 'Membuka…' : 'Kirim Pesan'}</Text>
-            </Pressable>
-          )}
-
-          {!isSelf && (
-            <View>
-              {recognizeCount > 0 && (
-                <Text style={styles.knowCount}>{recognizeCount} mengenal dia.</Text>
-              )}
-              <Pressable
-                style={({ pressed }) => [
-                  mutual ? styles.knowMutualBtn : iKnowThem ? styles.knowActiveBtn : styles.secondaryBtn,
-                  pressed && { opacity: 0.85 },
-                ]}
-                onPress={toggleKnow}
-                disabled={acting}
-              >
-                <Text style={mutual ? styles.knowMutualText : styles.secondaryBtnText}>
-                  {acting
-                    ? 'Working…'
-                    : mutual
-                    ? 'Saling Kenal 🤝'
-                    : iKnowThem
-                    ? 'Saya Kenal Dia ✓'
-                    : 'Saya Kenal Dia'}
-                </Text>
-              </Pressable>
-            </View>
-          )}
         </ScrollView>
       ) : null}
 
@@ -376,11 +467,12 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: { color: colors.primary, fontFamily: fonts.headingSemi, fontSize: 15 },
 
-  // Inbound recognition tally shown above the "Saya Kenal Dia" button.
-  knowCount: {
-    marginTop: 20, marginBottom: 2, textAlign: 'center',
-    color: colors.muted, fontFamily: fonts.bodyMedium, fontSize: 13.5,
-  },
+  // Kenal/dikenal counts + Saya Kenal Dia/Saling Kenal + Kirim Pesan, shown
+  // right after the social links (ProfileView).
+  knowSection: { marginTop: 20 },
+  knowStatsRow: { flexDirection: 'row', gap: 20, marginBottom: 4 },
+  knowStat: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  knowStatText: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.muted },
 
   // "I know this person" — you flagged, not yet mutual (selected, filled tint).
   knowActiveBtn: {
@@ -394,12 +486,12 @@ const styles = StyleSheet.create({
   },
   knowMutualText: { color: colors.white, fontFamily: fonts.headingSemi, fontSize: 15 },
 
-  // MARKETPLACE section (this member's brands), mirroring the KARIR DATA heading.
+  // Carousel sections (Marketplace/Komunitas/Artikel), mirroring the KARIR DATA heading.
   mpSection: { marginTop: 24 },
   mpHeadRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   mpBar: { width: 4, height: 18, borderRadius: 2, backgroundColor: colors.primary },
   mpHead: { fontFamily: fonts.heading, fontSize: 16, color: colors.primary, letterSpacing: 0.5 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  gridItem: { width: '48%' },
+  carouselRow: { gap: 12, paddingBottom: 4 },
+  artikelList: {},
 });
 

@@ -133,6 +133,7 @@ export const commApi = {
     token: string,
     opts: {
       community_type?: string; search?: string; role?: 'manager' | 'member'; status?: 'pending'; page?: number;
+      member_id?: number;
     } = {},
   ) {
     const q = new URLSearchParams({ per_page: '20', page: String(opts.page ?? 1) });
@@ -140,6 +141,7 @@ export const commApi = {
     if (opts.search) q.append('search', opts.search);
     if (opts.role) q.append('role', opts.role);
     if (opts.status) q.append('status', opts.status);
+    if (opts.member_id) q.append('member_id', String(opts.member_id));
     return fetch(`${API_BASE}/communities?${q.toString()}`, { headers: headers(token) }).then(
       parse<Paged<CommunitySummary>>,
     );
