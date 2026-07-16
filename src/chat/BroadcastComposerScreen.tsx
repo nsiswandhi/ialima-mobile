@@ -1,11 +1,14 @@
 // Announcement composer for Pengurus Angkatan / Pengurus Komunitas / Pengurus
 // IA Lima. Scope defaults to the sender's own angkatan; org-wide is only
-// offered when canMessageAll is true.
-import React, { useState } from 'react';
+// offered when canMessageAll is true. Komunitas targets are resolved by
+// fetching the communities the viewer manages (role=manager) — a pengurus
+// appointed to more than one community gets one chip per community.
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import { colors, fonts } from '../theme';
 import { chatApi, BroadcastScope } from './api';
+import { commApi, CommunitySummary } from '../community/api';
 
 type Props = {
   token: string;
@@ -13,25 +16,46 @@ type Props = {
   canMessageAngkatan: boolean;
   canMessageKomunitas: boolean;
   canMessageAll: boolean;
-  komunitasId?: number; // the community this pengurus manages, if canMessageKomunitas
-  komunitasName?: string;
   onBack: () => void;
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
 };
 
+type Option = { key: string; scope: BroadcastScope; komunitasId?: number; label: string };
+
 export default function BroadcastComposerScreen({
-  token, angkatan, canMessageAngkatan, canMessageKomunitas, canMessageAll, komunitasId, komunitasName,
+  token, angkatan, canMessageAngkatan, canMessageKomunitas, canMessageAll,
   onBack, onLogout, profile, onNavigate,
 }: Props) {
-  const options: { scope: BroadcastScope; label: string }[] = [
-    ...(canMessageAngkatan ? [{ scope: 'angkatan' as const, label: `Angkatan ${angkatan}` }] : []),
-    ...(canMessageKomunitas && komunitasId ? [{ scope: 'komunitas' as const, label: komunitasName || 'Komunitas saya' }] : []),
-    ...(canMessageAll ? [{ scope: 'all' as const, label: 'Semua anggota' }] : []),
+  const [komunitasList, setKomunitasList] = useState<CommunitySummary[]>([]);
+  const [loadingKomunitas, setLoadingKomunitas] = useState(canMessageKomunitas);
+
+  useEffect(() => {
+    if (!canMessageKomunitas) return;
+    let alive = true;
+    commApi.list(token, { role: 'manager' })
+      .then((res) => {
+        if (alive) setKomunitasList(res.data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (alive) setLoadingKomunitas(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [token, canMessageKomunitas]);
+
+  const options: Option[] = [
+    ...(canMessageAngkatan ? [{ key: 'angkatan', scope: 'angkatan' as const, label: `Angkatan ${angkatan}` }] : []),
+    ...komunitasList.map((c) => ({ key: `komunitas-${c.id}`, scope: 'komunitas' as const, komunitasId: c.id, label: c.name })),
+    ...(canMessageAll ? [{ key: 'all', scope: 'all' as const, label: 'Semua anggota' }] : []),
   ];
 
-  const [scope, setScope] = useState<BroadcastScope | null>(options[0]?.scope ?? null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const selected = options.find((o) => o.key === selectedKey) ?? options[0] ?? null;
+
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
@@ -39,14 +63,14 @@ export default function BroadcastComposerScreen({
   const [notice, setNotice] = useState<string | null>(null);
 
   async function send() {
-    if (!scope || !title.trim() || !body.trim()) return;
+    if (!selected || !title.trim() || !body.trim()) return;
     setSending(true);
     setError(null);
     setNotice(null);
     try {
       await chatApi.sendBroadcast(token, {
-        scope,
-        scope_ref: scope === 'komunitas' ? komunitasId : undefined,
+        scope: selected.scope,
+        scope_ref: selected.scope === 'komunitas' ? selected.komunitasId : undefined,
         title: title.trim(),
         body: body.trim(),
       });
@@ -64,19 +88,21 @@ export default function BroadcastComposerScreen({
     <View style={styles.flex}>
       <Header title="Buat Pengumuman" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       <View style={styles.content}>
-        {options.length === 0 ? (
-          <Text style={styles.empty}>Fitur pengumuman komunitas akan segera hadir.</Text>
+        {loadingKomunitas && options.length === 0 ? (
+          <ActivityIndicator color={colors.primary} style={styles.loadingSpinner} />
+        ) : options.length === 0 ? (
+          <Text style={styles.empty}>Anda belum memiliki target pengumuman yang tersedia.</Text>
         ) : (
           <>
             <Text style={styles.label}>Target</Text>
             <View style={styles.scopeRow}>
               {options.map((o) => (
                 <Pressable
-                  key={o.scope}
-                  style={[styles.scopeChip, scope === o.scope && styles.scopeChipActive]}
-                  onPress={() => setScope(o.scope)}
+                  key={o.key}
+                  style={[styles.scopeChip, selected?.key === o.key && styles.scopeChipActive]}
+                  onPress={() => setSelectedKey(o.key)}
                 >
-                  <Text style={[styles.scopeChipText, scope === o.scope && styles.scopeChipTextActive]}>{o.label}</Text>
+                  <Text style={[styles.scopeChipText, selected?.key === o.key && styles.scopeChipTextActive]}>{o.label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -99,7 +125,7 @@ export default function BroadcastComposerScreen({
             <Pressable
               style={({ pressed }) => [styles.sendBtn, pressed && styles.sendBtnPressed]}
               onPress={send}
-              disabled={sending || !scope || !title.trim() || !body.trim()}
+              disabled={sending || !selected || !title.trim() || !body.trim()}
             >
               {sending ? <ActivityIndicator color={colors.white} /> : <Text style={styles.sendBtnText}>Kirim</Text>}
             </Pressable>
@@ -114,6 +140,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16 },
   empty: { fontFamily: fonts.body, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40 },
+  loadingSpinner: { marginTop: 40 },
   label: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.muted, marginTop: 16, marginBottom: 8 },
   scopeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   scopeChip: { borderWidth: 1, borderColor: colors.border, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
