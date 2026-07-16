@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   preview: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 2 },
   badge: { minWidth: 22, height: 22, borderRadius: 11, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   badgeText: { fontFamily: fonts.bodySemi, fontSize: 11, color: colors.white },
-  broadcastCard: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 46, padding: 14, backgroundColor: colors.accent, borderRadius: 12 },
-  broadcastCardPressed: { backgroundColor: colors.accentDark },
+  broadcastCard: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 64, padding: 14, backgroundColor: colors.primary, borderRadius: 12 },
+  broadcastCardPressed: { backgroundColor: colors.primaryDark },
   broadcastCardTitle: { flex: 1, fontFamily: fonts.bodySemi, fontSize: 14, color: colors.white },
 });
