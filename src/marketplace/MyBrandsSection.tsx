@@ -100,6 +100,9 @@ export default function MyBrandsSection({ token, viewerId, onCreate, onEdit, onI
           <Pressable style={styles.createBtn} onPress={onCreate}>
             <Text style={styles.createBtnText}>＋ Buat Brand Baru</Text>
           </Pressable>
+          <View style={styles.limitAlert}>
+            <Text style={styles.limitAlertText}>Akun kamu hanya boleh membuat 1 brand</Text>
+          </View>
         </>
       )}
     </View>
@@ -109,6 +112,8 @@ export default function MyBrandsSection({ token, viewerId, onCreate, onEdit, onI
 const styles = StyleSheet.create({
   error: { color: colors.danger, fontFamily: fonts.bodyMedium, marginVertical: 12 },
   empty: { fontFamily: fonts.body, fontSize: 13.5, color: colors.muted, lineHeight: 20, marginBottom: 12 },
+  limitAlert: { backgroundColor: '#FAEEDA', borderRadius: 10, padding: 10, marginTop: 8 },
+  limitAlertText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: '#854F0B', textAlign: 'center' },
 
   card: { backgroundColor: colors.card, borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   cardMain: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14 },

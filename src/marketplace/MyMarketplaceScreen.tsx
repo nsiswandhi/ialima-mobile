@@ -93,6 +93,6 @@ export default function MyMarketplaceScreen({ token, viewerId, canManage, onBack
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
-  content: { flex: 1, padding: 16 },
+  content: { flex: 1, paddingHorizontal: 16, paddingBottom: 16, paddingTop: 64 },
   emptyText: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, textAlign: 'center', marginTop: 40 },
 });

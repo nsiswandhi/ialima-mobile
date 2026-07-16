@@ -164,6 +164,12 @@ export default function MyEventScreen({
               </View>
             )}
           </View>
+          {typeof item.follower_count === 'number' && (
+            <View style={styles.metaRow}>
+              <Ionicons name="person-outline" size={13} color={colors.muted} />
+              <Text style={styles.metaLight}>{item.follower_count} Pengikut Event</Text>
+            </View>
+          )}
         </View>
         {onPress && <Ionicons name="chevron-forward" size={18} color={colors.muted} />}
       </Pressable>
@@ -383,7 +389,7 @@ function ReviewField({ label, value }: { label: string; value?: string }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 16 },
+  content: { paddingHorizontal: 16, paddingBottom: 16, paddingTop: 64 },
   error: { color: colors.danger, fontFamily: fonts.bodyMedium, marginVertical: 12 },
   empty: { fontFamily: fonts.body, fontSize: 13.5, color: colors.muted, lineHeight: 20, marginBottom: 12 },
   noticeBanner: { backgroundColor: '#EAF3DE', borderRadius: 12, padding: 14, marginBottom: 14 },

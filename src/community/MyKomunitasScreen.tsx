@@ -192,6 +192,9 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
             <Pressable style={styles.createBtn} onPress={() => setNav({ kind: 'create' })}>
               <Text style={styles.createBtnText}>＋ Buat Komunitas Baru</Text>
             </Pressable>
+            <View style={styles.limitAlert}>
+              <Text style={styles.limitAlertText}>Akun kamu hanya boleh membuat 1 komunitas.</Text>
+            </View>
 
             <Text style={[styles.sectionHead, { marginTop: 24 }]}>MY KOMUNITAS</Text>
             {joined.length === 0 ? (
@@ -437,11 +440,13 @@ function ReviewField({ label, value }: { label: string; value?: string }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
-  content: { flex: 1, padding: 16 },
+  content: { flex: 1, paddingHorizontal: 16, paddingBottom: 16, paddingTop: 64 },
   error: { color: colors.danger, fontFamily: fonts.bodyMedium, marginVertical: 12 },
   empty: { fontFamily: fonts.body, fontSize: 13.5, color: colors.muted, lineHeight: 20, marginBottom: 12 },
   noticeBanner: { backgroundColor: '#EAF3DE', borderRadius: 12, padding: 14, marginBottom: 14 },
   noticeText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: '#3B6D11', lineHeight: 19 },
+  limitAlert: { backgroundColor: '#FAEEDA', borderRadius: 10, padding: 10, marginTop: 8 },
+  limitAlertText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: '#854F0B', textAlign: 'center' },
   sectionHead: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.muted, letterSpacing: 0.5, marginBottom: 10 },
 
   card: { backgroundColor: colors.card, borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
