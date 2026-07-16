@@ -433,8 +433,6 @@ function AppInner() {
           onOpenCommunity={(id) => { setCommunityDeepLinkId(id); setTab('community'); }}
           onOpenEvent={(id) => { setEventDeepLinkId(id); setTab('event'); }}
           onOpenArtikel={(id) => { setArtikelDeepLinkId(id); setTab('article'); }}
-          onOpenBroadcast={() => setTab('broadcast')}
-          canBroadcast={!!(user?.caps?.message_angkatan || user?.caps?.message_komunitas || user?.caps?.message_all)}
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
@@ -540,6 +538,8 @@ function AppInner() {
           <ChatInboxScreen
             token={token}
             onOpenThread={setOpenChatThread}
+            onOpenBroadcast={() => setTab('broadcast')}
+            canBroadcast={!!(user?.caps?.message_angkatan || user?.caps?.message_komunitas || user?.caps?.message_all)}
             onLogout={logout}
             profile={meProfile}
             onNavigate={handleNavigate}
@@ -552,7 +552,7 @@ function AppInner() {
           canMessageAngkatan={!!user?.caps?.message_angkatan}
           canMessageKomunitas={!!user?.caps?.message_komunitas}
           canMessageAll={!!user?.caps?.message_all}
-          onBack={() => setTab('dashboard')}
+          onBack={() => setTab('chat')}
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}

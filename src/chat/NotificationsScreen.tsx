@@ -54,9 +54,11 @@ export default function NotificationsScreen({ token, onOpenThread, onRead, onLog
     <View style={styles.flex}>
       <Header title="Notifikasi" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       {items.length > 0 && (
-        <Pressable onPress={markAll} style={styles.markAllRow}>
-          <Text style={styles.markAllText}>Tandai semua dibaca</Text>
-        </Pressable>
+        <View style={styles.markAllRow}>
+          <Pressable onPress={markAll} style={styles.markAllBtn} accessibilityLabel="Tandai semua dibaca">
+            <Ionicons name="checkmark-done-outline" size={18} color={colors.accent} />
+          </Pressable>
+        </View>
       )}
       {loading ? (
         <View style={styles.center}>
@@ -99,7 +101,7 @@ const styles = StyleSheet.create({
   error: { color: colors.danger, textAlign: 'center', marginTop: 16, fontFamily: fonts.bodyMedium },
   empty: { color: colors.muted, textAlign: 'center', fontFamily: fonts.body, fontSize: 14 },
   markAllRow: { alignItems: 'flex-end', paddingHorizontal: 16, paddingVertical: 8 },
-  markAllText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.accent },
+  markAllBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
   rowBody: { flex: 1 },
   rowTitle: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.text },

@@ -2,7 +2,7 @@
 // websocket infra — see the design spec's "Delivery = polling" decision),
 // stops polling on unmount.
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import { colors, fonts } from '../theme';
@@ -27,6 +27,7 @@ export default function ChatThreadScreen({ token, thread, onBack, onLogout, prof
   const [error, setError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(thread.is_blocked);
   const lastIdRef = useRef(0);
+  const listRef = useRef<FlatList<ChatMessage>>(null);
 
   async function loadInitial() {
     setLoading(true);
@@ -113,47 +114,64 @@ export default function ChatThreadScreen({ token, thread, onBack, onLogout, prof
         onNavigate={onNavigate}
       />
       <View style={styles.blockRow}>
-        <Pressable onPress={blocked ? undefined : confirmBlock} disabled={blocked}>
-          <Text style={styles.blockLink}>{blocked ? 'Anggota ini telah diblokir' : 'Blokir anggota ini'}</Text>
+        <Pressable
+          onPress={blocked ? undefined : confirmBlock}
+          disabled={blocked}
+          style={[styles.blockBtn, blocked && styles.blockBtnDisabled]}
+          accessibilityLabel={blocked ? 'Anggota ini telah diblokir' : 'Blokir anggota ini'}
+        >
+          <Ionicons
+            name={blocked ? 'checkmark-circle-outline' : 'ban-outline'}
+            size={16}
+            color={blocked ? colors.muted : colors.danger}
+          />
         </Pressable>
       </View>
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={messages}
-          keyExtractor={(m) => String(m.id)}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => {
-            const mine = item.sender_id !== thread.other.id;
-            return (
-              <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
-                <Text style={mine ? styles.bubbleTextMine : styles.bubbleTextTheirs}>{item.body}</Text>
-              </View>
-            );
-          }}
-        />
-      )}
-
-      {!!error && <Text style={styles.error}>{error}</Text>}
-
-      {!blocked && (
-        <View style={styles.composer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Tulis pesan"
-            value={draft}
-            onChangeText={setDraft}
-            multiline
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : (
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(m) => String(m.id)}
+            contentContainerStyle={styles.list}
+            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+            renderItem={({ item }) => {
+              const mine = item.sender_id !== thread.other.id;
+              return (
+                <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
+                  <Text style={mine ? styles.bubbleTextMine : styles.bubbleTextTheirs}>{item.body}</Text>
+                </View>
+              );
+            }}
           />
-          <Pressable onPress={send} disabled={sending || !draft.trim()} style={styles.sendBtn}>
-            <Ionicons name="send" size={20} color={draft.trim() ? colors.primary : colors.muted} />
-          </Pressable>
-        </View>
-      )}
+        )}
+
+        {!!error && <Text style={styles.error}>{error}</Text>}
+
+        {!blocked && (
+          <View style={styles.composer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Tulis pesan"
+              value={draft}
+              onChangeText={setDraft}
+              multiline
+            />
+            <Pressable onPress={send} disabled={sending || !draft.trim()} style={styles.sendBtn}>
+              <Ionicons name="send" size={20} color={draft.trim() ? colors.primary : colors.muted} />
+            </Pressable>
+          </View>
+        )}
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -162,7 +180,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   blockRow: { paddingHorizontal: 16, paddingVertical: 6, alignItems: 'flex-end' },
-  blockLink: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.danger },
+  blockBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: colors.danger, alignItems: 'center', justifyContent: 'center' },
+  blockBtnDisabled: { borderColor: colors.border },
   list: { padding: 16, gap: 8 },
   bubble: { maxWidth: '78%', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12 },
   bubbleMine: { alignSelf: 'flex-end', backgroundColor: colors.primary },

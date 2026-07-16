@@ -40,7 +40,6 @@ const PROFILE_ROWS: MenuRow[] = [
   { icon: 'calendar-outline', label: 'My Event', target: 'my-event' },
   { icon: 'newspaper-outline', label: 'My Artikel', target: 'my-artikel' },
   { icon: 'chatbubbles-outline', label: 'Pesan', target: 'chat' },
-  { icon: 'notifications-outline', label: 'Notifikasi', target: 'notifications' },
 ];
 
 const APP_ROWS: MenuRow[] = [
@@ -94,16 +93,26 @@ export default function Header({ title, onBack, onLogout, profile, onNavigate, u
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
+        {!!onNavigate && (
+          <Pressable
+            onPress={() => onNavigate('notifications')}
+            hitSlop={10}
+            style={styles.bellBtn}
+            accessibilityLabel="Notifikasi"
+          >
+            <Ionicons name="notifications-outline" size={22} color={colors.white} />
+            {!!unreadCount && unreadCount > 0 && (
+              <View style={styles.bellBadge}>
+                <Text style={styles.bellBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            )}
+          </Pressable>
+        )}
         {!!onLogout && (
           <Pressable onPress={() => setMenuOpen(true)} hitSlop={10} style={styles.burger}>
             <View style={styles.burgerLine} />
             <View style={styles.burgerLine} />
             <View style={styles.burgerLine} />
-            {!!unreadCount && unreadCount > 0 && (
-              <View style={styles.burgerBadge}>
-                <Text style={styles.burgerBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-              </View>
-            )}
           </Pressable>
         )}
       </View>
@@ -246,8 +255,9 @@ const styles = StyleSheet.create({
 
   burger: { width: 26, height: 20, justifyContent: 'space-between', paddingVertical: 2 },
   burgerLine: { height: 2.5, borderRadius: 2, backgroundColor: colors.white },
-  burgerBadge: { position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
-  burgerBadgeText: { fontFamily: fonts.bodySemi, fontSize: 9, color: colors.white },
+  bellBtn: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
+  bellBadge: { position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  bellBadgeText: { fontFamily: fonts.bodySemi, fontSize: 9, color: colors.white },
 
   // ---- Simple fallback drawer (detail/form screens — unchanged from before) ----
   menuBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', flexDirection: 'row', justifyContent: 'flex-end' },
