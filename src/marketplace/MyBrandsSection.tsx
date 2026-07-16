@@ -37,7 +37,7 @@ export default function MyBrandsSection({ token, viewerId, onCreate, onEdit, onI
   }, [load]);
 
   const confirmDelete = (b: BrandSummary) => {
-    Alert.alert('Hapus brand?', `"${b.name}" akan dihapus permanen.`, [
+    Alert.alert('Kamu yakin menghapus ini?', `"${b.name}" akan dihapus permanen.`, [
       { text: 'Batal', style: 'cancel' },
       {
         text: 'Hapus',

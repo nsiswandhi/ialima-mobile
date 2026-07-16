@@ -77,7 +77,7 @@ export default function MyEventScreen({
   }, [load, refresh]);
 
   const confirmDelete = (e: { id: number; name: string }) => {
-    Alert.alert('Hapus event?', `"${e.name}" akan dihapus permanen.`, [
+    Alert.alert('Kamu yakin menghapus ini?', `"${e.name}" akan dihapus permanen.`, [
       { text: 'Batal', style: 'cancel' },
       {
         text: 'Hapus',

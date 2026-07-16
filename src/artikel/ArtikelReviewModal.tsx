@@ -1,7 +1,7 @@
 // Review modal shown to Pengurus IA Lima for a single pending article —
 // Approve / Reject-with-reason / Delete. Mirrors event review modal patterns.
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors, fonts } from '../theme';
 import { ArtikelSummary } from './api';
 
@@ -50,7 +50,15 @@ export default function ArtikelReviewModal({ article, onClose, onApprove, onReje
               <Pressable style={[styles.btn, styles.rejectBtn]} onPress={() => setShowReject(true)}>
                 <Text style={styles.rejectBtnText}>Tolak</Text>
               </Pressable>
-              <Pressable style={[styles.btn, styles.deleteBtn]} onPress={() => onDelete(article.id)}>
+              <Pressable
+                style={[styles.btn, styles.deleteBtn]}
+                onPress={() => {
+                  Alert.alert('Kamu yakin menghapus ini?', undefined, [
+                    { text: 'Batal', style: 'cancel' },
+                    { text: 'Hapus', style: 'destructive', onPress: () => onDelete(article.id) },
+                  ]);
+                }}
+              >
                 <Text style={styles.deleteBtnText}>Hapus</Text>
               </Pressable>
             </>

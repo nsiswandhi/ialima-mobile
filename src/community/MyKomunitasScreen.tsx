@@ -71,7 +71,7 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
   }, [load, refresh]);
 
   const confirmDelete = (c: { id: number; name: string }) => {
-    Alert.alert('Hapus komunitas?', `"${c.name}" akan dihapus permanen.`, [
+    Alert.alert('Kamu yakin menghapus ini?', `"${c.name}" akan dihapus permanen.`, [
       { text: 'Batal', style: 'cancel' },
       {
         text: 'Hapus',

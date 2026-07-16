@@ -138,7 +138,7 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout, pr
   };
 
   const confirmDelete = (it: Item) => {
-    Alert.alert('Hapus item?', `"${it.name}" akan dihapus.`, [
+    Alert.alert('Kamu yakin menghapus ini?', `"${it.name}" akan dihapus.`, [
       { text: 'Batal', style: 'cancel' },
       {
         text: 'Hapus',
