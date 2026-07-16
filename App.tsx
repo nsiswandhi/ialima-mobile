@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, Image, Linking, Platform, Pressable,
+  ActivityIndicator, FlatList, Image, Linking, Modal, Platform, Pressable,
   ScrollView, StatusBar, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './src/config';
 import { colors, fonts } from './src/theme';
 import Header, { DrawerProfile, NavTarget } from './src/Header';
-import FilterPopover from './src/FilterPopover';
+import RightDrawer from './src/RightDrawer';
 import DeleteAccountScreen from './src/DeleteAccountScreen';
 import ProfileScreen from './src/ProfileScreen';
 import SignUpScreen from './src/SignUpScreen';
@@ -144,12 +144,18 @@ function AppInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Alumni directory filter: angkatan + Anggota Komunitas.
+  // Alumni directory filter: angkatan + Anggota Komunitas, in a right-side
+  // drawer with select-style fields (pending selections apply on "Terapkan").
   const [filterOpen, setFilterOpen] = useState(false);
   const [angkatanList, setAngkatanList] = useState<string[]>([]);
   const [komunitasList, setKomunitasList] = useState<{ id: number; name: string }[]>([]);
   const [filterAngkatan, setFilterAngkatan] = useState<string | null>(null);
   const [filterKomunitasId, setFilterKomunitasId] = useState<number | null>(null);
+  const [pendingAngkatan, setPendingAngkatan] = useState<string | null>(null);
+  const [pendingKomunitasId, setPendingKomunitasId] = useState<number | null>(null);
+  const [angkatanPickerOpen, setAngkatanPickerOpen] = useState(false);
+  const [komunitasPickerOpen, setKomunitasPickerOpen] = useState(false);
+  const pendingKomunitasName = komunitasList.find((c) => c.id === pendingKomunitasId)?.name;
 
   // When a directory card is tapped, show that member's detail screen.
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
@@ -204,6 +210,8 @@ function AppInner() {
 
   // Lazily loads the filter popover's option lists the first time it opens.
   async function openMemberFilter() {
+    setPendingAngkatan(filterAngkatan);
+    setPendingKomunitasId(filterKomunitasId);
     setFilterOpen(true);
     if (!token) return;
     if (angkatanList.length === 0) {
@@ -220,9 +228,17 @@ function AppInner() {
     }
   }
 
-  function applyMemberFilter(angkatan: string | null, komunitasId: number | null) {
-    setFilterAngkatan(angkatan);
-    setFilterKomunitasId(komunitasId);
+  function applyMemberFilter() {
+    setFilterAngkatan(pendingAngkatan);
+    setFilterKomunitasId(pendingKomunitasId);
+    setFilterOpen(false);
+  }
+
+  function resetMemberFilter() {
+    setPendingAngkatan(null);
+    setPendingKomunitasId(null);
+    setFilterAngkatan(null);
+    setFilterKomunitasId(null);
     setFilterOpen(false);
   }
 
@@ -699,29 +715,72 @@ function AppInner() {
         </Pressable>
       </View>
 
-      <FilterPopover visible={filterOpen} onClose={() => setFilterOpen(false)} topOffset={110}>
-        <ScrollView>
+      <RightDrawer visible={filterOpen} onClose={() => setFilterOpen(false)} widthPercent={70}>
+        <View style={styles.drawerContent}>
+          <Text style={styles.drawerTitle}>Filter Alumni</Text>
+
           <Text style={styles.filterLabel}>Angkatan</Text>
-          <Pressable style={styles.filterOption} onPress={() => applyMemberFilter(null, filterKomunitasId)}>
-            <Text style={[styles.filterOptionText, !filterAngkatan && styles.filterOptionActive]}>Semua Angkatan</Text>
+          <Pressable style={styles.pickerBtn} onPress={() => setAngkatanPickerOpen(true)}>
+            <Text style={pendingAngkatan ? styles.pickerBtnText : styles.pickerBtnPlaceholder}>
+              {pendingAngkatan || 'Semua Angkatan'}
+            </Text>
+            <Ionicons name="chevron-down" size={16} color={colors.muted} />
           </Pressable>
-          {angkatanList.map((a) => (
-            <Pressable key={a} style={styles.filterOption} onPress={() => applyMemberFilter(a, filterKomunitasId)}>
-              <Text style={[styles.filterOptionText, filterAngkatan === a && styles.filterOptionActive]}>{a}</Text>
-            </Pressable>
-          ))}
 
           <Text style={styles.filterLabel}>Anggota Komunitas</Text>
-          <Pressable style={styles.filterOption} onPress={() => applyMemberFilter(filterAngkatan, null)}>
-            <Text style={[styles.filterOptionText, !filterKomunitasId && styles.filterOptionActive]}>Semua Komunitas</Text>
+          <Pressable style={styles.pickerBtn} onPress={() => setKomunitasPickerOpen(true)}>
+            <Text style={pendingKomunitasName ? styles.pickerBtnText : styles.pickerBtnPlaceholder} numberOfLines={1}>
+              {pendingKomunitasName || 'Semua Komunitas'}
+            </Text>
+            <Ionicons name="chevron-down" size={16} color={colors.muted} />
           </Pressable>
-          {komunitasList.map((c) => (
-            <Pressable key={c.id} style={styles.filterOption} onPress={() => applyMemberFilter(filterAngkatan, c.id)}>
-              <Text style={[styles.filterOptionText, filterKomunitasId === c.id && styles.filterOptionActive]} numberOfLines={1}>{c.name}</Text>
+
+          <View style={styles.drawerActions}>
+            <Pressable style={styles.drawerResetBtn} onPress={resetMemberFilter}>
+              <Text style={styles.drawerResetText}>Reset</Text>
             </Pressable>
-          ))}
-        </ScrollView>
-      </FilterPopover>
+            <Pressable style={styles.drawerApplyBtn} onPress={applyMemberFilter}>
+              <Text style={styles.drawerApplyText}>Terapkan Filter</Text>
+            </Pressable>
+          </View>
+        </View>
+      </RightDrawer>
+
+      <Modal visible={angkatanPickerOpen} transparent animationType="fade" onRequestClose={() => setAngkatanPickerOpen(false)}>
+        <Pressable style={styles.pickerBackdrop} onPress={() => setAngkatanPickerOpen(false)}>
+          <Pressable style={styles.typeSheet} onPress={() => {}}>
+            <Text style={styles.linkPickerTitle}>Pilih Angkatan</Text>
+            <ScrollView style={{ maxHeight: 320 }}>
+              <Pressable style={styles.typeOpt} onPress={() => { setPendingAngkatan(null); setAngkatanPickerOpen(false); }}>
+                <Text style={styles.typeOptText}>Semua Angkatan</Text>
+              </Pressable>
+              {angkatanList.map((a) => (
+                <Pressable key={a} style={styles.typeOpt} onPress={() => { setPendingAngkatan(a); setAngkatanPickerOpen(false); }}>
+                  <Text style={styles.typeOptText}>{a}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={komunitasPickerOpen} transparent animationType="fade" onRequestClose={() => setKomunitasPickerOpen(false)}>
+        <Pressable style={styles.pickerBackdrop} onPress={() => setKomunitasPickerOpen(false)}>
+          <Pressable style={styles.typeSheet} onPress={() => {}}>
+            <Text style={styles.linkPickerTitle}>Pilih Komunitas</Text>
+            <ScrollView style={{ maxHeight: 320 }}>
+              <Pressable style={styles.typeOpt} onPress={() => { setPendingKomunitasId(null); setKomunitasPickerOpen(false); }}>
+                <Text style={styles.typeOptText}>Semua Komunitas</Text>
+              </Pressable>
+              {komunitasList.map((c) => (
+                <Pressable key={c.id} style={styles.typeOpt} onPress={() => { setPendingKomunitasId(c.id); setKomunitasPickerOpen(false); }}>
+                  <Text style={styles.typeOptText}>{c.name}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {loading && <ActivityIndicator style={{ marginTop: 20 }} color={colors.primary} />}
       {error && <Text style={styles.error}>{error}</Text>}
@@ -903,12 +962,32 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     fontFamily: fonts.bodySemi, fontSize: 11, color: colors.muted, letterSpacing: 0.5,
-    textTransform: 'uppercase', paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6,
+    textTransform: 'uppercase', marginTop: 18, marginBottom: 8,
   },
-  filterOption: { paddingHorizontal: 16, paddingVertical: 10 },
-  filterOptionText: { fontFamily: fonts.body, fontSize: 14, color: colors.text },
-  filterOptionActive: { fontFamily: fonts.bodySemi, color: colors.primary },
   empty: { textAlign: 'center', color: colors.muted, marginTop: 40, fontFamily: fonts.body },
+
+  // ---- Alumni filter drawer ----
+  drawerContent: { flex: 1, padding: 20, paddingTop: 50 },
+  drawerTitle: { fontFamily: fonts.heading, fontSize: 20, color: colors.heading, marginBottom: 8 },
+  pickerBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 13,
+  },
+  pickerBtnText: { fontFamily: fonts.body, fontSize: 15, color: colors.heading },
+  pickerBtnPlaceholder: { fontFamily: fonts.body, fontSize: 15, color: colors.muted },
+  drawerActions: { marginTop: 28, gap: 10 },
+  drawerApplyBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  drawerApplyText: { color: colors.white, fontFamily: fonts.headingSemi, fontSize: 15 },
+  drawerResetBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 1.5, borderColor: colors.border },
+  drawerResetText: { color: colors.muted, fontFamily: fonts.bodySemi, fontSize: 14 },
+
+  // ---- Angkatan/Komunitas picker sheets (mirrors CommunityFormScreen's type picker) ----
+  pickerBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  typeSheet: { backgroundColor: colors.card, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, paddingBottom: 28 },
+  linkPickerTitle: { fontFamily: fonts.heading, fontSize: 18, color: colors.heading, marginBottom: 14 },
+  typeOpt: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+  typeOptText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.heading },
 
   // ---- Member card ----
   card: {
