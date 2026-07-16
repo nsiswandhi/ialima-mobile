@@ -32,6 +32,12 @@
         }
       ],
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3a708e38-0b38-45c0-96f9-e2e04fa32cc9"
+      }
+    },
+    "owner": "malayeka-digital-solution"
   }
 }
