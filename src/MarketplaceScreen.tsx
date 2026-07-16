@@ -162,13 +162,13 @@ const styles = StyleSheet.create({
   filterLabel: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.muted },
   filterLabelActive: { color: colors.white },
 
-  searchRow: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 10, paddingBottom: 4, gap: 8, alignItems: 'center' },
+  searchRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4, gap: 8 },
   searchInput: {
     flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12,
-    paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, fontFamily: fonts.body, color: colors.heading,
+    paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, fontFamily: fonts.body, color: colors.heading,
   },
-  searchBtn: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 18 },
-  searchBtnText: { color: colors.white, fontFamily: fonts.headingSemi, fontSize: 15 },
+  searchBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center' },
+  searchBtnText: { color: colors.white, fontFamily: fonts.bodyMedium, fontSize: 13 },
 
   grid: { padding: 12, gap: 12 },
   column: { gap: 12 },

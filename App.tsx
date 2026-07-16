@@ -689,7 +689,7 @@ function AppInner() {
           style={({ pressed }) => [styles.searchBtn, pressed && styles.buttonPressed]}
           onPress={() => loadMembers(search)}
         >
-          <Text style={styles.buttonText}>Go</Text>
+          <Text style={styles.searchBtnText}>Go</Text>
         </Pressable>
         <Pressable
           style={({ pressed }) => [styles.filterBtn, pressed && styles.buttonPressed]}
@@ -888,14 +888,17 @@ const styles = StyleSheet.create({
   welcomeMsg: { fontFamily: fonts.body, fontSize: 14, color: colors.text, marginTop: 4, lineHeight: 20 },
 
   // ---- Search ----
-  searchRow: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 46, paddingBottom: 12, gap: 8, alignItems: 'center' },
+  searchRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 46, gap: 8 },
   searchRowTight: { paddingTop: 14 },
-  searchInput: { flex: 1, marginBottom: 0 },
-  searchBtn: {
-    backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 20,
+  searchInput: {
+    flex: 1, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border,
+    paddingHorizontal: 14, paddingVertical: 10, fontFamily: fonts.body, fontSize: 14, color: colors.heading,
+    marginBottom: 0,
   },
+  searchBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center' },
+  searchBtnText: { color: colors.white, fontFamily: fonts.bodyMedium, fontSize: 13 },
   filterBtn: {
-    backgroundColor: colors.primary, borderRadius: 12, width: 44, height: 44,
+    backgroundColor: colors.primary, borderRadius: 12, width: 44,
     alignItems: 'center', justifyContent: 'center',
   },
   filterLabel: {

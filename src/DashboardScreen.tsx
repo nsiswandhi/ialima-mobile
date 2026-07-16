@@ -101,16 +101,17 @@ export default function DashboardScreen({ token, onOpenBrand, onOpenMember, onOp
     <View style={styles.flex}>
       <Header title="Dashboard" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.statGrid}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statGrid}>
           {STAT_TILES.map((t) => (
-            <View key={t.key} style={[styles.statTile, { backgroundColor: t.color }]}>
+            <View key={t.key} style={[styles.statTile, { borderTopColor: t.color }]}>
+              <Text style={styles.statTotal}>TOTAL</Text>
               <Text style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit>
                 {stats ? formatCompactNumber(stats[t.key]) : '—'}
               </Text>
               <Text style={styles.statLabel}>{t.label}</Text>
             </View>
           ))}
-        </View>
+        </ScrollView>
 
         {loading ? (
           <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
@@ -192,14 +193,19 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   content: { paddingTop: 46, paddingBottom: 32 },
 
-  statGrid: { flexDirection: 'row', marginHorizontal: 12, gap: 8 },
+  statGrid: { paddingHorizontal: 12, gap: 10 },
   statTile: {
-    flex: 1, borderRadius: 14, paddingVertical: 14, alignItems: 'center', justifyContent: 'center',
-    shadowColor: colors.primaryDark, shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    width: 92, height: 92, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, borderTopWidth: 3,
+    shadowColor: colors.primaryDark, shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
-  statNumber: { fontFamily: fonts.heading, fontSize: 20, color: colors.white },
-  statLabel: { fontFamily: fonts.bodySemi, fontSize: 9, color: 'rgba(255,255,255,0.9)', marginTop: 4, letterSpacing: 0.4 },
+  statTotal: { fontFamily: fonts.bodySemi, fontSize: 9, lineHeight: 9, color: colors.muted, letterSpacing: 0.5 },
+  statNumber: {
+    fontFamily: fonts.heading, fontSize: 19, color: colors.heading, letterSpacing: -1.5,
+    marginTop: 3, textAlign: 'center',
+  },
+  statLabel: { fontFamily: fonts.bodySemi, fontSize: 9, color: colors.muted, marginTop: 3, letterSpacing: 0.4, textAlign: 'center' },
 
   card: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
