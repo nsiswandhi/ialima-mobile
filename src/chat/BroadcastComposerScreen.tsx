@@ -64,41 +64,47 @@ export default function BroadcastComposerScreen({
     <View style={styles.flex}>
       <Header title="Buat Pengumuman" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       <View style={styles.content}>
-        <Text style={styles.label}>Target</Text>
-        <View style={styles.scopeRow}>
-          {options.map((o) => (
+        {options.length === 0 ? (
+          <Text style={styles.empty}>Fitur pengumuman komunitas akan segera hadir.</Text>
+        ) : (
+          <>
+            <Text style={styles.label}>Target</Text>
+            <View style={styles.scopeRow}>
+              {options.map((o) => (
+                <Pressable
+                  key={o.scope}
+                  style={[styles.scopeChip, scope === o.scope && styles.scopeChipActive]}
+                  onPress={() => setScope(o.scope)}
+                >
+                  <Text style={[styles.scopeChipText, scope === o.scope && styles.scopeChipTextActive]}>{o.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.label}>Judul</Text>
+            <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Judul pengumuman" />
+
+            <Text style={styles.label}>Isi</Text>
+            <TextInput
+              style={[styles.input, styles.textarea]}
+              value={body}
+              onChangeText={setBody}
+              placeholder="Isi pengumuman"
+              multiline
+            />
+
+            {!!notice && <Text style={styles.notice}>{notice}</Text>}
+            {!!error && <Text style={styles.error}>{error}</Text>}
+
             <Pressable
-              key={o.scope}
-              style={[styles.scopeChip, scope === o.scope && styles.scopeChipActive]}
-              onPress={() => setScope(o.scope)}
+              style={({ pressed }) => [styles.sendBtn, pressed && styles.sendBtnPressed]}
+              onPress={send}
+              disabled={sending || !scope || !title.trim() || !body.trim()}
             >
-              <Text style={[styles.scopeChipText, scope === o.scope && styles.scopeChipTextActive]}>{o.label}</Text>
+              {sending ? <ActivityIndicator color={colors.white} /> : <Text style={styles.sendBtnText}>Kirim</Text>}
             </Pressable>
-          ))}
-        </View>
-
-        <Text style={styles.label}>Judul</Text>
-        <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Judul pengumuman" />
-
-        <Text style={styles.label}>Isi</Text>
-        <TextInput
-          style={[styles.input, styles.textarea]}
-          value={body}
-          onChangeText={setBody}
-          placeholder="Isi pengumuman"
-          multiline
-        />
-
-        {!!notice && <Text style={styles.notice}>{notice}</Text>}
-        {!!error && <Text style={styles.error}>{error}</Text>}
-
-        <Pressable
-          style={({ pressed }) => [styles.sendBtn, pressed && styles.sendBtnPressed]}
-          onPress={send}
-          disabled={sending || !scope || !title.trim() || !body.trim()}
-        >
-          {sending ? <ActivityIndicator color={colors.white} /> : <Text style={styles.sendBtnText}>Kirim</Text>}
-        </Pressable>
+          </>
+        )}
       </View>
     </View>
   );
@@ -107,6 +113,7 @@ export default function BroadcastComposerScreen({
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16 },
+  empty: { fontFamily: fonts.body, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40 },
   label: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.muted, marginTop: 16, marginBottom: 8 },
   scopeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   scopeChip: { borderWidth: 1, borderColor: colors.border, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
