@@ -30,7 +30,8 @@
           "icon": "./assets/icon.png",
           "color": "#4C7A6A"
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

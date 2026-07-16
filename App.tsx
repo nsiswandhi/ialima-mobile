@@ -28,6 +28,7 @@ import ChatThreadScreen from './src/chat/ChatThreadScreen';
 import BroadcastComposerScreen from './src/chat/BroadcastComposerScreen';
 import NotificationsScreen from './src/chat/NotificationsScreen';
 import { chatApi, ChatThread } from './src/chat/api';
+import { getStableDeviceId } from './src/chat/deviceId';
 import { useAndroidBack } from './src/useAndroidBack';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -252,7 +253,8 @@ function AppInner() {
         const tokenResponse = await Notifications.getExpoPushTokenAsync(
           projectId ? { projectId } : undefined,
         );
-        const deviceId = Constants.sessionId || Constants.deviceName || 'unknown-device';
+        const fallbackDeviceId = Constants.deviceName || 'unknown-device';
+        const deviceId = await getStableDeviceId(fallbackDeviceId);
         if (alive) {
           await chatApi.registerPushToken(token!, tokenResponse.data, String(deviceId));
         }
