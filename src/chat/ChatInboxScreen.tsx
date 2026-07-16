@@ -51,6 +51,7 @@ export default function ChatInboxScreen({ token, onLogout, onOpenThread, onOpenB
           <Ionicons name="chevron-forward" size={18} color={colors.white} />
         </Pressable>
       )}
+      <Text style={styles.sectionTitle}>Pesan Antar Member</Text>
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
@@ -112,4 +113,5 @@ const styles = StyleSheet.create({
   broadcastCard: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 64, padding: 14, backgroundColor: colors.primary, borderRadius: 12 },
   broadcastCardPressed: { backgroundColor: colors.primaryDark },
   broadcastCardTitle: { flex: 1, fontFamily: fonts.bodySemi, fontSize: 14, color: colors.white },
+  sectionTitle: { fontFamily: fonts.heading, fontSize: 16, color: colors.heading, marginTop: 20, marginBottom: 8, marginHorizontal: 16 },
 });

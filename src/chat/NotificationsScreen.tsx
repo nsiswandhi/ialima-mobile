@@ -85,6 +85,9 @@ export default function NotificationsScreen({ token, onOpenThread, onRead, onLog
                 <Text style={styles.rowTitle}>
                   {item.type === 'chat_message' ? `${item.from.name} mengirim pesan baru` : `${item.sender_name} mengirim pengumuman`}
                 </Text>
+                {item.type === 'broadcast' && !!item.title && (
+                  <Text style={styles.rowJudul}>{item.title}</Text>
+                )}
                 <Text style={styles.rowPreview} numberOfLines={1}>{item.preview}</Text>
               </View>
             </Pressable>
@@ -105,5 +108,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
   rowBody: { flex: 1 },
   rowTitle: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.text },
+  rowJudul: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.heading, marginTop: 2 },
   rowPreview: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2 },
 });
