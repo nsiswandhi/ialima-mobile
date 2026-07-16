@@ -73,26 +73,31 @@ export default function ArtikelDetailScreen({ token, articleId, onBack, onEdit }
 
         {data.author && (
           <View style={styles.authorCard}>
-            {data.author.avatar ? (
-              <Image source={{ uri: data.author.avatar.full }} style={styles.authorAvatar} />
-            ) : (
-              <View style={[styles.authorAvatar, styles.authorAvatarFallback]}>
-                <Text style={styles.authorAvatarLetter}>{data.author.name.charAt(0).toUpperCase()}</Text>
-              </View>
-            )}
-            <View style={styles.authorBody}>
-              <Text style={styles.authorName}>{data.author.name}</Text>
-              {!!data.author.angkatan && <Text style={styles.authorMeta}>Angkatan {data.author.angkatan}</Text>}
-              {data.author.roles.length > 0 && (
-                <View style={styles.authorRoleRow}>
+            <Text style={styles.authorLabel}>Penulis Artikel</Text>
+            <View style={styles.authorRow}>
+              {data.author.avatar ? (
+                <Image source={{ uri: data.author.avatar.full }} style={styles.authorAvatar} />
+              ) : (
+                <View style={[styles.authorAvatar, styles.authorAvatarFallback]}>
+                  <Text style={styles.authorAvatarLetter}>{data.author.name.charAt(0).toUpperCase()}</Text>
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.authorName}>{data.author.name}</Text>
+                <View style={styles.authorBadges}>
+                  {!!data.author.angkatan && (
+                    <View style={styles.authorBadge}>
+                      <Text style={styles.authorBadgeText}>Angkatan {data.author.angkatan}</Text>
+                    </View>
+                  )}
                   {data.author.roles.map((r) => (
-                    <View key={r} style={styles.authorRolePill}>
-                      <Text style={styles.authorRolePillText}>{r}</Text>
+                    <View key={r} style={styles.authorRoleBadge}>
+                      <Text style={styles.authorRoleText}>{r}</Text>
                     </View>
                   ))}
                 </View>
-              )}
-              {!!data.author.job_title && <Text style={styles.authorMeta}>{data.author.job_title}</Text>}
+                {!!data.author.job_title && <Text style={styles.authorJobTitle}>{data.author.job_title}</Text>}
+              </View>
             </View>
           </View>
         )}
@@ -120,14 +125,17 @@ const styles = StyleSheet.create({
   content: { marginBottom: 20 },
   editBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   editBtnText: { color: '#fff', fontFamily: fonts.bodyMedium, fontSize: 14 },
-  authorCard: { flexDirection: 'row', gap: 12, marginTop: 24, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: '#fff' },
-  authorAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.bgAlt },
-  authorAvatarFallback: { alignItems: 'center', justifyContent: 'center' },
-  authorAvatarLetter: { fontFamily: fonts.headingSemi, fontSize: 20, color: colors.primary },
-  authorBody: { flex: 1, justifyContent: 'center' },
-  authorName: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.heading, marginBottom: 2 },
-  authorMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginBottom: 2 },
-  authorRoleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 4 },
-  authorRolePill: { backgroundColor: colors.bgAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
-  authorRolePillText: { fontFamily: fonts.bodyMedium, fontSize: 10, color: colors.primary },
+  authorCard: { marginTop: 24, backgroundColor: colors.card, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: 14 },
+  authorLabel: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.muted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  authorAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.bgAlt },
+  authorAvatarFallback: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
+  authorAvatarLetter: { fontFamily: fonts.heading, fontSize: 22, color: colors.primary },
+  authorName: { fontFamily: fonts.headingSemi, fontSize: 16, color: colors.heading },
+  authorBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  authorBadge: { backgroundColor: colors.bgAlt, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
+  authorBadgeText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primary },
+  authorRoleBadge: { backgroundColor: colors.secondary, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
+  authorRoleText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.heading },
+  authorJobTitle: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 4 },
 });

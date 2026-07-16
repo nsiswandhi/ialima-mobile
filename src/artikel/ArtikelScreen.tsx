@@ -1,6 +1,5 @@
-// Artikel tab — search + capped category chip bar (top 5 + "Lainnya"
-// overflow modal) + feed + FAB, plus local list/detail/form view routing.
-// Mirrors EventScreen's local view routing.
+// Artikel tab — search + category filter popover + feed + FAB, plus local
+// list/detail/form view routing. Mirrors EventScreen's local view routing.
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,8 +10,6 @@ import ArtikelCategoryModal from './ArtikelCategoryModal';
 import ArtikelDetailScreen from './ArtikelDetailScreen';
 import ArtikelFormScreen from './ArtikelFormScreen';
 import { useAndroidBack } from '../useAndroidBack';
-
-const VISIBLE_CATEGORY_COUNT = 5;
 
 type View3 = 'list' | 'detail' | 'form';
 
@@ -31,7 +28,7 @@ export default function ArtikelScreen({ token, canCreate, isIALima, initialArtik
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<number | null>(null);
-  const [showOverflow, setShowOverflow] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -101,32 +98,17 @@ export default function ArtikelScreen({ token, canCreate, isIALima, initialArtik
         <Pressable style={({ pressed }) => [styles.searchBtn, pressed && styles.pressed]} onPress={load}>
           <Text style={styles.searchBtnText}>Cari</Text>
         </Pressable>
-      </View>
-      <View style={styles.chipRow}>
-        <Pressable style={[styles.chip, category === '' && styles.chipActive]} onPress={() => setCategory('')}>
-          <Text style={[styles.chipText, category === '' && styles.chipTextActive]}>Semua</Text>
+        <Pressable style={({ pressed }) => [styles.filterBtn, pressed && styles.pressed]} onPress={() => setFilterOpen(true)}>
+          <Ionicons name="filter" size={18} color={colors.white} />
         </Pressable>
-        {categories.slice(0, VISIBLE_CATEGORY_COUNT).map((c) => (
-          <Pressable key={c.slug} style={[styles.chip, category === c.slug && styles.chipActive]} onPress={() => setCategory(c.slug)}>
-            <Text style={[styles.chipText, category === c.slug && styles.chipTextActive]}>{c.label}</Text>
-          </Pressable>
-        ))}
-        {categories.length > VISIBLE_CATEGORY_COUNT && (
-          <Pressable
-            style={[styles.chip, categories.slice(VISIBLE_CATEGORY_COUNT).some((c) => c.slug === category) && styles.chipActive]}
-            onPress={() => setShowOverflow(true)}
-          >
-            <Text style={styles.chipText}>Lainnya</Text>
-          </Pressable>
-        )}
       </View>
-      {showOverflow && (
-        <ArtikelCategoryModal
-          categories={categories.slice(VISIBLE_CATEGORY_COUNT)}
-          onSelect={setCategory}
-          onClose={() => setShowOverflow(false)}
-        />
-      )}
+      <ArtikelCategoryModal
+        visible={filterOpen}
+        categories={categories}
+        selected={category}
+        onSelect={setCategory}
+        onClose={() => setFilterOpen(false)}
+      />
       {loading ? (
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       ) : (
@@ -155,12 +137,8 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 14, paddingVertical: 10, fontFamily: fonts.body, fontSize: 14, color: colors.heading },
   searchBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center' },
   searchBtnText: { color: colors.white, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  filterBtn: { backgroundColor: colors.primary, borderRadius: 12, width: 44, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.85 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginTop: 12 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.text },
-  chipTextActive: { color: colors.white },
   loading: { marginTop: 40 },
   list: { padding: 16, paddingBottom: 100 },
   empty: { textAlign: 'center', color: colors.muted, fontFamily: fonts.body, marginTop: 40 },

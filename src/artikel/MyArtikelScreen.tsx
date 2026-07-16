@@ -14,13 +14,15 @@ type Props = { token: string; isIALima: boolean };
 type View3 = 'list' | 'detail' | 'form';
 
 function Row({ article, onPress }: { article: ArtikelSummary; onPress: () => void }) {
+  const statusLabel = article.status === 'pending' ? 'Menunggu review' : article.status === 'draft' ? 'Draft' : 'Terbit';
   return (
     <Pressable style={({ pressed }) => [styles.row, pressed && styles.rowPressed]} onPress={onPress}>
       <View style={styles.rowBody}>
         <Text style={styles.rowTitle} numberOfLines={1}>{article.title}</Text>
-        <Text style={styles.rowMeta}>
-          {article.status === 'pending' ? 'Menunggu review' : article.status === 'draft' ? 'Draft' : 'Terbit'}
-        </Text>
+        {!!article.category_label && <Text style={styles.rowCategory}>{article.category_label}</Text>}
+      </View>
+      <View style={styles.rowStatusBadge}>
+        <Text style={styles.rowStatusText}>{statusLabel}</Text>
       </View>
     </Pressable>
   );
@@ -111,11 +113,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, paddingBottom: 60 },
   sectionTitle: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.muted, marginTop: 24, marginBottom: 10, letterSpacing: 0.5 },
-  row: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.border, padding: 14, marginBottom: 10 },
+  row: {
+    backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.border, padding: 14, marginBottom: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+  },
   rowPressed: { opacity: 0.85 },
-  rowBody: {},
+  rowBody: { flex: 1 },
   rowTitle: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.heading, marginBottom: 4 },
-  rowMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+  rowCategory: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+  rowStatusBadge: { backgroundColor: colors.bgAlt, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  rowStatusText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primary },
   newBtn: { alignItems: 'center', paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed' },
   newBtnText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.primary },
 });
