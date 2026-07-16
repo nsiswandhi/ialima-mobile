@@ -496,6 +496,7 @@ function AppInner() {
           viewerId={user!.id}
           onLogout={logout}
           initialBrandId={marketplaceBrandId}
+          canManage={!!user?.caps?.manage_own_brand}
           profile={meProfile}
           onNavigate={handleNavigate}
         />

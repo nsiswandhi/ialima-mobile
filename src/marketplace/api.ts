@@ -52,6 +52,7 @@ export type BrandSummary = {
   has_location: boolean;
   owner_id: number;
   is_featured?: boolean;
+  product_count?: number;
 };
 
 // Full brand (GET /marketplace/{id}).

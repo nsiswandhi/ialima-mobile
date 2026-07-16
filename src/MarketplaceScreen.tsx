@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from './theme';
 import Header, { DrawerProfile, NavTarget } from './Header';
 import BrandDetailScreen from './BrandDetailScreen';
@@ -14,6 +15,7 @@ type Props = {
   viewerId: number;
   onLogout: () => void;
   initialBrandId?: number | null; // deep-link straight to a brand (e.g. from Dashboard)
+  canManage?: boolean;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
 };
@@ -29,7 +31,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 // Marketplace directory: 2-column brand grid with type filter + search, and the
 // brand detail page. Brand management now lives in My Profile, so there is no
 // "Brand Saya" entry here anymore.
-export default function MarketplaceScreen({ token, viewerId, onLogout, initialBrandId, profile, onNavigate }: Props) {
+export default function MarketplaceScreen({ token, viewerId, onLogout, initialBrandId, canManage, profile, onNavigate }: Props) {
   const [view, setView] = useState<'list' | 'detail'>(initialBrandId ? 'detail' : 'list');
   const [selectedId, setSelectedId] = useState<number | null>(initialBrandId ?? null);
 
@@ -139,6 +141,12 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
           />
         )}
       />
+
+      {!!canManage && (
+        <Pressable style={styles.fab} onPress={() => onNavigate?.('my-marketplace')}>
+          <Ionicons name="add" size={26} color={colors.white} />
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -165,4 +173,9 @@ const styles = StyleSheet.create({
   grid: { padding: 12, gap: 12 },
   column: { gap: 12 },
   gridItem: { flex: 1, maxWidth: '48%' },
+  fab: {
+    position: 'absolute', right: 20, bottom: 20, width: 56, height: 56, borderRadius: 28,
+    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
+    shadowColor: colors.primaryDark, shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4,
+  },
 });

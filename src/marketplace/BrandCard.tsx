@@ -34,6 +34,11 @@ export default function BrandCard({
           )}
         </View>
         {!!brand.city && <Text style={styles.city} numberOfLines={1}>{brand.city}</Text>}
+        {typeof brand.product_count === 'number' && (
+          <View style={styles.productBadge}>
+            <Text style={styles.productBadgeText}>{brand.product_count} Produk</Text>
+          </View>
+        )}
       </View>
     </Pressable>
   );
@@ -55,4 +60,6 @@ const styles = StyleSheet.create({
   badge: { backgroundColor: colors.bgAlt, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
   badgeText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.primary },
   city: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 6 },
+  productBadge: { alignSelf: 'flex-start', backgroundColor: colors.primary, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3, marginTop: 6 },
+  productBadgeText: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.white },
 });
