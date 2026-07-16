@@ -46,9 +46,9 @@ export default function ChatInboxScreen({ token, onLogout, onOpenThread, onOpenB
           style={({ pressed }) => [styles.broadcastCard, pressed && styles.broadcastCardPressed]}
           onPress={onOpenBroadcast}
         >
-          <Ionicons name="megaphone-outline" size={20} color={colors.primary} />
+          <Ionicons name="megaphone-outline" size={20} color={colors.white} />
           <Text style={styles.broadcastCardTitle}>Buat Pengumuman</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          <Ionicons name="chevron-forward" size={18} color={colors.white} />
         </Pressable>
       )}
       {loading ? (
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   preview: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 2 },
   badge: { minWidth: 22, height: 22, borderRadius: 11, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   badgeText: { fontFamily: fonts.bodySemi, fontSize: 11, color: colors.white },
-  broadcastCard: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 12, padding: 14, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
-  broadcastCardPressed: { backgroundColor: colors.bgAlt },
-  broadcastCardTitle: { flex: 1, fontFamily: fonts.bodySemi, fontSize: 14, color: colors.text },
+  broadcastCard: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 46, padding: 14, backgroundColor: colors.accent, borderRadius: 12 },
+  broadcastCardPressed: { backgroundColor: colors.accentDark },
+  broadcastCardTitle: { flex: 1, fontFamily: fonts.bodySemi, fontSize: 14, color: colors.white },
 });
