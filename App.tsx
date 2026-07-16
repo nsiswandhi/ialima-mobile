@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, FlatList, Image, Linking, Platform, Pressable,
-  StatusBar, StyleSheet, Text, TextInput, View,
+  ScrollView, StatusBar, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './src/config';
 import { colors, fonts } from './src/theme';
 import Header, { DrawerProfile, NavTarget } from './src/Header';
+import FilterPopover from './src/FilterPopover';
 import ProfileScreen from './src/ProfileScreen';
 import SignUpScreen from './src/SignUpScreen';
 import MemberDetailScreen from './src/MemberDetailScreen';
@@ -142,6 +143,13 @@ function AppInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Alumni directory filter: angkatan + Anggota Komunitas.
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [angkatanList, setAngkatanList] = useState<string[]>([]);
+  const [komunitasList, setKomunitasList] = useState<{ id: number; name: string }[]>([]);
+  const [filterAngkatan, setFilterAngkatan] = useState<string | null>(null);
+  const [filterKomunitasId, setFilterKomunitasId] = useState<number | null>(null);
+
   // When a directory card is tapped, show that member's detail screen.
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
 
@@ -178,7 +186,10 @@ function AppInner() {
     setError(null);
     setLoading(true);
     try {
-      const url = `${API_BASE}/members?per_page=50&search=${encodeURIComponent(q)}`;
+      const params = new URLSearchParams({ per_page: '50', search: q });
+      if (filterAngkatan) params.set('angkatan', filterAngkatan);
+      if (filterKomunitasId) params.set('komunitas_id', String(filterKomunitasId));
+      const url = `${API_BASE}/members?${params.toString()}`;
       const res = await fetch(url, t ? { headers: { 'X-IA5-Token': t } } : undefined);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || 'Could not load members');
@@ -189,6 +200,38 @@ function AppInner() {
       setLoading(false);
     }
   }
+
+  // Lazily loads the filter popover's option lists the first time it opens.
+  async function openMemberFilter() {
+    setFilterOpen(true);
+    if (!token) return;
+    if (angkatanList.length === 0) {
+      fetch(`${API_BASE}/angkatan-list`, { headers: { 'X-IA5-Token': token } })
+        .then((r) => r.json())
+        .then((d) => setAngkatanList(d.data || []))
+        .catch(() => {});
+    }
+    if (komunitasList.length === 0) {
+      fetch(`${API_BASE}/communities?per_page=50`, { headers: { 'X-IA5-Token': token } })
+        .then((r) => r.json())
+        .then((d) => setKomunitasList((d.data || []).map((c: any) => ({ id: c.id, name: c.name }))))
+        .catch(() => {});
+    }
+  }
+
+  function applyMemberFilter(angkatan: string | null, komunitasId: number | null) {
+    setFilterAngkatan(angkatan);
+    setFilterKomunitasId(komunitasId);
+    setFilterOpen(false);
+  }
+
+  // Re-runs the directory search whenever the filter selection changes (state
+  // updates from applyMemberFilter aren't visible to a loadMembers() call made
+  // in the same tick, so this effect is the reliable trigger instead).
+  useEffect(() => {
+    if (!token) return;
+    loadMembers(search);
+  }, [filterAngkatan, filterKomunitasId]);
 
   // Feeds the burger drawer's profile card (avatar/angkatan/city/roles) — the
   // same /member/{id} shape ProfileScreen already fetches for itself.
@@ -625,7 +668,7 @@ function AppInner() {
       <View style={styles.searchRow}>
         <TextInput
           style={[styles.input, styles.searchInput]}
-          placeholder="Search by name…"
+          placeholder="Cari nama, jabatan, kota…"
           placeholderTextColor={colors.muted}
           value={search}
           onChangeText={setSearch}
@@ -637,7 +680,37 @@ function AppInner() {
         >
           <Text style={styles.buttonText}>Go</Text>
         </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.filterBtn, pressed && styles.buttonPressed]}
+          onPress={openMemberFilter}
+        >
+          <Ionicons name="filter" size={18} color={colors.white} />
+        </Pressable>
       </View>
+
+      <FilterPopover visible={filterOpen} onClose={() => setFilterOpen(false)} topOffset={110}>
+        <ScrollView>
+          <Text style={styles.filterLabel}>Angkatan</Text>
+          <Pressable style={styles.filterOption} onPress={() => applyMemberFilter(null, filterKomunitasId)}>
+            <Text style={[styles.filterOptionText, !filterAngkatan && styles.filterOptionActive]}>Semua Angkatan</Text>
+          </Pressable>
+          {angkatanList.map((a) => (
+            <Pressable key={a} style={styles.filterOption} onPress={() => applyMemberFilter(a, filterKomunitasId)}>
+              <Text style={[styles.filterOptionText, filterAngkatan === a && styles.filterOptionActive]}>{a}</Text>
+            </Pressable>
+          ))}
+
+          <Text style={styles.filterLabel}>Anggota Komunitas</Text>
+          <Pressable style={styles.filterOption} onPress={() => applyMemberFilter(filterAngkatan, null)}>
+            <Text style={[styles.filterOptionText, !filterKomunitasId && styles.filterOptionActive]}>Semua Komunitas</Text>
+          </Pressable>
+          {komunitasList.map((c) => (
+            <Pressable key={c.id} style={styles.filterOption} onPress={() => applyMemberFilter(filterAngkatan, c.id)}>
+              <Text style={[styles.filterOptionText, filterKomunitasId === c.id && styles.filterOptionActive]} numberOfLines={1}>{c.name}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </FilterPopover>
 
       {loading && <ActivityIndicator style={{ marginTop: 20 }} color={colors.primary} />}
       {error && <Text style={styles.error}>{error}</Text>}
@@ -810,6 +883,17 @@ const styles = StyleSheet.create({
   searchBtn: {
     backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 20,
   },
+  filterBtn: {
+    backgroundColor: colors.primary, borderRadius: 12, width: 44, height: 44,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  filterLabel: {
+    fontFamily: fonts.bodySemi, fontSize: 11, color: colors.muted, letterSpacing: 0.5,
+    textTransform: 'uppercase', paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6,
+  },
+  filterOption: { paddingHorizontal: 16, paddingVertical: 10 },
+  filterOptionText: { fontFamily: fonts.body, fontSize: 14, color: colors.text },
+  filterOptionActive: { fontFamily: fonts.bodySemi, color: colors.primary },
   empty: { textAlign: 'center', color: colors.muted, marginTop: 40, fontFamily: fonts.body },
 
   // ---- Member card ----
