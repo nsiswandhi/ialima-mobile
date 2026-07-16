@@ -37,7 +37,7 @@ export default function ArtikelScreen({ token, canCreate, isIALima, initialArtik
       artikelApi.listCategories(token),
     ])
       .then(([list, cats]) => {
-        setArticles(list.data);
+        setArticles(list.data.filter((a) => a.category !== 'uncategorized'));
         setCategories(cats.data);
       })
       .finally(() => setLoading(false));
