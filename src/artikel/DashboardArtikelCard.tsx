@@ -18,7 +18,7 @@ export default function DashboardArtikelCard({ article, onPress }: Props) {
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={2}>{article.title}</Text>
         <Text style={styles.excerpt} numberOfLines={2}>{article.excerpt}</Text>
-        <Text style={styles.meta}>{article.published_date_display} · {article.author_name}</Text>
+        <Text style={styles.meta}>{article.published_date_display} · by {article.author_name}</Text>
       </View>
     </Pressable>
   );

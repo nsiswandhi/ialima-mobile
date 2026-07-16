@@ -27,33 +27,52 @@ type Props = {
   onNavigate?: (target: NavTarget) => void;
 };
 
-const WELCOME_MESSAGES = [
-  'Wilujeng sumping, senang kamu kembali.',
-  'Selamat datang kembali di LIMA Circle.',
-  'Apa yang akan kita lakukan hari ini?',
-  'Senang melihatmu lagi di sini.',
-  'Siap terhubung dengan keluarga Lima hari ini?',
-];
-
 const CARD_W = 156;
 
-// Home screen shown right after login: a welcome banner, a "Brand Unggulan"
-// carousel (up to 10 brands) and an "Alumni Populer" carousel (up to 10 members,
-// already ranked by recognition on the server).
-export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMember, onOpenCommunity, onOpenEvent, onOpenArtikel, onLogout, profile, onNavigate }: Props) {
+type Stats = {
+  total_users: number;
+  total_marketplace: number;
+  total_marketplace_item: number;
+  total_komunitas: number;
+  total_posts: number;
+};
+
+const STAT_TILES: { key: keyof Stats; label: string; color: string }[] = [
+  { key: 'total_users', label: 'MEMBER', color: colors.primary },
+  { key: 'total_marketplace', label: 'BRAND', color: colors.accent },
+  { key: 'total_marketplace_item', label: 'PRODUK', color: colors.secondary },
+  { key: 'total_komunitas', label: 'KOMUNITAS', color: colors.primaryDark },
+  { key: 'total_posts', label: 'ARTIKEL', color: colors.accentDark },
+];
+
+// Plain digits fit 4 digits (<10,000); beyond that, abbreviate so the tile
+// stays visually compact regardless of how big the count gets.
+function formatCompactNumber(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 10_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+
+// Home screen shown right after login: a stat counter row, upcoming events,
+// a "Brand Unggulan" carousel (up to 10 brands) and an "Alumni Populer"
+// carousel (up to 10 members, already ranked by recognition on the server).
+export default function DashboardScreen({ token, onOpenBrand, onOpenMember, onOpenCommunity, onOpenEvent, onOpenArtikel, onLogout, profile, onNavigate }: Props) {
+  const [stats, setStats] = useState<Stats | null>(null);
   const [brands, setBrands] = useState<BrandSummary[]>([]);
   const [alumni, setAlumni] = useState<AlumniSummary[]>([]);
   const [communities, setCommunities] = useState<CommunitySummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [articles, setArticles] = useState<ArtikelSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [welcome] = useState(() => WELCOME_MESSAGES[Math.floor(Math.random() * WELCOME_MESSAGES.length)]);
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const [brandRes, memberRes, communityRes, eventRes, articleRes] = await Promise.all([
+        const [statsRes, brandRes, memberRes, communityRes, eventRes, articleRes] = await Promise.all([
+          fetch(`${API_BASE}/stats`, { headers: { 'X-IA5-Token': token } })
+            .then((r) => r.json())
+            .catch(() => null),
           mkApi.list(token, { featured: true }).catch(() => ({ data: [] as BrandSummary[] })),
           fetch(`${API_BASE}/members?per_page=10`, { headers: { 'X-IA5-Token': token } })
             .then((r) => r.json())
@@ -63,6 +82,7 @@ export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMe
           artikelApi.list(token, { per_page: 3 }).catch(() => ({ data: [] as ArtikelSummary[] })),
         ]);
         if (!alive) return;
+        setStats(statsRes || null);
         setBrands((brandRes.data || []).slice(0, 10));
         setAlumni((memberRes.data || []).slice(0, 10));
         setCommunities((communityRes.data || []).slice(0, 10));
@@ -81,15 +101,35 @@ export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMe
     <View style={styles.flex}>
       <Header title="Dashboard" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.welcomeCard}>
-          <Text style={styles.welcomeHi}>Hai {userName || 'Alumni'},</Text>
-          <Text style={styles.welcomeMsg}>{welcome}</Text>
+        <View style={styles.statGrid}>
+          {STAT_TILES.map((t) => (
+            <View key={t.key} style={[styles.statTile, { backgroundColor: t.color }]}>
+              <Text style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit>
+                {stats ? formatCompactNumber(stats[t.key]) : '—'}
+              </Text>
+              <Text style={styles.statLabel}>{t.label}</Text>
+            </View>
+          ))}
         </View>
 
         {loading ? (
           <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
         ) : (
           <>
+            <View style={styles.section}>
+              <View style={styles.sectionBar} />
+              <Text style={styles.sectionTitle}>Kegiatan Akan Datang</Text>
+              {events.length > 0 ? (
+                <View style={styles.eventList}>
+                  {events.map((e) => (
+                    <EventListCard key={e.id} event={e} onPress={() => onOpenEvent(e.id)} />
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.empty}>Belum ada kegiatan.</Text>
+              )}
+            </View>
+
             <Section title="Brand Unggulan" empty="Belum ada brand." show={brands.length > 0}>
               {brands.map((b) => (
                 <BrandCard key={b.id} brand={b} onPress={() => onOpenBrand(b.id)} style={{ width: CARD_W }} />
@@ -107,20 +147,6 @@ export default function DashboardScreen({ token, userName, onOpenBrand, onOpenMe
                 <CommunityCard key={c.id} community={c} onPress={() => onOpenCommunity(c.id)} style={{ width: CARD_W }} />
               ))}
             </Section>
-
-            <View style={styles.section}>
-              <View style={styles.sectionBar} />
-              <Text style={styles.sectionTitle}>Kegiatan Akan Datang</Text>
-              {events.length > 0 ? (
-                <View style={styles.eventList}>
-                  {events.map((e) => (
-                    <EventListCard key={e.id} event={e} onPress={() => onOpenEvent(e.id)} />
-                  ))}
-                </View>
-              ) : (
-                <Text style={styles.empty}>Belum ada kegiatan.</Text>
-              )}
-            </View>
 
             <View style={styles.section}>
               <View style={styles.sectionBar} />
@@ -166,15 +192,14 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   content: { paddingTop: 46, paddingBottom: 32 },
 
-  welcomeCard: {
-    marginHorizontal: 12, backgroundColor: colors.card,
-    borderRadius: 14, borderLeftWidth: 4, borderLeftColor: colors.secondary,
-    paddingVertical: 14, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.border,
-    shadowColor: colors.primaryDark, shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
+  statGrid: { flexDirection: 'row', marginHorizontal: 12, gap: 8 },
+  statTile: {
+    flex: 1, borderRadius: 14, paddingVertical: 14, alignItems: 'center', justifyContent: 'center',
+    shadowColor: colors.primaryDark, shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  welcomeHi: { fontFamily: fonts.heading, fontSize: 20, color: colors.heading },
-  welcomeMsg: { fontFamily: fonts.body, fontSize: 14, color: colors.text, marginTop: 4, lineHeight: 20 },
+  statNumber: { fontFamily: fonts.heading, fontSize: 20, color: colors.white },
+  statLabel: { fontFamily: fonts.bodySemi, fontSize: 9, color: 'rgba(255,255,255,0.9)', marginTop: 4, letterSpacing: 0.4 },
 
   card: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
