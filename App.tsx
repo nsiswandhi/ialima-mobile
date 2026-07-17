@@ -43,7 +43,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Placeholder store IDs — swap in the real ones once the app is published.
 const APPLE_APP_ID = 'REPLACE_WITH_APPLE_APP_ID';
-const ANDROID_PACKAGE = 'REPLACE_WITH_ANDROID_PACKAGE';
+const ANDROID_PACKAGE = 'id.ialima.app';
 
 // Controls how a push notification is presented while the app is foregrounded.
 Notifications.setNotificationHandler({
