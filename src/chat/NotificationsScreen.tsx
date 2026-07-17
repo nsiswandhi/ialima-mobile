@@ -25,12 +25,18 @@ export default function NotificationsScreen({ token, onOpenThread, onRead, onLog
     try {
       const res = await chatApi.notifications(token);
       setItems(res.data);
+      // Being on this screen counts as having read everything currently shown —
+      // clear the unread cursor/badge in the background, but keep the items
+      // visible for this visit (only the next fetch will come back empty).
+      if (res.data.length > 0) {
+        chatApi.markNotificationsRead(token, { all: true }).then(onRead).catch(() => {});
+      }
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, onRead]);
 
   useEffect(() => {
     load();
@@ -62,7 +68,8 @@ export default function NotificationsScreen({ token, onOpenThread, onRead, onLog
       {items.length > 0 && (
         <View style={styles.markAllRow}>
           <Pressable onPress={markAll} style={styles.markAllBtn} accessibilityLabel="Tandai semua dibaca">
-            <Ionicons name="checkmark-done-outline" size={18} color={colors.accent} />
+            <Ionicons name="checkmark-done-outline" size={16} color={colors.accent} />
+            <Text style={styles.markAllText}>Tandai semua dibaca</Text>
           </Pressable>
         </View>
       )}
@@ -128,7 +135,11 @@ const styles = StyleSheet.create({
   error: { color: colors.danger, textAlign: 'center', marginTop: 16, fontFamily: fonts.bodyMedium },
   empty: { color: colors.muted, textAlign: 'center', fontFamily: fonts.body, fontSize: 14 },
   markAllRow: { alignItems: 'flex-end', paddingHorizontal: 16, paddingVertical: 8 },
-  markAllBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  markAllBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 16, borderWidth: 1,
+    borderColor: colors.accent, paddingHorizontal: 12, paddingVertical: 6,
+  },
+  markAllText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.accent },
   row: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
   rowBody: { flex: 1 },
   rowTitle: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.text },
