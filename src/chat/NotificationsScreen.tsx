@@ -109,7 +109,7 @@ export default function NotificationsScreen({ token, onOpenThread, onRead, onLog
                 {item.type === 'broadcast' && !!item.title && (
                   <Text style={styles.rowJudul}>{item.title}</Text>
                 )}
-                <Text style={styles.rowPreview} numberOfLines={1}>
+                <Text style={styles.rowPreview}>
                   {item.type === 'user_notification' ? item.body : item.preview}
                 </Text>
               </View>
@@ -136,5 +136,5 @@ const styles = StyleSheet.create({
   rowBody: { flex: 1 },
   rowTitle: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.text },
   rowJudul: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.heading, marginTop: 2 },
-  rowPreview: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2 },
+  rowPreview: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2, lineHeight: 17 },
 });
