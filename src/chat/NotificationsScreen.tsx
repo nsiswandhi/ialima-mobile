@@ -25,24 +25,20 @@ export default function NotificationsScreen({ token, onOpenThread, onRead, onLog
     try {
       const res = await chatApi.notifications(token);
       setItems(res.data);
-      // Being on this screen counts as having read everything currently shown —
-      // clear the unread cursor/badge in the background, but keep the items
-      // visible for this visit (only the next fetch will come back empty).
-      if (res.data.length > 0) {
-        chatApi.markNotificationsRead(token, { all: true }).then(onRead).catch(() => {});
-      }
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [token, onRead]);
+  }, [token]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  async function markAll() {
+  // The only action that clears the feed — items stay visible on this screen
+  // until the user explicitly taps "Bersihkan Pesan".
+  async function clearAll() {
     await chatApi.markNotificationsRead(token, { all: true }).catch(() => {});
     setItems([]);
     onRead();
@@ -53,13 +49,9 @@ export default function NotificationsScreen({ token, onOpenThread, onRead, onLog
       onOpenThread(item.thread_id);
       return;
     }
-    if (item.type === 'user_notification') {
-      chatApi.markNotificationsRead(token, { notificationId: item.id }).catch(() => {});
-      setItems((prev) => prev.filter((i) => !(i.type === 'user_notification' && i.id === item.id)));
-      return;
-    }
-    // Broadcast items have no detail screen in this plan — the title/body is
-    // already shown inline in the feed row.
+    // Broadcast and user_notification items have no detail screen — the
+    // title/body is already shown inline in the feed row, and they stay in
+    // the list until "Bersihkan Pesan" is tapped.
   }
 
   return (
@@ -67,9 +59,9 @@ export default function NotificationsScreen({ token, onOpenThread, onRead, onLog
       <Header title="Notifikasi" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
       {items.length > 0 && (
         <View style={styles.markAllRow}>
-          <Pressable onPress={markAll} style={styles.markAllBtn} accessibilityLabel="Tandai semua dibaca">
+          <Pressable onPress={clearAll} style={styles.markAllBtn} accessibilityLabel="Bersihkan Pesan">
             <Ionicons name="checkmark-done-outline" size={16} color={colors.accent} />
-            <Text style={styles.markAllText}>Tandai semua dibaca</Text>
+            <Text style={styles.markAllText}>Bersihkan Pesan</Text>
           </Pressable>
         </View>
       )}
