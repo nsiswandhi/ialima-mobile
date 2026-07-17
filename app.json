@@ -31,7 +31,15 @@
           "color": "#4C7A6A"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#4C7A6A"
+        }
+      ]
     ],
     "extra": {
       "eas": {

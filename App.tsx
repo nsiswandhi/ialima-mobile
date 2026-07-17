@@ -34,6 +34,12 @@ import { getStableDeviceId } from './src/chat/deviceId';
 import { useAndroidBack } from './src/useAndroidBack';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import * as SplashScreen from 'expo-splash-screen';
+import BootScreen from './src/BootScreen';
+
+// Keep the native splash up until BootScreen has mounted and taken over —
+// avoids a blank-white flash between the native splash and the JS boot screen.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Placeholder store IDs — swap in the real ones once the app is published.
 const APPLE_APP_ID = 'REPLACE_WITH_APPLE_APP_ID';
@@ -418,12 +424,9 @@ function AppInner() {
   });
 
   // Hold rendering until fonts are ready (keeps the brand look consistent).
+  // BootScreen takes over from the native splash the instant it mounts.
   if (!fontsLoaded) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
+    return <BootScreen />;
   }
 
   // ---------- SIGN UP SCREEN ----------
