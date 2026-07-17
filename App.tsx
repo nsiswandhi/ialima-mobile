@@ -13,6 +13,7 @@ import RightDrawer from './src/RightDrawer';
 import DeleteAccountScreen from './src/DeleteAccountScreen';
 import ProfileScreen from './src/ProfileScreen';
 import SignUpScreen from './src/SignUpScreen';
+import ForgotPasswordScreen from './src/ForgotPasswordScreen';
 import MemberDetailScreen from './src/MemberDetailScreen';
 import MarketplaceScreen from './src/MarketplaceScreen';
 import CommunityScreen from './src/community/CommunityScreen';
@@ -117,7 +118,7 @@ function AppInner() {
   const [password, setPassword] = useState('');
 
   // Which auth screen shows when logged out.
-  const [authView, setAuthView] = useState<'login' | 'signup'>('login');
+  const [authView, setAuthView] = useState<'login' | 'signup' | 'forgot'>('login');
 
   // Which authenticated tab is showing. Login lands on the Dashboard. The
   // browse tabs (directory/community/marketplace/event/article) live in the
@@ -390,7 +391,7 @@ function AppInner() {
   // report "not handled" — see useAndroidBack.ts.
   useAndroidBack(() => {
     if (!token) {
-      if (authView === 'signup') {
+      if (authView === 'signup' || authView === 'forgot') {
         setAuthView('login');
         return true;
       }
@@ -434,6 +435,11 @@ function AppInner() {
     return <SignUpScreen onBackToLogin={() => setAuthView('login')} />;
   }
 
+  // ---------- FORGOT PASSWORD SCREEN ----------
+  if (!token && authView === 'forgot') {
+    return <ForgotPasswordScreen onBackToLogin={() => setAuthView('login')} />;
+  }
+
   // ---------- LOGIN SCREEN ----------
   if (!token) {
     return (
@@ -472,6 +478,10 @@ function AppInner() {
           </Pressable>
 
           {error && <Text style={styles.error}>{error}</Text>}
+
+          <Pressable style={styles.signupLink} onPress={() => setAuthView('forgot')}>
+            <Text style={styles.signupLinkText}>Lupa Password?</Text>
+          </Pressable>
 
           <Pressable style={styles.signupLink} onPress={() => setAuthView('signup')}>
             <Text style={styles.signupLinkText}>Don’t have an account? Sign Up here..</Text>
