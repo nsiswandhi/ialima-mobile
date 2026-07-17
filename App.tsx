@@ -506,6 +506,7 @@ function AppInner() {
           onNameUpdated={(name) => setUser((u) => (u ? { ...u, name } : u))}
           profile={meProfile}
           onNavigate={handleNavigate}
+          canApproveAngkatan={!!user?.caps?.appoint_pengurus}
         />
       ) : tab === 'marketplace' ? (
         <MarketplaceScreen

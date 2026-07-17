@@ -10,6 +10,9 @@ import Header, { DrawerProfile, NavTarget } from './Header';
 import ProfileView, { ProfileViewData } from './ProfileView';
 import KeyboardAwareScroll from './KeyboardAwareScroll';
 import { useAndroidBack } from './useAndroidBack';
+import { angkatanApi, MyRequestStatus } from './angkatan/api';
+import AngkatanRequestModal from './angkatan/AngkatanRequestModal';
+import AngkatanApprovalSection from './angkatan/AngkatanApprovalSection';
 
 // Field metadata, mirroring the WordPress "Update Alumni Profile" JetForm.
 // Keys are the real WP user-meta keys (confirmed against the DB); the labels
@@ -87,10 +90,11 @@ type Props = {
   onNameUpdated?: (name: string) => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  canApproveAngkatan?: boolean;
 };
 
 export default function ProfileScreen({
-  token, userId, onLogout, onBackToDirectory, onNameUpdated, profile, onNavigate,
+  token, userId, onLogout, onBackToDirectory, onNameUpdated, profile, onNavigate, canApproveAngkatan,
 }: Props) {
   // Profile opens read-only; the Edit Profile button switches to the form.
   const [mode, setMode] = useState<'view' | 'edit'>('view');
@@ -111,6 +115,9 @@ export default function ProfileScreen({
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [pwSaving, setPwSaving] = useState(false);
+
+  const [angkatanStatus, setAngkatanStatus] = useState<MyRequestStatus>({ status: 'none' });
+  const [angkatanModalOpen, setAngkatanModalOpen] = useState(false);
 
   useAndroidBack(() => {
     if (mode === 'edit') {
@@ -166,6 +173,7 @@ export default function ProfileScreen({
         if (alive) setLoading(false);
       }
     })();
+    angkatanApi.myStatus(token).then((s) => alive && setAngkatanStatus(s)).catch(() => {});
     return () => {
       alive = false;
     };
@@ -357,10 +365,47 @@ export default function ProfileScreen({
           <Text style={styles.primaryBtnText}>Edit Profile</Text>
         </Pressable>
 
+        {!roles.includes('Pengurus Angkatan') &&
+          !roles.includes('Pengurus IA Lima') &&
+          angkatanStatus.status !== 'approved' && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.secondaryBtn,
+                angkatanStatus.status === 'pending' && styles.secondaryBtnDisabled,
+                pressed && angkatanStatus.status !== 'pending' && { opacity: 0.85 },
+              ]}
+              disabled={angkatanStatus.status === 'pending'}
+              onPress={() => setAngkatanModalOpen(true)}
+            >
+              <Text
+                style={[
+                  styles.secondaryBtnText,
+                  angkatanStatus.status === 'pending' && styles.secondaryBtnTextDisabled,
+                ]}
+              >
+                {angkatanStatus.status === 'pending' ? 'Menunggu Persetujuan' : 'Menjadi Pengurus Angkatan'}
+              </Text>
+            </Pressable>
+          )}
+
+        {canApproveAngkatan && <AngkatanApprovalSection token={token} />}
+
         <Pressable style={styles.logoutBtn} onPress={onLogout}>
           <Text style={styles.logoutText}>Log out</Text>
         </Pressable>
       </KeyboardAwareScroll>
+
+      <AngkatanRequestModal
+        token={token}
+        angkatan={form.angkatan || ''}
+        visible={angkatanModalOpen}
+        onClose={() => setAngkatanModalOpen(false)}
+        onSubmitted={() => {
+          setAngkatanModalOpen(false);
+          setAngkatanStatus({ status: 'pending' });
+          setNotice('Permintaan terkirim, menunggu persetujuan.');
+        }}
+      />
       </View>
     );
   }
@@ -601,6 +646,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.accent,
   },
   secondaryBtnText: { color: colors.accent, fontFamily: fonts.headingSemi, fontSize: 15 },
+  secondaryBtnDisabled: { borderColor: colors.border, backgroundColor: colors.bgAlt },
+  secondaryBtnTextDisabled: { color: colors.muted },
 
   logoutBtn: { alignItems: 'center', paddingVertical: 10 },
   logoutText: { color: colors.danger, fontFamily: fonts.bodySemi, fontSize: 15 },

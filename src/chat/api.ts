@@ -39,7 +39,8 @@ export type Broadcast = {
 
 export type NotificationItem =
   | { type: 'chat_message'; thread_id: number; from: ChatPerson; preview: string | null; created_at: string }
-  | { type: 'broadcast'; broadcast_id: number; title: string; preview: string; sender_name: string; created_at: string };
+  | { type: 'broadcast'; broadcast_id: number; title: string; preview: string; sender_name: string; created_at: string }
+  | { type: 'user_notification'; id: number; title: string; body: string; created_at: string };
 
 export type ApiError = Error & { code?: string };
 
@@ -141,11 +142,19 @@ export const chatApi = {
     );
   },
 
-  markNotificationsRead(token: string, opts: { threadId?: number; broadcastId?: number; all?: boolean } = {}) {
+  markNotificationsRead(
+    token: string,
+    opts: { threadId?: number; broadcastId?: number; notificationId?: number; all?: boolean } = {},
+  ) {
     return fetch(`${API_BASE}/notifications/read`, {
       method: 'POST',
       headers: headers(token, true),
-      body: form({ thread_id: opts.threadId, broadcast_id: opts.broadcastId, all: opts.all }),
+      body: form({
+        thread_id: opts.threadId,
+        broadcast_id: opts.broadcastId,
+        notification_id: opts.notificationId,
+        all: opts.all,
+      }),
     }).then(parse<{ success: boolean }>);
   },
 

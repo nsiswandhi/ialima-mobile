@@ -5,6 +5,7 @@ import React from 'react';
 import { Image, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { colors, fonts } from '../theme';
 import { CommunitySummary } from './api';
+import StarRating from '../reviews/StarRating';
 
 type Props = {
   community: CommunitySummary;
@@ -33,6 +34,9 @@ export default function CommunityCard({ community, onPress, style }: Props) {
       )}
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>{community.name}</Text>
+        <View style={{ marginTop: 4 }}>
+          <StarRating value={community.rating_average} count={community.rating_count} />
+        </View>
         {!!community.berdiri_sejak && (
           <Text style={styles.sejakText}>Sejak {community.berdiri_sejak}</Text>
         )}

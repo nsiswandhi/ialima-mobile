@@ -45,6 +45,12 @@ export default function NotificationsScreen({ token, onOpenThread, onRead, onLog
   function openItem(item: NotificationItem) {
     if (item.type === 'chat_message') {
       onOpenThread(item.thread_id);
+      return;
+    }
+    if (item.type === 'user_notification') {
+      chatApi.markNotificationsRead(token, { notificationId: item.id }).catch(() => {});
+      setItems((prev) => prev.filter((i) => !(i.type === 'user_notification' && i.id === item.id)));
+      return;
     }
     // Broadcast items have no detail screen in this plan — the title/body is
     // already shown inline in the feed row.
@@ -73,22 +79,40 @@ export default function NotificationsScreen({ token, onOpenThread, onRead, onLog
       ) : (
         <FlatList
           data={items}
-          keyExtractor={(item, i) => (item.type === 'chat_message' ? `t${item.thread_id}` : `b${item.broadcast_id}`) + i}
+          keyExtractor={(item, i) =>
+            (item.type === 'chat_message'
+              ? `t${item.thread_id}`
+              : item.type === 'broadcast'
+                ? `b${item.broadcast_id}`
+                : `n${item.id}`) + i
+          }
           renderItem={({ item }) => (
             <Pressable style={styles.row} onPress={() => openItem(item)}>
               <Ionicons
-                name={item.type === 'chat_message' ? 'chatbubble-ellipses-outline' : 'megaphone-outline'}
+                name={
+                  item.type === 'chat_message'
+                    ? 'chatbubble-ellipses-outline'
+                    : item.type === 'broadcast'
+                      ? 'megaphone-outline'
+                      : 'notifications-outline'
+                }
                 size={20}
                 color={colors.primary}
               />
               <View style={styles.rowBody}>
                 <Text style={styles.rowTitle}>
-                  {item.type === 'chat_message' ? `${item.from.name} mengirim pesan baru` : `${item.sender_name} mengirim pengumuman`}
+                  {item.type === 'chat_message'
+                    ? `${item.from.name} mengirim pesan baru`
+                    : item.type === 'broadcast'
+                      ? `${item.sender_name} mengirim pengumuman`
+                      : item.title}
                 </Text>
                 {item.type === 'broadcast' && !!item.title && (
                   <Text style={styles.rowJudul}>{item.title}</Text>
                 )}
-                <Text style={styles.rowPreview} numberOfLines={1}>{item.preview}</Text>
+                <Text style={styles.rowPreview} numberOfLines={1}>
+                  {item.type === 'user_notification' ? item.body : item.preview}
+                </Text>
               </View>
             </Pressable>
           )}

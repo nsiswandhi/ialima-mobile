@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { colors, fonts } from '../theme';
 import { BrandSummary, TYPE_LABELS } from './api';
+import StarRating from '../reviews/StarRating';
 
 // Reusable brand card. Logo-forward (square image on top) so brands stand out in
 // the 2-column Marketplace grid and the Dashboard "Brand Unggulan" carousel.
@@ -26,6 +27,9 @@ export default function BrandCard({
       )}
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>{brand.name}</Text>
+        <View style={{ marginTop: 4 }}>
+          <StarRating value={brand.rating_average} count={brand.rating_count} />
+        </View>
         <View style={styles.metaRow}>
           {!!brand.type && (
             <View style={styles.badge}>

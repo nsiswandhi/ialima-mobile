@@ -10,6 +10,8 @@ import {
   BrandDetail, Item, Place, mkApi, whatsappUrl, directionsUrl, TYPE_LABELS,
   linkPlatform, linkOpenUrl,
 } from './marketplace/api';
+import StarRating from './reviews/StarRating';
+import ReviewSection from './reviews/ReviewSection';
 
 type Props = {
   brandId: number;
@@ -126,6 +128,9 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
                 )}
                 {!!brand.city && <Text style={styles.metaLight}>{brand.city}</Text>}
               </View>
+              <View style={{ marginTop: 6 }}>
+                <StarRating value={brand.rating_average} count={brand.rating_count} size="md" />
+              </View>
             </View>
           </View>
 
@@ -230,6 +235,8 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
               brand.items.map((it) => <ItemRow key={it.id} item={it} onTap={() => openWhatsApp(it.name)} />)
             )}
           </View>
+
+          <ReviewSection token={token} objectType="marketplace" objectId={brandId} />
 
           {/* Owner block */}
           {owner && (

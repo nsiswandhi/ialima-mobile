@@ -21,6 +21,8 @@ export type ArtikelSummary = {
   view_count: number;
   status: ArtikelStatus;
   owner_id: number;
+  rating_average?: number | null;
+  rating_count?: number;
 };
 
 export type ArtikelAuthor = {

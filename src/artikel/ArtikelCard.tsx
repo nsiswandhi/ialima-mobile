@@ -3,6 +3,7 @@ import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts } from '../theme';
 import { ArtikelSummary } from './api';
+import StarRating from '../reviews/StarRating';
 
 type Props = { article: ArtikelSummary; onPress: () => void };
 
@@ -23,6 +24,9 @@ export default function ArtikelCard({ article, onPress }: Props) {
       </View>
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={2}>{article.title}</Text>
+        <View style={{ marginBottom: 8 }}>
+          <StarRating value={article.rating_average} count={article.rating_count} />
+        </View>
         <View style={styles.metaRow}>
           {!!article.published_date_display && <Text style={styles.meta}>{article.published_date_display}</Text>}
           <Text style={styles.meta}> - by {article.author_name}</Text>

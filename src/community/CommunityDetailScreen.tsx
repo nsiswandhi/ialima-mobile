@@ -11,6 +11,8 @@ import Header, { DrawerProfile, NavTarget } from '../Header';
 import { colors, fonts } from '../theme';
 import { renderBlock, Block } from '../Blocks';
 import { commApi, CommunityDetail, CommunityMember, contactChannel, contactOpenUrl, hariLabel, MyStatus } from './api';
+import StarRating from '../reviews/StarRating';
+import ReviewSection from '../reviews/ReviewSection';
 
 type Props = {
   token: string;
@@ -147,6 +149,9 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
                     <Text style={styles.badgeText}>{data.status_komunitas}</Text>
                   </View>
                 )}
+              </View>
+              <View style={{ marginTop: 6 }}>
+                <StarRating value={data.rating_average} count={data.rating_count} size="md" />
               </View>
             </View>
           </View>
@@ -300,6 +305,8 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
               ))
             )}
           </View>
+
+          <ReviewSection token={token} objectType="community" objectId={communityId} />
         </ScrollView>
       ) : null}
 

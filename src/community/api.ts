@@ -30,6 +30,8 @@ export type CommunitySummary = {
   view_count: number;
   owner_id: number;
   approval_status: ApprovalStatus;
+  rating_average: number | null;
+  rating_count: number;
 };
 
 // Full community (GET /community/{id}).
@@ -57,6 +59,8 @@ export type CommunityDetail = {
   my_status: MyStatus;
   is_manager: boolean;
   approval_status: ApprovalStatus;
+  rating_average: number | null;
+  rating_count: number;
 };
 
 // A person row in GET /community/{id}/members.

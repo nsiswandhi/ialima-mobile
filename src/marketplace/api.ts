@@ -53,6 +53,8 @@ export type BrandSummary = {
   owner_id: number;
   is_featured?: boolean;
   product_count?: number;
+  rating_average?: number | null;
+  rating_count?: number;
 };
 
 // Full brand (GET /marketplace/{id}).
@@ -73,6 +75,8 @@ export type BrandDetail = {
   links?: BrandLink[];
   items: Item[];
   place?: Place;
+  rating_average?: number | null;
+  rating_count?: number;
 };
 
 export type Paged<T> = {

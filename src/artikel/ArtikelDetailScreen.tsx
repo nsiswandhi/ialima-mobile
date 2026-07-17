@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
 import { artikelApi, ArtikelDetail } from './api';
 import { renderBlock } from '../Blocks';
+import StarRating from '../reviews/StarRating';
+import ReviewSection from '../reviews/ReviewSection';
 
 type Props = {
   token: string;
@@ -50,6 +52,8 @@ export default function ArtikelDetailScreen({ token, articleId, onBack, onEdit }
         </View>
         <Text style={styles.title}>{data.title}</Text>
         <Text style={styles.author}>{data.author_name}</Text>
+        <StarRating value={data.rating_average} count={data.rating_count} size="md" />
+        <View style={{ height: 16 }} />
 
         {data.status !== 'publish' && (data.is_owner || data.is_ia_lima_review) && (
           <View style={styles.banner}>
@@ -101,6 +105,8 @@ export default function ArtikelDetailScreen({ token, articleId, onBack, onEdit }
             </View>
           </View>
         )}
+
+        <ReviewSection token={token} objectType="artikel" objectId={articleId} />
       </View>
     </ScrollView>
   );
