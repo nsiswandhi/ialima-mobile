@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ialima-mobile",
+    "name": "Lima Circle",
     "slug": "ialima-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,7 +12,7 @@
     "android": {
       "package": "id.ialima.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#4C7A6A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

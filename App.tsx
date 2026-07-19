@@ -14,6 +14,7 @@ import DeleteAccountScreen from './src/DeleteAccountScreen';
 import ProfileScreen from './src/ProfileScreen';
 import SignUpScreen from './src/SignUpScreen';
 import ForgotPasswordScreen from './src/ForgotPasswordScreen';
+import PostLoginSplashScreen from './src/PostLoginSplashScreen';
 import MemberDetailScreen from './src/MemberDetailScreen';
 import MarketplaceScreen from './src/MarketplaceScreen';
 import CommunityScreen from './src/community/CommunityScreen';
@@ -36,7 +37,10 @@ import { useAndroidBack } from './src/useAndroidBack';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
+import * as SecureStore from 'expo-secure-store';
 import BootScreen from './src/BootScreen';
+
+const SPLASH_SEEN_KEY = 'ia5_post_login_splash_seen';
 
 // Keep the native splash up until BootScreen has mounted and taken over —
 // avoids a blank-white flash between the native splash and the JS boot screen.
@@ -112,6 +116,19 @@ function AppInner() {
   // Auth state. `token` is the JWT from /login; null means logged out.
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+
+  // Whether the one-time post-login splash carousel has already been shown on
+  // this device. null = not read from storage yet.
+  const [splashSeen, setSplashSeen] = useState<boolean | null>(null);
+  useEffect(() => {
+    SecureStore.getItemAsync(SPLASH_SEEN_KEY)
+      .then((v) => setSplashSeen(v === '1'))
+      .catch(() => setSplashSeen(true)); // storage unavailable — never block login on it
+  }, []);
+  function markSplashSeen() {
+    setSplashSeen(true);
+    SecureStore.setItemAsync(SPLASH_SEEN_KEY, '1').catch(() => {});
+  }
 
   // Login form fields.
   const [phone, setPhone] = useState('');
@@ -490,6 +507,14 @@ function AppInner() {
         </KeyboardAwareScroll>
       </View>
     );
+  }
+
+  // ---------- POST-LOGIN SPLASH (first login only) ----------
+  if (splashSeen === null) {
+    return <BootScreen />;
+  }
+  if (!splashSeen) {
+    return <PostLoginSplashScreen onDone={markSplashSeen} />;
   }
 
   // ---------- AUTHENTICATED (tabbed) ----------
