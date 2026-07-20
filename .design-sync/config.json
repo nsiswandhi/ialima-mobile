@@ -1,0 +1,7 @@
+{
+  "projectId": "34907ee6-79c2-4a82-9f94-27628b5ddc96",
+  "shape": "package",
+  "readmeHeader": ".design-sync/conventions.md",
+  "offScript": true,
+  "offScriptReason": "Expo/React Native app; see .design-sync/NOTES.md \"Off-script build\""
+}

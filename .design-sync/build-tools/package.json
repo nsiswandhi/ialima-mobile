@@ -1,0 +1,1 @@
+{"name":"lima-circle-ds-build","private":true,"type":"module","dependencies":{"esbuild":"^0.24.2"},"devDependencies":{"playwright":"^1.61.1"}}
