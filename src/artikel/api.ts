@@ -2,6 +2,7 @@
 // copies per the codebase's per-feature-duplication convention.
 import { API_BASE } from '../config';
 import { Block } from '../Blocks';
+import { trackEvent } from '../analytics';
 
 export type Img = { full: string; thumbnail: string } | null;
 export type ArtikelStatus = 'draft' | 'pending' | 'publish';
@@ -119,6 +120,7 @@ export const artikelApi = {
 
   trackView(token: string, id: number) {
     fetch(`${API_BASE}/article/${id}/view`, { method: 'POST', headers: headers(token) }).catch(() => {});
+    trackEvent('artikel_viewed');
   },
 
   create(token: string, fields: Record<string, unknown>) {

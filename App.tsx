@@ -39,6 +39,7 @@ import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SecureStore from 'expo-secure-store';
 import BootScreen from './src/BootScreen';
+import { trackScreen, trackFormResult, recordError, identifyUser, clearUser } from './src/analytics';
 
 const SPLASH_SEEN_KEY = 'ia5_post_login_splash_seen';
 
@@ -146,6 +147,7 @@ function AppInner() {
     | 'chat' | 'notifications' | 'broadcast'
     | 'about' | 'privacy' | 'terms' | 'delete-account';
   const [tab, setTab] = useState<Tab>('dashboard');
+  useEffect(() => { trackScreen(tab); }, [tab]);
   // A brand id to deep-link into on the Marketplace tab (e.g. from the Dashboard).
   const [marketplaceBrandId, setMarketplaceBrandId] = useState<number | null>(null);
   // A community id to deep-link into on the Komunitas tab (e.g. from the Dashboard).
@@ -202,9 +204,13 @@ function AppInner() {
       setToken(data.token);
       setUser(data.user);
       setTab('dashboard');
+      trackFormResult('login', true);
+      identifyUser(data.user.id);
       await loadMembers('', data.token); // prefetch the directory for the Directory tab
     } catch (e: any) {
       setError(e.message);
+      trackFormResult('login', false, e.message);
+      recordError(e, { form: 'login' });
     } finally {
       setLoading(false);
     }
@@ -390,6 +396,7 @@ function AppInner() {
   }
 
   function logout() {
+    clearUser();
     setToken(null);
     setUser(null);
     setMeProfile(undefined);

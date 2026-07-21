@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "672106016907",
+    "project_id": "lima-circle",
+    "storage_bucket": "lima-circle.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:672106016907:android:0bbb958f85503fde4c648e",
+        "android_client_info": {
+          "package_name": "id.ialima.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDP5r6O-bHliwoIS9mZXXhXvOoCu4CUA50"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

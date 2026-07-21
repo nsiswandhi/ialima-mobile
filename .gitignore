@@ -30,6 +30,9 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# Firebase service-account keys (secrets — never commit)
+*firebase-adminsdk*.json
+
 # git worktrees
 .worktrees/
 

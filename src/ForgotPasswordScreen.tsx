@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
+import { trackFormResult, recordError } from './analytics';
 import Header from './Header';
 import KeyboardAwareScroll from './KeyboardAwareScroll';
 
@@ -38,8 +39,11 @@ export default function ForgotPasswordScreen({ onBackToLogin }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || 'Could not send reset code');
       setStep('reset');
+      trackFormResult('forgot_password_request', true);
     } catch (e: any) {
       setError(e.message);
+      trackFormResult('forgot_password_request', false, e.message);
+      recordError(e, { form: 'forgot_password_request' });
     } finally {
       setLoading(false);
     }
@@ -69,8 +73,11 @@ export default function ForgotPasswordScreen({ onBackToLogin }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || 'Could not reset password');
       setStep('done');
+      trackFormResult('reset_password', true);
     } catch (e: any) {
       setError(e.message);
+      trackFormResult('reset_password', false, e.message);
+      recordError(e, { form: 'reset_password' });
     } finally {
       setLoading(false);
     }

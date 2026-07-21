@@ -7,6 +7,7 @@ import { API_BASE } from './config';
 import { colors, fonts } from './theme';
 import Header from './Header';
 import KeyboardAwareScroll from './KeyboardAwareScroll';
+import { trackFormResult, recordError } from './analytics';
 
 // Required fields, mirroring the website Sign Up form (all marked *).
 const FIELDS: { key: string; label: string; hint?: string; keyboard?: any; noCaps?: boolean; secure?: boolean }[] = [
@@ -61,8 +62,11 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || 'Sign up failed');
       setDone(true);
+      trackFormResult('signup', true);
     } catch (e: any) {
       setError(e.message);
+      trackFormResult('signup', false, e.message);
+      recordError(e, { form: 'signup' });
     } finally {
       setLoading(false);
     }

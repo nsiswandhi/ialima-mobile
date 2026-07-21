@@ -13,6 +13,7 @@ import { useAndroidBack } from './useAndroidBack';
 import { angkatanApi, MyRequestStatus } from './angkatan/api';
 import AngkatanRequestModal from './angkatan/AngkatanRequestModal';
 import AngkatanApprovalSection from './angkatan/AngkatanApprovalSection';
+import { trackFormResult, recordError } from './analytics';
 
 // Field metadata, mirroring the WordPress "Update Alumni Profile" JetForm.
 // Keys are the real WP user-meta keys (confirmed against the DB); the labels
@@ -246,8 +247,11 @@ export default function ProfileScreen({
       setNotice('Profile saved.');
       if (display) onNameUpdated?.(display);
       setMode('view'); // back to the read-only view after a successful save
+      trackFormResult('profile_update', true);
     } catch (e: any) {
       setError(e.message);
+      trackFormResult('profile_update', false, e.message);
+      recordError(e, { form: 'profile_update' });
     } finally {
       setSaving(false);
     }

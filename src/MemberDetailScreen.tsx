@@ -19,6 +19,7 @@ import { artikelApi, ArtikelSummary } from './artikel/api';
 import AppointKomunitasSheet from './community/AppointKomunitasSheet';
 import { useAndroidBack } from './useAndroidBack';
 import { chatApi, ChatThread } from './chat/api';
+import { trackEvent } from './analytics';
 
 const CARD_W = 156;
 
@@ -142,6 +143,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
           method: 'POST',
           headers: authHeaders,
         }).catch(() => {});
+        trackEvent('alumni_profile_viewed');
       } catch (e: any) {
         if (alive) setError(e.message);
       } finally {

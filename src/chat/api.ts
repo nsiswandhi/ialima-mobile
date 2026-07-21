@@ -3,6 +3,7 @@
 // community/api.ts: JWT in the X-IA5-Token header, urlencoded POST bodies,
 // parse<T>() + ApiError.
 import { API_BASE } from '../config';
+import { trackEvent } from '../analytics';
 
 export type Img = { full: string; thumbnail: string } | null;
 
@@ -96,7 +97,7 @@ export const chatApi = {
       method: 'POST',
       headers: headers(token, true),
       body: form({ thread_id: threadId, body }),
-    }).then(parse<ChatMessage>);
+    }).then(parse<ChatMessage>).then((msg) => { trackEvent('chat_message_sent'); return msg; });
   },
 
   markThreadRead(token: string, threadId: number) {

@@ -4,6 +4,7 @@
 // Basic-auth wrapper).
 import { API_BASE } from '../config';
 import { Block } from '../Blocks';
+import { trackEvent } from '../analytics';
 
 export type Img = { full: string; thumbnail: string } | null;
 
@@ -182,7 +183,7 @@ export const commApi = {
   join(token: string, id: number) {
     return fetch(`${API_BASE}/community/${id}/join`, { method: 'POST', headers: headers(token) }).then(
       parse<{ success: boolean; my_status: MyStatus }>,
-    );
+    ).then((res) => { trackEvent('community_joined'); return res; });
   },
 
   leave(token: string, id: number) {
@@ -222,7 +223,7 @@ export const commApi = {
       method: 'POST',
       headers: headers(token, true),
       body: form(fields),
-    }).then(parse<CommunityDetail>);
+    }).then(parse<CommunityDetail>).then((c) => { trackEvent('community_created'); return c; });
   },
 
   update(token: string, id: number, fields: Record<string, unknown>) {

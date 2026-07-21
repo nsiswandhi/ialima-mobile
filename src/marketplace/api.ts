@@ -2,6 +2,7 @@
 // endpoints in class-ia5-marketplace.php. Every call carries the JWT in the
 // X-IA5-Token header (see config.ts for the Live Link Basic-auth wrapper).
 import { API_BASE } from '../config';
+import { trackEvent } from '../analytics';
 
 export type BrandType = 'product' | 'service' | 'place';
 
@@ -182,7 +183,7 @@ export const mkApi = {
       method: 'POST',
       headers: headers(token, true),
       body: form(fields),
-    }).then(parse<BrandDetail>);
+    }).then(parse<BrandDetail>).then((brand) => { trackEvent('marketplace_listing_created'); return brand; });
   },
 
   update(token: string, id: number, fields: Record<string, unknown>) {

@@ -4,6 +4,7 @@
 // per-feature-duplication convention (they are not shared across modules).
 import { API_BASE } from '../config';
 import { Block } from '../Blocks';
+import { trackEvent } from '../analytics';
 
 export type Img = { full: string; thumbnail: string } | null;
 
@@ -179,7 +180,7 @@ export const evApi = {
       method: 'POST',
       headers: headers(token, true),
       body: form(fields),
-    }).then(parse<EventDetail>);
+    }).then(parse<EventDetail>).then((ev) => { trackEvent('event_created'); return ev; });
   },
 
   update(token: string, id: number, fields: Record<string, unknown>) {
@@ -200,7 +201,7 @@ export const evApi = {
   follow(token: string, id: number) {
     return fetch(`${API_BASE}/event/${id}/follow`, { method: 'POST', headers: headers(token) }).then(
       parse<{ success: boolean; is_following: boolean; follower_count: number }>,
-    );
+    ).then((res) => { if (res.is_following) trackEvent('event_followed'); return res; });
   },
 
   unfollow(token: string, id: number) {

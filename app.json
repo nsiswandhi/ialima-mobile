@@ -11,6 +11,7 @@
     },
     "android": {
       "package": "id.ialima.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#4C7A6A",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -40,7 +41,10 @@
           "resizeMode": "contain",
           "backgroundColor": "#4C7A6A"
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/analytics",
+      "@react-native-firebase/crashlytics"
     ],
     "extra": {
       "eas": {
