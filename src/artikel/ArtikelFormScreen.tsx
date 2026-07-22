@@ -105,8 +105,8 @@ export default function ArtikelFormScreen({ token, articleId, isIALima, onDone, 
   };
 
   const submit = async () => {
-    if (!title.trim() || !content.trim()) {
-      setError('Judul dan konten wajib diisi.');
+    if (!title.trim() || !category.trim() || !(imageId || imageUrl) || !content.trim()) {
+      setError('Judul, kategori, featured image, dan konten wajib diisi.');
       return;
     }
     setSaving(true);
@@ -131,7 +131,7 @@ export default function ArtikelFormScreen({ token, articleId, isIALima, onDone, 
           <Text style={styles.rejectText}>Ditolak: {rejectReason}</Text>
         </View>
       )}
-      <Text style={styles.label}>Judul</Text>
+      <Text style={styles.label}>Judul *</Text>
       <TextInput
         style={styles.input}
         value={title}
@@ -140,7 +140,7 @@ export default function ArtikelFormScreen({ token, articleId, isIALima, onDone, 
         placeholderTextColor={colors.muted}
       />
 
-      <Text style={styles.label}>Kategori</Text>
+      <Text style={styles.label}>Kategori *</Text>
       <View style={styles.chipWrap}>
         {categories.map((c) => (
           <Pressable
@@ -153,7 +153,7 @@ export default function ArtikelFormScreen({ token, articleId, isIALima, onDone, 
         ))}
       </View>
 
-      <Text style={styles.label}>Featured Image</Text>
+      <Text style={styles.label}>Featured Image *</Text>
       <Pressable style={styles.imagePicker} onPress={pickImage} disabled={imageUploading}>
         {imageUploading ? (
           <ActivityIndicator color={colors.primary} />
@@ -164,7 +164,7 @@ export default function ArtikelFormScreen({ token, articleId, isIALima, onDone, 
         )}
       </Pressable>
 
-      <Text style={styles.label}>Konten</Text>
+      <Text style={styles.label}>Konten *</Text>
       <RichTextEditor
         defaultValue={content}
         onChangeHtml={setContent}

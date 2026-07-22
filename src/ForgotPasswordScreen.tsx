@@ -26,7 +26,7 @@ export default function ForgotPasswordScreen({ onBackToLogin }: Props) {
   async function handleRequestCode() {
     setError(null);
     if (!phone.trim()) {
-      setError('Phone is required.');
+      setError('Phone or email is required.');
       return;
     }
     setLoading(true);
@@ -111,19 +111,19 @@ export default function ForgotPasswordScreen({ onBackToLogin }: Props) {
           {step === 'request' ? (
             <>
               <Text style={styles.intro}>
-                Masukkan nomor HP yang kamu gunakan untuk masuk. Kami akan mengirimkan kode reset
-                ke email yang terdaftar.
+                Masukkan nomor HP atau email yang kamu gunakan untuk masuk. Kami akan mengirimkan
+                kode reset ke email yang terdaftar.
               </Text>
               <View style={styles.fieldRow}>
-                <Text style={styles.label}>PHONE</Text>
+                <Text style={styles.label}>PHONE / EMAIL</Text>
                 <TextInput
                   style={styles.input}
                   value={phone}
                   onChangeText={setPhone}
-                  placeholder="+62xxxxxxxxxx"
+                  placeholder="+62xxxxxxxxxx atau email"
                   placeholderTextColor={colors.muted}
                   autoCapitalize="none"
-                  keyboardType="phone-pad"
+                  keyboardType="default"
                 />
               </View>
 

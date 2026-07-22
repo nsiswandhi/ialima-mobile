@@ -17,6 +17,7 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 type Draft = {
@@ -31,7 +32,7 @@ const emptyDraft = (): Draft => ({
 
 // Manage a brand's items (products / services / menu rows). Add, edit, delete.
 // Item photo upload is a follow-up (needs the image picker).
-export default function ManageItemsScreen({ token, brandId, onBack, onLogout, profile, onNavigate }: Props) {
+export default function ManageItemsScreen({ token, brandId, onBack, onLogout, profile, onNavigate, unreadCount }: Props) {
   const [brand, setBrand] = useState<BrandDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -160,7 +161,7 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout, pr
     return (
       <View style={styles.flex}>
         <Header title={editingId === 'new' ? `Tambah ${itemLabel}` : `Ubah ${itemLabel}`}
-          onBack={() => setEditingId(null)} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+          onBack={() => setEditingId(null)} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
         <KeyboardAwareScroll contentContainerStyle={styles.formContent}>
           <Field label="Foto">
             <Pressable style={styles.photoPick} onPress={pickImage} disabled={uploading}>
@@ -221,7 +222,7 @@ export default function ManageItemsScreen({ token, brandId, onBack, onLogout, pr
 
   return (
     <View style={styles.flex}>
-      <Header title={brand ? `${itemLabel} — ${brand.name}` : 'Item'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title={brand ? `${itemLabel} — ${brand.name}` : 'Item'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
 
       {loading ? (

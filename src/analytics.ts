@@ -2,8 +2,27 @@
 // sites stay simple. Every call is wrapped in try/catch and no-ops quietly if
 // Firebase isn't configured (e.g. a build without google-services.json) —
 // tracking must never be able to crash or block the feature it's attached to.
-import analytics from '@react-native-firebase/analytics';
-import crashlytics from '@react-native-firebase/crashlytics';
+//
+// Expo Go has no native Firebase module, so a static import throws on load —
+// which would take down every screen that imports this file. Guard it behind
+// an Expo Go check and fall back to no-op stubs there.
+import Constants from 'expo-constants';
+
+const isExpoGo = Constants.executionEnvironment === 'storeClient';
+
+const noopAnalytics = () => ({
+  logScreenView: (..._args: any[]) => {},
+  logEvent: (..._args: any[]) => {},
+  setUserId: (..._args: any[]) => {},
+});
+const noopCrashlytics = () => ({
+  log: (..._args: any[]) => {},
+  recordError: (..._args: any[]) => {},
+  setUserId: (..._args: any[]) => {},
+});
+
+const analytics: any = isExpoGo ? noopAnalytics : require('@react-native-firebase/analytics').default;
+const crashlytics: any = isExpoGo ? noopCrashlytics : require('@react-native-firebase/crashlytics').default;
 
 export function trackScreen(name: string) {
   try {

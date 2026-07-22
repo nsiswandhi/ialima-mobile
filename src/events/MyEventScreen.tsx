@@ -30,10 +30,11 @@ type Props = {
   isIALima?: boolean;       // holds ia5_appoint_pengurus — sees the moderation queue
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 export default function MyEventScreen({
-  token, onBack, onLogout, canCreate, canOrg, canKomunitas, canAngkatan, isIALima, profile, onNavigate,
+  token, onBack, onLogout, canCreate, canOrg, canKomunitas, canAngkatan, isIALima, profile, onNavigate, unreadCount,
 }: Props) {
   const [nav, setNav] = useState<EvNav>(null);
   const [mine, setMine] = useState<EventSummary[]>([]);
@@ -115,6 +116,7 @@ export default function MyEventScreen({
         onEdit={(id) => setNav({ kind: 'edit', id })}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
@@ -138,6 +140,7 @@ export default function MyEventScreen({
         onLogout={onLogout}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
@@ -179,7 +182,7 @@ export default function MyEventScreen({
 
   return (
     <View style={styles.flex}>
-      <Header title="My Event" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="My Event" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       <ScrollView contentContainerStyle={styles.content}>
         {!!notice && (
           <Pressable style={styles.noticeBanner} onPress={() => setNotice(null)}>

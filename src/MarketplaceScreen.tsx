@@ -18,6 +18,7 @@ type Props = {
   canManage?: boolean;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 type Filter = 'all' | BrandType;
@@ -31,7 +32,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 // Marketplace directory: 2-column brand grid with type filter + search, and the
 // brand detail page. Brand management now lives in My Profile, so there is no
 // "Brand Saya" entry here anymore.
-export default function MarketplaceScreen({ token, viewerId, onLogout, initialBrandId, canManage, profile, onNavigate }: Props) {
+export default function MarketplaceScreen({ token, viewerId, onLogout, initialBrandId, canManage, profile, onNavigate, unreadCount }: Props) {
   const [view, setView] = useState<'list' | 'detail'>(initialBrandId ? 'detail' : 'list');
   const [selectedId, setSelectedId] = useState<number | null>(initialBrandId ?? null);
 
@@ -83,13 +84,14 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
         onLogout={onLogout}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
 
   return (
     <View style={styles.flex}>
-      <Header title="Marketplace" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="Marketplace" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
 
       {/* Type filter tabs */}
       <View style={styles.filterRow}>

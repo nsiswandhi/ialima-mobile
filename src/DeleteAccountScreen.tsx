@@ -16,6 +16,7 @@ type Props = {
   onDeleted: () => void; // account gone — reset auth state, distinct from a normal logout
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 const DELETED_ITEMS = [
@@ -27,7 +28,7 @@ const DELETED_ITEMS = [
   'Notifikasi dan token perangkat untuk push notification',
 ];
 
-export default function DeleteAccountScreen({ token, onBack, onLogout, onDeleted, profile, onNavigate }: Props) {
+export default function DeleteAccountScreen({ token, onBack, onLogout, onDeleted, profile, onNavigate, unreadCount }: Props) {
   const [confirmText, setConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +66,7 @@ export default function DeleteAccountScreen({ token, onBack, onLogout, onDeleted
 
   return (
     <View style={styles.flex}>
-      <Header title="Delete Account" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="Delete Account" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.warningBox}>
           <Ionicons name="warning-outline" size={22} color={colors.danger} />

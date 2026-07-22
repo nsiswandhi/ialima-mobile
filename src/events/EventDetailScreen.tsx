@@ -23,9 +23,10 @@ type Props = {
   onEdit?: (id: number) => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
-export default function EventDetailScreen({ token, eventId, onBack, onLogout, onEdit, profile, onNavigate }: Props) {
+export default function EventDetailScreen({ token, eventId, onBack, onLogout, onEdit, profile, onNavigate, unreadCount }: Props) {
   const [data, setData] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,12 +92,15 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
 
   const online = data ? showsOnline(data.jenis_event) : false;
   const offline = data ? showsOffline(data.jenis_event) : false;
+  const hasEnded = data
+    ? Math.floor(Date.now() / 1000) > (data.end_date || data.start_date || 0)
+    : false;
   const hasMeeting = data && online && (data.meeting_url || data.meeting_id || data.password || data.online_platform);
   const hasLocation = data && offline && (data.nama_lokasi || data.alamat || (data.latitude && data.longitude));
 
   return (
     <View style={styles.flex}>
-      <Header title={data?.name || 'Event'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title={data?.name || 'Event'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
@@ -159,7 +163,7 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
             >
               <Text style={styles.registerText}>Daftar Event</Text>
             </Pressable>
-          ) : (
+          ) : !hasEnded ? (
             <Pressable
               style={({ pressed }) => [
                 styles.registerBtn,
@@ -173,7 +177,7 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
                 {data.is_following ? 'Mengikuti' : 'Ikuti Event'}
               </Text>
             </Pressable>
-          )}
+          ) : null}
 
           {data.is_owner && (
             <Pressable style={styles.manageBtn} onPress={() => onEdit?.(data.id)}>

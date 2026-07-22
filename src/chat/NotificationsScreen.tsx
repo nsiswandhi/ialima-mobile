@@ -13,9 +13,10 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
-export default function NotificationsScreen({ token, onOpenThread, onRead, onLogout, profile, onNavigate }: Props) {
+export default function NotificationsScreen({ token, onOpenThread, onRead, onLogout, profile, onNavigate, unreadCount }: Props) {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +57,7 @@ export default function NotificationsScreen({ token, onOpenThread, onRead, onLog
 
   return (
     <View style={styles.flex}>
-      <Header title="Notifikasi" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="Notifikasi" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       {items.length > 0 && (
         <View style={styles.markAllRow}>
           <Pressable onPress={clearAll} style={styles.markAllBtn} accessibilityLabel="Bersihkan Pesan">

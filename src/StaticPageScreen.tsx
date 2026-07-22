@@ -14,12 +14,13 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 // Renders a WP Page's content natively: About LIMA Circle, Privacy Policy,
 // Terms and Conditions. Fetches GET /page/{slug} (public, no token — same as
 // /glossary) which strips the site's theme HTML down to { title, blocks }.
-export default function StaticPageScreen({ slug, fallbackTitle, onBack, onLogout, profile, onNavigate }: Props) {
+export default function StaticPageScreen({ slug, fallbackTitle, onBack, onLogout, profile, onNavigate, unreadCount }: Props) {
   const [data, setData] = useState<PageContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +54,7 @@ export default function StaticPageScreen({ slug, fallbackTitle, onBack, onLogout
         onLogout={onLogout}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />

@@ -477,10 +477,10 @@ function AppInner() {
 
           <TextInput
             style={styles.input}
-            placeholder="Phone (e.g. 0812… or +62…)"
+            placeholder="Phone or Email"
             placeholderTextColor={colors.muted}
             autoCapitalize="none"
-            keyboardType="phone-pad"
+            keyboardType="default"
             value={phone}
             onChangeText={setPhone}
           />
@@ -541,6 +541,7 @@ function AppInner() {
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'profile' ? (
         <ProfileScreen
@@ -551,6 +552,7 @@ function AppInner() {
           onNameUpdated={(name) => setUser((u) => (u ? { ...u, name } : u))}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
           canApproveAngkatan={!!user?.caps?.appoint_pengurus}
         />
       ) : tab === 'marketplace' ? (
@@ -562,6 +564,7 @@ function AppInner() {
           canManage={!!user?.caps?.manage_own_brand}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'community' ? (
         <CommunityScreen
@@ -571,6 +574,7 @@ function AppInner() {
           initialCommunityId={communityDeepLinkId}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'my-marketplace' ? (
         <MyMarketplaceScreen
@@ -581,6 +585,7 @@ function AppInner() {
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'my-komunitas' ? (
         <MyKomunitasScreen
@@ -590,6 +595,7 @@ function AppInner() {
           isIALima={!!user?.caps?.appoint_pengurus}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'event' ? (
         <EventScreen
@@ -602,6 +608,7 @@ function AppInner() {
           initialEventId={eventDeepLinkId}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'my-event' ? (
         <MyEventScreen
@@ -615,6 +622,7 @@ function AppInner() {
           isIALima={!!user?.caps?.appoint_pengurus}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'article' ? (
         <View style={styles.flex}>
@@ -640,6 +648,7 @@ function AppInner() {
             onLogout={logout}
             profile={meProfile}
             onNavigate={handleNavigate}
+            unreadCount={unreadCount}
           />
         ) : (
           <ChatInboxScreen
@@ -650,6 +659,7 @@ function AppInner() {
             onLogout={logout}
             profile={meProfile}
             onNavigate={handleNavigate}
+            unreadCount={unreadCount}
           />
         )
       ) : tab === 'broadcast' ? (
@@ -663,6 +673,7 @@ function AppInner() {
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'notifications' ? (
         <NotificationsScreen
@@ -682,6 +693,7 @@ function AppInner() {
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'about' ? (
         <StaticPageScreen
@@ -691,6 +703,7 @@ function AppInner() {
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'privacy' ? (
         <StaticPageScreen
@@ -700,6 +713,7 @@ function AppInner() {
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'terms' ? (
         <StaticPageScreen
@@ -709,6 +723,7 @@ function AppInner() {
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : tab === 'delete-account' ? (
         <DeleteAccountScreen
@@ -718,6 +733,7 @@ function AppInner() {
           onDeleted={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
         />
       ) : selectedMemberId ? (
         <MemberDetailScreen
@@ -728,6 +744,7 @@ function AppInner() {
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
+          unreadCount={unreadCount}
           onOpenThread={(thread) => {
             setSelectedMemberId(null);
             setOpenChatThread(thread);

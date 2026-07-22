@@ -91,11 +91,12 @@ type Props = {
   onNameUpdated?: (name: string) => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
   canApproveAngkatan?: boolean;
 };
 
 export default function ProfileScreen({
-  token, userId, onLogout, onBackToDirectory, onNameUpdated, profile, onNavigate, canApproveAngkatan,
+  token, userId, onLogout, onBackToDirectory, onNameUpdated, profile, onNavigate, unreadCount, canApproveAngkatan,
 }: Props) {
   // Profile opens read-only; the Edit Profile button switches to the form.
   const [mode, setMode] = useState<'view' | 'edit'>('view');
@@ -341,7 +342,7 @@ export default function ProfileScreen({
 
     return (
       <View style={styles.flex}>
-      <Header title="My Profile" onBack={onBackToDirectory} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="My Profile" onBack={onBackToDirectory} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       <KeyboardAwareScroll style={styles.flex} contentContainerStyle={styles.content}>
         {/* Completion score — mirrors "SKOR KELENGKAPAN DATA". */}
         <Text style={styles.sectionHead}>SKOR KELENGKAPAN DATA</Text>
@@ -417,7 +418,7 @@ export default function ProfileScreen({
   // ---------- EDIT MODE (the form) ----------
   return (
     <View style={styles.flex}>
-    <Header title="Update Profile" onBack={() => setMode('view')} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+    <Header title="Update Profile" onBack={() => setMode('view')} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
     <KeyboardAwareScroll style={styles.flex} contentContainerStyle={styles.content}>
 
       {/* Completion score — mirrors "SKOR KELENGKAPAN DATA". */}

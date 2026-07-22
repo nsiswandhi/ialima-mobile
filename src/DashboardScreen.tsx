@@ -25,6 +25,7 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 const CARD_W = 156;
@@ -56,7 +57,7 @@ function formatCompactNumber(n: number): string {
 // Home screen shown right after login: a stat counter row, upcoming events,
 // a "Brand Unggulan" carousel (up to 10 brands) and an "Alumni Populer"
 // carousel (up to 10 members, already ranked by recognition on the server).
-export default function DashboardScreen({ token, onOpenBrand, onOpenMember, onOpenCommunity, onOpenEvent, onOpenArtikel, onLogout, profile, onNavigate }: Props) {
+export default function DashboardScreen({ token, onOpenBrand, onOpenMember, onOpenCommunity, onOpenEvent, onOpenArtikel, onLogout, profile, onNavigate, unreadCount }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [brands, setBrands] = useState<BrandSummary[]>([]);
   const [alumni, setAlumni] = useState<AlumniSummary[]>([]);
@@ -99,7 +100,7 @@ export default function DashboardScreen({ token, onOpenBrand, onOpenMember, onOp
 
   return (
     <View style={styles.flex}>
-      <Header title="Dashboard" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="Dashboard" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statGrid}>
           {STAT_TILES.map((t) => (

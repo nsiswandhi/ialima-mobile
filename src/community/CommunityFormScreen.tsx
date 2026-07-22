@@ -25,6 +25,7 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 const STATUS_KOMUNITAS = ['Aktif dan Berbadan Hukum', 'Aktif', 'Tidak Aktif', 'Dalam Pembentukan'];
@@ -32,7 +33,7 @@ const STATUS_KEANGGOTAAN = [
   'Terbuka Untuk Alumni dan Umum', 'Untuk Alumni Lima', 'Terbatas Untuk Profesi', 'Berdasarkan Undangan',
 ];
 
-export default function CommunityFormScreen({ token, communityId, onBack, onSaved, onLogout, profile, onNavigate }: Props) {
+export default function CommunityFormScreen({ token, communityId, onBack, onSaved, onLogout, profile, onNavigate, unreadCount }: Props) {
   const editing = !!communityId;
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
@@ -49,8 +50,8 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
   const [introduction, setIntroduction] = useState('');
   const [tentangKami, setTentangKami] = useState('');
   const [berdiriSejak, setBerdiriSejak] = useState('');
-  const [statusKomunitas, setStatusKomunitas] = useState('');
-  const [statusKeanggotaan, setStatusKeanggotaan] = useState('');
+  const [statusKomunitas, setStatusKomunitas] = useState('Aktif');
+  const [statusKeanggotaan, setStatusKeanggotaan] = useState('Terbuka Untuk Alumni dan Umum');
   const [syaratBergabung, setSyaratBergabung] = useState('');
   const [caraBergabung, setCaraBergabung] = useState('');
 
@@ -172,6 +173,26 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
       setError('Nama komunitas wajib diisi.');
       return;
     }
+    if (communityType === '') {
+      setError('Tipe komunitas wajib dipilih.');
+      return;
+    }
+    if (!logo) {
+      setError('Logo wajib diunggah.');
+      return;
+    }
+    if (introduction.trim() === '') {
+      setError('Pengenalan singkat wajib diisi.');
+      return;
+    }
+    if (statusKomunitas === '') {
+      setError('Status komunitas wajib dipilih.');
+      return;
+    }
+    if (statusKeanggotaan === '') {
+      setError('Status keanggotaan wajib dipilih.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -205,7 +226,7 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
   if (loading) {
     return (
       <View style={styles.flex}>
-        <Header title="Komunitas" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+        <Header title="Komunitas" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
         </View>
@@ -217,13 +238,13 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
 
   return (
     <View style={styles.flex}>
-      <Header title={editing ? 'Edit Komunitas' : 'Komunitas Baru'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title={editing ? 'Edit Komunitas' : 'Komunitas Baru'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       <KeyboardAwareScroll style={styles.flex} contentContainerStyle={styles.content}>
         <Field label="Nama *">
           <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Nama komunitas" placeholderTextColor={colors.muted} />
         </Field>
 
-        <Field label="Tipe Komunitas">
+        <Field label="Tipe Komunitas *">
           <Pressable style={styles.pickerBtn} onPress={() => setTypePickerOpen(true)}>
             <Text style={typeLabel ? styles.pickerBtnText : styles.pickerBtnPlaceholder}>
               {typeLabel || 'Pilih tipe komunitas'}
@@ -233,11 +254,11 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
         </Field>
 
         <View style={styles.imgRow}>
-          <ImagePick label="Logo" img={logo?.full} onPress={() => pick('logo')} busy={uploading === 'logo'} />
+          <ImagePick label="Logo *" img={logo?.full} onPress={() => pick('logo')} busy={uploading === 'logo'} />
           <ImagePick label="Sampul" img={cover?.full} onPress={() => pick('cover')} busy={uploading === 'cover'} wide />
         </View>
 
-        <Field label={`Pengenalan Singkat (${introduction.length}/200)`}>
+        <Field label={`Pengenalan Singkat * (${introduction.length}/200)`}>
           <TextInput
             style={[styles.input, styles.textareaSmall]}
             value={introduction}
@@ -253,11 +274,11 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
           <TextInput style={styles.input} value={berdiriSejak} onChangeText={setBerdiriSejak} placeholder="cth: 1 Juni 2022" placeholderTextColor={colors.muted} />
         </Field>
 
-        <Field label="Status Komunitas">
+        <Field label="Status Komunitas *">
           <ChipPicker options={STATUS_KOMUNITAS} value={statusKomunitas} onChange={setStatusKomunitas} />
         </Field>
 
-        <Field label="Status Keanggotaan">
+        <Field label="Status Keanggotaan *">
           <ChipPicker options={STATUS_KEANGGOTAAN} value={statusKeanggotaan} onChange={setStatusKeanggotaan} />
         </Field>
 

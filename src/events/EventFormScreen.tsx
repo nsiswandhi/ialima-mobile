@@ -30,10 +30,11 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 export default function EventFormScreen({
-  token, eventId, canOrg, canKomunitas, canAngkatan, onBack, onSaved, onLogout, profile, onNavigate,
+  token, eventId, canOrg, canKomunitas, canAngkatan, onBack, onSaved, onLogout, profile, onNavigate, unreadCount,
 }: Props) {
   const editing = !!eventId;
   // When the creator holds BOTH the Angkatan and Komunitas caps they must pick
@@ -186,6 +187,26 @@ export default function EventFormScreen({
       setError('Nama event wajib diisi.');
       return;
     }
+    if (category.trim() === '') {
+      setError('Kategori wajib dipilih.');
+      return;
+    }
+    if (!logo) {
+      setError('Logo wajib diunggah.');
+      return;
+    }
+    if (!cover) {
+      setError('Sampul wajib diunggah.');
+      return;
+    }
+    if (introduction.trim() === '') {
+      setError('Pengenalan singkat wajib diisi.');
+      return;
+    }
+    if (jenis.trim() === '') {
+      setError('Jenis event wajib dipilih.');
+      return;
+    }
     if (!startTs || !endTs) {
       setError('Tanggal mulai dan selesai wajib diisi.');
       return;
@@ -245,7 +266,7 @@ export default function EventFormScreen({
   if (loading) {
     return (
       <View style={styles.flex}>
-        <Header title="Event" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+        <Header title="Event" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
         </View>
@@ -260,13 +281,13 @@ export default function EventFormScreen({
 
   return (
     <View style={styles.flex}>
-      <Header title={editing ? 'Edit Event' : 'Event Baru'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title={editing ? 'Edit Event' : 'Event Baru'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       <KeyboardAwareScroll style={styles.flex} contentContainerStyle={styles.content}>
         <Field label="Nama Event *">
           <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Nama event" placeholderTextColor={colors.muted} />
         </Field>
 
-        <Field label="Kategori">
+        <Field label="Kategori *">
           <Pressable style={styles.pickerBtn} onPress={() => setCatPickerOpen(true)}>
             <Text style={catLabel ? styles.pickerBtnText : styles.pickerBtnPlaceholder}>{catLabel || 'Pilih kategori'}</Text>
             <Ionicons name="chevron-down" size={16} color={colors.muted} />
@@ -296,11 +317,11 @@ export default function EventFormScreen({
         )}
 
         <View style={styles.imgRow}>
-          <ImagePick label="Logo" img={logo?.full} onPress={() => pick('logo')} busy={uploading === 'logo'} />
-          <ImagePick label="Sampul (4:5)" img={cover?.full} onPress={() => pick('cover')} busy={uploading === 'cover'} wide />
+          <ImagePick label="Logo *" img={logo?.full} onPress={() => pick('logo')} busy={uploading === 'logo'} />
+          <ImagePick label="Sampul * (4:5)" img={cover?.full} onPress={() => pick('cover')} busy={uploading === 'cover'} wide />
         </View>
 
-        <Field label={`Pengenalan Singkat (${introduction.length}/200)`}>
+        <Field label={`Pengenalan Singkat * (${introduction.length}/200)`}>
           <TextInput
             style={[styles.input, styles.textareaSmall]}
             value={introduction}
@@ -321,7 +342,7 @@ export default function EventFormScreen({
           />
         </Field>
 
-        <Field label="Jenis Event">
+        <Field label="Jenis Event *">
           <ChipPicker options={JENIS_EVENT} value={jenis} onChange={setJenis} />
         </Field>
 

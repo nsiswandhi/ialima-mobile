@@ -20,13 +20,14 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 type Option = { key: string; scope: BroadcastScope; komunitasId?: number; label: string };
 
 export default function BroadcastComposerScreen({
   token, angkatan, canMessageAngkatan, canMessageKomunitas, canMessageAll,
-  onBack, onLogout, profile, onNavigate,
+  onBack, onLogout, profile, onNavigate, unreadCount,
 }: Props) {
   const [komunitasList, setKomunitasList] = useState<CommunitySummary[]>([]);
   const [loadingKomunitas, setLoadingKomunitas] = useState(canMessageKomunitas);
@@ -86,7 +87,7 @@ export default function BroadcastComposerScreen({
 
   return (
     <View style={styles.flex}>
-      <Header title="Buat Pengumuman" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="Buat Pengumuman" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       <View style={styles.content}>
         {loadingKomunitas && options.length === 0 ? (
           <ActivityIndicator color={colors.primary} style={styles.loadingSpinner} />

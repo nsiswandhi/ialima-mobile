@@ -22,9 +22,10 @@ type Props = {
   onEdit?: (id: number) => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
-export default function CommunityDetailScreen({ token, communityId, onBack, onLogout, onEdit, profile, onNavigate }: Props) {
+export default function CommunityDetailScreen({ token, communityId, onBack, onLogout, onEdit, profile, onNavigate, unreadCount }: Props) {
   const [data, setData] = useState<CommunityDetail | null>(null);
   const [members, setMembers] = useState<CommunityMember[]>([]);
   const [pending, setPending] = useState<CommunityMember[]>([]);
@@ -113,7 +114,7 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
 
   return (
     <View style={styles.flex}>
-      <Header title={data?.name || 'Komunitas'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title={data?.name || 'Komunitas'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />

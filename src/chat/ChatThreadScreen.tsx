@@ -17,9 +17,10 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
-export default function ChatThreadScreen({ token, thread, onBack, onLogout, profile, onNavigate }: Props) {
+export default function ChatThreadScreen({ token, thread, onBack, onLogout, profile, onNavigate, unreadCount }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState('');
@@ -112,6 +113,7 @@ export default function ChatThreadScreen({ token, thread, onBack, onLogout, prof
         onLogout={onLogout}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
       <View style={styles.blockRow}>
         <Pressable

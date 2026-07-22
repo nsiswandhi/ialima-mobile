@@ -15,9 +15,10 @@ type Props = {
   canBroadcast?: boolean;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
-export default function ChatInboxScreen({ token, onLogout, onOpenThread, onOpenBroadcast, canBroadcast, profile, onNavigate }: Props) {
+export default function ChatInboxScreen({ token, onLogout, onOpenThread, onOpenBroadcast, canBroadcast, profile, onNavigate, unreadCount }: Props) {
   const [items, setItems] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export default function ChatInboxScreen({ token, onLogout, onOpenThread, onOpenB
 
   return (
     <View style={styles.flex}>
-      <Header title="Pesan" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="Pesan" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       {!!canBroadcast && (
         <Pressable
           style={({ pressed }) => [styles.broadcastCard, pressed && styles.broadcastCardPressed]}

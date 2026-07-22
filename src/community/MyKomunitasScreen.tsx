@@ -18,6 +18,7 @@ type Props = {
   isIALima?: boolean; // holds ia5_appoint_pengurus — sees the moderation queue too
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 // Burger-menu destination for "My Komunitas" — three sections: "Kelola
@@ -28,7 +29,7 @@ type Props = {
 // awaiting approval, with Setujui/Hapus and a tap-to-review popup). The
 // community-level approval gate here is separate from member-join approval,
 // which stays inside CommunityDetailScreen.
-export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, profile, onNavigate }: Props) {
+export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, profile, onNavigate, unreadCount }: Props) {
   const [nav, setNav] = useState<ComNav>(null);
   const [managed, setManaged] = useState<CommunitySummary[]>([]);
   const [joined, setJoined] = useState<CommunitySummary[]>([]);
@@ -109,6 +110,7 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
         onEdit={(id) => setNav({ kind: 'edit', id })}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
@@ -129,13 +131,14 @@ export default function MyKomunitasScreen({ token, onBack, onLogout, isIALima, p
         onLogout={onLogout}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
 
   return (
     <View style={styles.flex}>
-      <Header title="My Komunitas" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="My Komunitas" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       <View style={styles.content}>
         {!!notice && (
           <Pressable style={styles.noticeBanner} onPress={() => setNotice(null)}>

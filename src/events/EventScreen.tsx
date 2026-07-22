@@ -23,12 +23,13 @@ type Props = {
   initialEventId?: number | null;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 type View3 = 'list' | 'detail' | 'form';
 type When = 'upcoming' | 'past';
 
-export default function EventScreen({ token, canCreate, canOrg, canKomunitas, canAngkatan, onLogout, initialEventId, profile, onNavigate }: Props) {
+export default function EventScreen({ token, canCreate, canOrg, canKomunitas, canAngkatan, onLogout, initialEventId, profile, onNavigate, unreadCount }: Props) {
   const [view, setView] = useState<View3>(initialEventId ? 'detail' : 'list');
   const [selectedId, setSelectedId] = useState<number | null>(initialEventId ?? null);
   const [editId, setEditId] = useState<number | null>(null);
@@ -83,6 +84,7 @@ export default function EventScreen({ token, canCreate, canOrg, canKomunitas, ca
         }}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
@@ -109,13 +111,14 @@ export default function EventScreen({ token, canCreate, canOrg, canKomunitas, ca
         onLogout={onLogout}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
 
   return (
     <View style={styles.flex}>
-      <Header title="Event" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="Event" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
 
       <View style={styles.segRow}>

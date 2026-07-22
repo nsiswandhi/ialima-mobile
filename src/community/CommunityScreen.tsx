@@ -19,11 +19,12 @@ type Props = {
   initialCommunityId?: number | null;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 type View3 = 'list' | 'detail' | 'form';
 
-export default function CommunityScreen({ token, canManage, onLogout, initialCommunityId, profile, onNavigate }: Props) {
+export default function CommunityScreen({ token, canManage, onLogout, initialCommunityId, profile, onNavigate, unreadCount }: Props) {
   const [view, setView] = useState<View3>(initialCommunityId ? 'detail' : 'list');
   const [selectedId, setSelectedId] = useState<number | null>(initialCommunityId ?? null);
   const [editId, setEditId] = useState<number | null>(null);
@@ -76,6 +77,7 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
         }}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
@@ -99,13 +101,14 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
         onLogout={onLogout}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
 
   return (
     <View style={styles.flex}>
-      <Header title="Komunitas" onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="Komunitas" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
 
       <View style={styles.searchRow}>

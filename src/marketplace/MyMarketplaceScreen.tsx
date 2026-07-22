@@ -18,12 +18,13 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 // Burger-menu destination for "My Marketplace" — full-screen version of the
 // brand list ProfileScreen embeds inline, reusing the same MyBrandsSection +
 // create/edit/items sub-navigation (mirrors ProfileScreen.tsx's brandNav state).
-export default function MyMarketplaceScreen({ token, viewerId, canManage, onBack, onLogout, profile, onNavigate }: Props) {
+export default function MyMarketplaceScreen({ token, viewerId, canManage, onBack, onLogout, profile, onNavigate, unreadCount }: Props) {
   const [brandNav, setBrandNav] = useState<BrandNav>(null);
   const [refresh, setRefresh] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
@@ -53,6 +54,7 @@ export default function MyMarketplaceScreen({ token, viewerId, canManage, onBack
           onLogout={onLogout}
           profile={profile}
           onNavigate={onNavigate}
+          unreadCount={unreadCount}
         />
       );
     }
@@ -65,13 +67,14 @@ export default function MyMarketplaceScreen({ token, viewerId, canManage, onBack
         onLogout={onLogout}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
 
   return (
     <View style={styles.flex}>
-      <Header title="My Marketplace" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title="My Marketplace" onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
       <View style={styles.content}>
         {canManage ? (

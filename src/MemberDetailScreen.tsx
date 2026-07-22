@@ -45,13 +45,14 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
   onOpenThread: (thread: ChatThread) => void;
 };
 
 // Read-only detail for a member tapped in the directory. Fetches the
 // (auth-gated) /member/{id} payload and resolves the industry label. Pengurus
 // see a Verify button for eligible subscribers; members see a Recognize button.
-export default function MemberDetailScreen({ memberId, token, viewer, onBack, onLogout, profile, onNavigate, onOpenThread }: Props) {
+export default function MemberDetailScreen({ memberId, token, viewer, onBack, onLogout, profile, onNavigate, unreadCount, onOpenThread }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ProfileViewData | null>(null);
@@ -269,6 +270,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
         onLogout={onLogout}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
@@ -282,6 +284,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
         onLogout={onLogout}
         profile={profile}
         onNavigate={onNavigate}
+        unreadCount={unreadCount}
       />
     );
   }
@@ -299,7 +302,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
 
   return (
     <View style={styles.flex}>
-      <Header title={data?.name || 'Profile'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title={data?.name || 'Profile'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
 
       {loading ? (
         <View style={styles.center}>

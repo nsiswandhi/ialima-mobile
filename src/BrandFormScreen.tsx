@@ -17,6 +17,7 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 const DAYS: [keyof Hours, string][] = [
@@ -34,7 +35,7 @@ const emptyHours = (): Record<keyof Hours, DayState> =>
 // Create + edit a Brand. In create mode the member picks a type first (locked
 // afterwards); place brands expose the address / coordinates / hours / offerings
 // block. Logo & cover upload is a separate follow-up (needs the image picker).
-export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLogout, profile, onNavigate }: Props) {
+export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLogout, profile, onNavigate, unreadCount }: Props) {
   const isEdit = brandId != null;
 
   const [loading, setLoading] = useState(isEdit);
@@ -188,10 +189,14 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
   const validate = (): string | null => {
     if (!type) return 'Pilih tipe brand.';
     if (!name.trim()) return 'Nama brand wajib diisi.';
+    if (!description.trim()) return 'Deskripsi wajib diisi.';
     if (!whatsapp.trim()) return 'Nomor WhatsApp wajib diisi.';
+    if (!city.trim()) return 'Kota wajib diisi.';
+    if (!logoId && !logoPreview) return 'Logo wajib diunggah.';
     if (isPlace) {
       if (!address.trim()) return 'Alamat wajib diisi untuk tempat.';
       if (!lat.trim() || !lng.trim()) return 'Koordinat (lat & lng) wajib diisi untuk tempat.';
+      if (hoursRows.length === 0) return 'Jam buka wajib diisi minimal 1 hari untuk tempat.';
     }
     return null;
   };
@@ -246,7 +251,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
   if (loading) {
     return (
       <View style={styles.flex}>
-        <Header title={title} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+        <Header title={title} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
         </View>
@@ -258,7 +263,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
   if (!isEdit && !type) {
     return (
       <View style={styles.flex}>
-        <Header title={title} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+        <Header title={title} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
         <ScrollView contentContainerStyle={styles.pickerWrap}>
           <Text style={styles.pickerTitle}>Apa jenis brand Anda?</Text>
           {(['product', 'service', 'place'] as BrandType[]).map((t) => (
@@ -280,7 +285,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
 
   return (
     <View style={styles.flex}>
-      <Header title={title} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title={title} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       <KeyboardAwareScroll contentContainerStyle={styles.content}>
         <View style={styles.typeBadge}>
           <Text style={styles.typeBadgeText}>{type ? TYPE_LABELS[type] : ''}</Text>
@@ -291,7 +296,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
             placeholderTextColor={colors.muted} />
         </Field>
 
-        <Field label="Deskripsi">
+        <Field label="Deskripsi *">
           <TextInput style={[styles.input, styles.multiline]} value={description} onChangeText={setDescription}
             placeholder="Ceritakan tentang brand Anda" placeholderTextColor={colors.muted} multiline />
         </Field>
@@ -301,7 +306,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
             placeholder="08xxxxxxxxxx" placeholderTextColor={colors.muted} keyboardType="phone-pad" />
         </Field>
 
-        <Field label="Kota">
+        <Field label="Kota *">
           <TextInput style={styles.input} value={city} onChangeText={setCity} placeholder="Bandung"
             placeholderTextColor={colors.muted} />
         </Field>
@@ -311,7 +316,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
             placeholder="mis. fashion, restoran-kafe" placeholderTextColor={colors.muted} autoCapitalize="none" />
         </Field>
 
-        <Field label="Foto (Logo & Sampul)">
+        <Field label="Foto (Logo * & Sampul)">
           <View style={styles.photoRow}>
             <Pressable style={styles.logoPick} onPress={() => pickImage('logo')} disabled={uploading !== null}>
               {uploading === 'logo' ? (
@@ -390,7 +395,7 @@ export default function BrandFormScreen({ token, brandId, onBack, onSaved, onLog
               </View>
             </View>
 
-            <Field label="Jam Buka">
+            <Field label="Jam Buka * (minimal 1 hari)">
               <View>
                 {DAYS.map(([day, label]) => (
                   <View style={styles.hourRow} key={day}>

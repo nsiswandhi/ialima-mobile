@@ -22,6 +22,7 @@ type Props = {
   onManage?: (brand: BrandDetail) => void; // owner taps "Kelola Brand" (optional)
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 type OwnerProfile = {
@@ -38,7 +39,7 @@ const DAY_LABELS: [keyof Place['operating_hours'], string][] = [
 
 // Public brand page. Fires a one-time view increment on open, then renders the
 // items and (for place brands) hours + directions. Owners get a manage button.
-export default function BrandDetailScreen({ brandId, token, viewerId, onBack, onLogout, onManage, profile, onNavigate }: Props) {
+export default function BrandDetailScreen({ brandId, token, viewerId, onBack, onLogout, onManage, profile, onNavigate, unreadCount }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [brand, setBrand] = useState<BrandDetail | null>(null);
@@ -94,7 +95,7 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
 
   return (
     <View style={styles.flex}>
-      <Header title={brand?.name || 'Brand'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title={brand?.name || 'Brand'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
 
       {loading ? (
         <View style={styles.center}>

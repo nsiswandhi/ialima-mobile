@@ -11,14 +11,15 @@ type Props = {
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
+  unreadCount?: number;
 };
 
 // Placeholder for Phase 3 destinations (Event, Article) — wired into the nav
 // shell now so it doesn't need to change again once those features ship.
-export default function ComingSoonScreen({ title, icon, onBack, onLogout, profile, onNavigate }: Props) {
+export default function ComingSoonScreen({ title, icon, onBack, onLogout, profile, onNavigate, unreadCount }: Props) {
   return (
     <View style={styles.flex}>
-      <Header title={title} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} />
+      <Header title={title} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       <View style={styles.center}>
         <View style={styles.iconCircle}>
           <Ionicons name={icon} size={34} color={colors.primary} />
