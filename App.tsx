@@ -26,6 +26,7 @@ import StaticPageScreen from './src/StaticPageScreen';
 import EventScreen from './src/events/EventScreen';
 import MyEventScreen from './src/events/MyEventScreen';
 import ArtikelScreen from './src/artikel/ArtikelScreen';
+import AdBanner from './src/ads/AdBanner';
 import MyArtikelScreen from './src/artikel/MyArtikelScreen';
 import ChatInboxScreen from './src/chat/ChatInboxScreen';
 import ChatThreadScreen from './src/chat/ChatThreadScreen';
@@ -156,6 +157,15 @@ function AppInner() {
   const [eventDeepLinkId, setEventDeepLinkId] = useState<number | null>(null);
   // An article id to deep-link into on the Artikel tab (e.g. from the Dashboard).
   const [artikelDeepLinkId, setArtikelDeepLinkId] = useState<number | null>(null);
+  // Ad tap routing for the `app://<type>/<id>` internal-link convention
+  // (see src/ads/api.ts's resolveAdTap) — reuses the same deep-link setters
+  // as onOpenArtikel/onOpenCommunity/onOpenEvent/onOpenBrand above.
+  function handleAdInternalLink(type: string, id: number) {
+    if (type === 'article') { setArtikelDeepLinkId(id); setTab('article'); }
+    else if (type === 'community') { setCommunityDeepLinkId(id); setTab('community'); }
+    else if (type === 'event') { setEventDeepLinkId(id); setTab('event'); }
+    else if (type === 'marketplace') { setMarketplaceBrandId(id); setTab('marketplace'); }
+  }
   // The chat thread to open when the 'chat' tab is showing (set by tapping a
   // thread in the inbox, or by MemberDetailScreen's "Kirim Pesan" button).
   const [openChatThread, setOpenChatThread] = useState<ChatThread | null>(null);
@@ -538,6 +548,7 @@ function AppInner() {
           onOpenCommunity={(id) => { setCommunityDeepLinkId(id); setTab('community'); }}
           onOpenEvent={(id) => { setEventDeepLinkId(id); setTab('event'); }}
           onOpenArtikel={(id) => { setArtikelDeepLinkId(id); setTab('article'); }}
+          onInternalLink={handleAdInternalLink}
           onLogout={logout}
           profile={meProfile}
           onNavigate={handleNavigate}
@@ -565,6 +576,7 @@ function AppInner() {
           profile={meProfile}
           onNavigate={handleNavigate}
           unreadCount={unreadCount}
+          onInternalLink={handleAdInternalLink}
         />
       ) : tab === 'community' ? (
         <CommunityScreen
@@ -575,6 +587,7 @@ function AppInner() {
           profile={meProfile}
           onNavigate={handleNavigate}
           unreadCount={unreadCount}
+          onInternalLink={handleAdInternalLink}
         />
       ) : tab === 'my-marketplace' ? (
         <MyMarketplaceScreen
@@ -609,6 +622,7 @@ function AppInner() {
           profile={meProfile}
           onNavigate={handleNavigate}
           unreadCount={unreadCount}
+          onInternalLink={handleAdInternalLink}
         />
       ) : tab === 'my-event' ? (
         <MyEventScreen
@@ -627,6 +641,7 @@ function AppInner() {
       ) : tab === 'article' ? (
         <View style={styles.flex}>
           <Header title="Artikel" onLogout={logout} profile={meProfile} onNavigate={handleNavigate} unreadCount={unreadCount} />
+          <AdBanner placement="artikel_header" aspectRatio={16 / 9} onInternalLink={handleAdInternalLink} />
           <ArtikelScreen
             token={token}
             canCreate={true}

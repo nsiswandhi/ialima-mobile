@@ -9,6 +9,7 @@ import { artikelApi, ArtikelDetail } from './api';
 import { renderBlock } from '../Blocks';
 import StarRating from '../reviews/StarRating';
 import ReviewSection from '../reviews/ReviewSection';
+import { promptReport } from '../report/promptReport';
 
 type Props = {
   token: string;
@@ -53,6 +54,14 @@ export default function ArtikelDetailScreen({ token, articleId, onBack, onEdit }
         <Text style={styles.title}>{data.title}</Text>
         <Text style={styles.author}>{data.author_name}</Text>
         <StarRating value={data.rating_average} count={data.rating_count} size="md" />
+        <Pressable
+          onPress={() => promptReport(token, 'article', articleId)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}
+          accessibilityLabel="Laporkan artikel ini"
+        >
+          <Ionicons name="flag-outline" size={14} color={colors.muted} />
+          <Text style={{ color: colors.muted, fontSize: 12 }}>Laporkan</Text>
+        </Pressable>
         <View style={{ height: 16 }} />
 
         {data.status !== 'publish' && (data.is_owner || data.is_ia_lima_review) && (

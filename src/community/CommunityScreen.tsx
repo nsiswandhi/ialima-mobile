@@ -11,6 +11,7 @@ import CommunityDetailScreen from './CommunityDetailScreen';
 import CommunityFormScreen from './CommunityFormScreen';
 import NoticeBanner from '../NoticeBanner';
 import { useAndroidBack } from '../useAndroidBack';
+import AdBanner from '../ads/AdBanner';
 
 type Props = {
   token: string;
@@ -20,11 +21,12 @@ type Props = {
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
   unreadCount?: number;
+  onInternalLink: (type: string, id: number) => void;
 };
 
 type View3 = 'list' | 'detail' | 'form';
 
-export default function CommunityScreen({ token, canManage, onLogout, initialCommunityId, profile, onNavigate, unreadCount }: Props) {
+export default function CommunityScreen({ token, canManage, onLogout, initialCommunityId, profile, onNavigate, unreadCount, onInternalLink }: Props) {
   const [view, setView] = useState<View3>(initialCommunityId ? 'detail' : 'list');
   const [selectedId, setSelectedId] = useState<number | null>(initialCommunityId ?? null);
   const [editId, setEditId] = useState<number | null>(null);
@@ -109,6 +111,7 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
   return (
     <View style={styles.flex}>
       <Header title="Komunitas" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
+      <AdBanner placement="komunitas_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />
       {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
 
       <View style={styles.searchRow}>

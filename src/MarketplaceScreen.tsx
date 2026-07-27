@@ -9,6 +9,7 @@ import BrandDetailScreen from './BrandDetailScreen';
 import BrandCard from './marketplace/BrandCard';
 import { BrandSummary, BrandType, mkApi, TYPE_LABELS } from './marketplace/api';
 import { useAndroidBack } from './useAndroidBack';
+import AdBanner from './ads/AdBanner';
 
 type Props = {
   token: string;
@@ -19,6 +20,7 @@ type Props = {
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
   unreadCount?: number;
+  onInternalLink: (type: string, id: number) => void;
 };
 
 type Filter = 'all' | BrandType;
@@ -32,7 +34,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 // Marketplace directory: 2-column brand grid with type filter + search, and the
 // brand detail page. Brand management now lives in My Profile, so there is no
 // "Brand Saya" entry here anymore.
-export default function MarketplaceScreen({ token, viewerId, onLogout, initialBrandId, canManage, profile, onNavigate, unreadCount }: Props) {
+export default function MarketplaceScreen({ token, viewerId, onLogout, initialBrandId, canManage, profile, onNavigate, unreadCount, onInternalLink }: Props) {
   const [view, setView] = useState<'list' | 'detail'>(initialBrandId ? 'detail' : 'list');
   const [selectedId, setSelectedId] = useState<number | null>(initialBrandId ?? null);
 
@@ -92,6 +94,7 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
   return (
     <View style={styles.flex}>
       <Header title="Marketplace" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
+      <AdBanner placement="marketplace_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />
 
       {/* Type filter tabs */}
       <View style={styles.filterRow}>

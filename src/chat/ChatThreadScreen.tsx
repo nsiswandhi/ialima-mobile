@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import { colors, fonts } from '../theme';
 import { chatApi, ChatMessage, ChatThread } from './api';
+import { promptReport } from '../report/promptReport';
 
 const POLL_MS = 8000;
 
@@ -116,6 +117,13 @@ export default function ChatThreadScreen({ token, thread, onBack, onLogout, prof
         unreadCount={unreadCount}
       />
       <View style={styles.blockRow}>
+        <Pressable
+          onPress={() => promptReport(token, 'user', thread.other.id)}
+          style={styles.blockBtn}
+          accessibilityLabel="Laporkan anggota ini"
+        >
+          <Ionicons name="flag-outline" size={16} color={colors.muted} />
+        </Pressable>
         <Pressable
           onPress={blocked ? undefined : confirmBlock}
           disabled={blocked}

@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './config';
+import { trackEvent } from './analytics';
 import { colors, fonts } from './theme';
 import Header, { DrawerProfile, NavTarget } from './Header';
 import {
@@ -12,6 +13,7 @@ import {
 } from './marketplace/api';
 import StarRating from './reviews/StarRating';
 import ReviewSection from './reviews/ReviewSection';
+import { promptReport } from './report/promptReport';
 
 type Props = {
   brandId: number;
@@ -87,7 +89,12 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
   const isOwner = !!brand && brand.owner_id === viewerId;
   const isPlace = brand?.type === 'place';
 
-  const openWhatsApp = (itemName?: string) => brand && Linking.openURL(whatsappUrl(brand, itemName));
+  const openWhatsApp = (itemName?: string) => {
+    if (!brand) return;
+    trackEvent('marketplace_whatsapp_click', { brand_id: brand.id, brand_name: brand.name, item_name: itemName });
+    if (itemName) trackEvent('marketplace_product_click', { brand_id: brand.id, item_name: itemName });
+    Linking.openURL(whatsappUrl(brand, itemName));
+  };
   const openDirections = () => brand?.place && Linking.openURL(directionsUrl(brand.place));
 
   const ctaLabel =
@@ -173,6 +180,14 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
             onPress={() => openWhatsApp()}
           >
             <Text style={isPlace ? styles.secondaryBtnText : styles.primaryBtnText}>{ctaLabel}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => brand && promptReport(token, 'listing', brand.id)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, alignSelf: 'center' }}
+            accessibilityLabel="Laporkan brand ini"
+          >
+            <Ionicons name="flag-outline" size={14} color={colors.muted} />
+            <Text style={{ color: colors.muted, fontSize: 12 }}>Laporkan</Text>
           </Pressable>
 
           {isOwner && onManage && (

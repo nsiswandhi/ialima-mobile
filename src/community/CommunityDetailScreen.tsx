@@ -13,6 +13,7 @@ import { renderBlock, Block } from '../Blocks';
 import { commApi, CommunityDetail, CommunityMember, contactChannel, contactOpenUrl, hariLabel, MyStatus } from './api';
 import StarRating from '../reviews/StarRating';
 import ReviewSection from '../reviews/ReviewSection';
+import { promptReport } from '../report/promptReport';
 
 type Props = {
   token: string;
@@ -115,6 +116,16 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
   return (
     <View style={styles.flex}>
       <Header title={data?.name || 'Komunitas'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
+      {data ? (
+        <Pressable
+          onPress={() => promptReport(token, 'community', communityId)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingTop: 8 }}
+          accessibilityLabel="Laporkan komunitas ini"
+        >
+          <Ionicons name="flag-outline" size={14} color={colors.muted} />
+          <Text style={{ color: colors.muted, fontFamily: fonts.body, fontSize: 12 }}>Laporkan</Text>
+        </Pressable>
+      ) : null}
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />

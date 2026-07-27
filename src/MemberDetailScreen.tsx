@@ -226,6 +226,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d?.message || 'Action failed');
+      if (!iKnowThem && d.i_know_them) trackEvent('saya_kenal_dia_click', { target_id: memberId });
       setIKnowThem(!!d.i_know_them);
       setTheyKnowMe(!!d.they_know_me);
       if (typeof d.recognize_count === 'number') setRecognizeCount(d.recognize_count);

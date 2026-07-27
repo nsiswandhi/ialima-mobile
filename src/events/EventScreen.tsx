@@ -12,6 +12,7 @@ import EventDetailScreen from './EventDetailScreen';
 import EventFormScreen from './EventFormScreen';
 import NoticeBanner from '../NoticeBanner';
 import { useAndroidBack } from '../useAndroidBack';
+import AdBanner from '../ads/AdBanner';
 
 type Props = {
   token: string;
@@ -24,12 +25,13 @@ type Props = {
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
   unreadCount?: number;
+  onInternalLink: (type: string, id: number) => void;
 };
 
 type View3 = 'list' | 'detail' | 'form';
 type When = 'upcoming' | 'past';
 
-export default function EventScreen({ token, canCreate, canOrg, canKomunitas, canAngkatan, onLogout, initialEventId, profile, onNavigate, unreadCount }: Props) {
+export default function EventScreen({ token, canCreate, canOrg, canKomunitas, canAngkatan, onLogout, initialEventId, profile, onNavigate, unreadCount, onInternalLink }: Props) {
   const [view, setView] = useState<View3>(initialEventId ? 'detail' : 'list');
   const [selectedId, setSelectedId] = useState<number | null>(initialEventId ?? null);
   const [editId, setEditId] = useState<number | null>(null);
@@ -119,6 +121,7 @@ export default function EventScreen({ token, canCreate, canOrg, canKomunitas, ca
   return (
     <View style={styles.flex}>
       <Header title="Event" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
+      <AdBanner placement="event_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />
       {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
 
       <View style={styles.segRow}>

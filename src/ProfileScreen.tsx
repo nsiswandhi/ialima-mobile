@@ -24,6 +24,7 @@ type FieldDef = {
   multiline?: boolean;
   keyboard?: any;
   noCaps?: boolean;
+  disabled?: boolean;
 };
 const FIELDS: Record<string, FieldDef> = {
   phone: { label: 'Phone', hint: 'Format +62xxxxxxxxxx (+62 Kode Negara)', keyboard: 'phone-pad' },
@@ -31,7 +32,7 @@ const FIELDS: Record<string, FieldDef> = {
   first_name: { label: 'First name' },
   last_name: { label: 'Last name' },
   nickname: { label: 'Nickname', hint: 'Nama Panggilan' },
-  angkatan: { label: 'Angkatan', hint: 'Tahun Kelulusan', keyboard: 'number-pad' },
+  angkatan: { label: 'Angkatan', hint: 'Tidak bisa dirubah setelah terdaftar', keyboard: 'number-pad', disabled: true },
   alamat: {
     label: 'Alamat',
     hint: 'Contoh: Nama Jalan dan No. Rumah, Komplek, Desa/Kelurahan, Kecamatan',
@@ -291,7 +292,7 @@ export default function ProfileScreen({
       <View key={key} style={styles.fieldRow}>
         <Text style={styles.label}>{f.label.toUpperCase()}</Text>
         <TextInput
-          style={[styles.input, f.multiline && styles.multiline]}
+          style={[styles.input, f.multiline && styles.multiline, f.disabled && styles.inputDisabled]}
           value={form[key] ?? ''}
           onChangeText={(t) => setField(key, t)}
           placeholder={f.label}
@@ -299,6 +300,7 @@ export default function ProfileScreen({
           autoCapitalize={f.noCaps ? 'none' : 'sentences'}
           keyboardType={f.keyboard}
           multiline={f.multiline}
+          editable={!f.disabled}
         />
         {!!f.hint && <Text style={styles.hint}>{f.hint}</Text>}
       </View>
@@ -619,6 +621,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, fontFamily: fonts.body, color: colors.heading,
   },
   multiline: { minHeight: 70, textAlignVertical: 'top' },
+  inputDisabled: { backgroundColor: colors.bgAlt, color: colors.muted },
   hint: { fontFamily: fonts.body, fontSize: 11, color: colors.muted, marginTop: 5 },
 
   // Industry dropdown

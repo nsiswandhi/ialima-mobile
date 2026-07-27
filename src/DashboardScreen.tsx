@@ -13,6 +13,8 @@ import EventListCard from './events/EventListCard';
 import { evApi, EventSummary } from './events/api';
 import DashboardArtikelCard from './artikel/DashboardArtikelCard';
 import { artikelApi, ArtikelSummary } from './artikel/api';
+import HeroBannerSlider from './ads/HeroBannerSlider';
+import AdBanner from './ads/AdBanner';
 
 type Props = {
   token: string;
@@ -22,6 +24,7 @@ type Props = {
   onOpenCommunity: (id: number) => void;
   onOpenEvent: (id: number) => void;
   onOpenArtikel: (id: number) => void;
+  onInternalLink: (type: string, id: number) => void;
   onLogout: () => void;
   profile?: DrawerProfile;
   onNavigate?: (target: NavTarget) => void;
@@ -57,7 +60,7 @@ function formatCompactNumber(n: number): string {
 // Home screen shown right after login: a stat counter row, upcoming events,
 // a "Brand Unggulan" carousel (up to 10 brands) and an "Alumni Populer"
 // carousel (up to 10 members, already ranked by recognition on the server).
-export default function DashboardScreen({ token, onOpenBrand, onOpenMember, onOpenCommunity, onOpenEvent, onOpenArtikel, onLogout, profile, onNavigate, unreadCount }: Props) {
+export default function DashboardScreen({ token, onOpenBrand, onOpenMember, onOpenCommunity, onOpenEvent, onOpenArtikel, onInternalLink, onLogout, profile, onNavigate, unreadCount }: Props) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [brands, setBrands] = useState<BrandSummary[]>([]);
   const [alumni, setAlumni] = useState<AlumniSummary[]>([]);
@@ -102,6 +105,7 @@ export default function DashboardScreen({ token, onOpenBrand, onOpenMember, onOp
     <View style={styles.flex}>
       <Header title="Dashboard" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <HeroBannerSlider onInternalLink={onInternalLink} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statGrid}>
           {STAT_TILES.map((t) => (
             <View key={t.key} style={[styles.statTile, { borderTopColor: t.color }]}>
@@ -137,6 +141,8 @@ export default function DashboardScreen({ token, onOpenBrand, onOpenMember, onOp
                 <BrandCard key={b.id} brand={b} onPress={() => onOpenBrand(b.id)} style={{ width: CARD_W }} />
               ))}
             </Section>
+
+            <AdBanner placement="home_banner" aspectRatio={4} onInternalLink={onInternalLink} />
 
             <Section title="Alumni Populer" empty="Belum ada alumni." show={alumni.length > 0}>
               {alumni.map((m) => (
@@ -192,9 +198,9 @@ function Section({
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingTop: 46, paddingBottom: 32 },
+  content: { paddingBottom: 32 },
 
-  statGrid: { paddingHorizontal: 12, gap: 10 },
+  statGrid: { paddingHorizontal: 12, paddingTop: 46, gap: 10 },
   statTile: {
     width: 92, height: 92, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, borderTopWidth: 3,
