@@ -1,6 +1,6 @@
 // Community tab — searchable list of communities, drilling into detail, plus a
 // create/edit form for managers. Mirrors MarketplaceScreen's local view routing.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header, { DrawerProfile, NavTarget } from '../Header';
@@ -25,6 +25,16 @@ type Props = {
 };
 
 type View3 = 'list' | 'detail' | 'form';
+
+// Rows fed to the single FlatList below: banner (scrolls away) + search
+// (sticky at index 1, pinned just under the header once it reaches the top)
+// + status + 2-up community pairs. Mixing these means cards can't rely on
+// FlatList's numColumns, so pairs are chunked manually.
+type Row =
+  | { kind: 'banner' }
+  | { kind: 'search' }
+  | { kind: 'status' }
+  | { kind: 'pair'; items: CommunitySummary[] };
 
 export default function CommunityScreen({ token, canManage, onLogout, initialCommunityId, profile, onNavigate, unreadCount, onInternalLink }: Props) {
   const [view, setView] = useState<View3>(initialCommunityId ? 'detail' : 'list');
@@ -65,6 +75,13 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
   useEffect(() => {
     if (view === 'list') load();
   }, [view]);
+
+  const rows = useMemo<Row[]>(() => {
+    const rs: Row[] = [{ kind: 'banner' }, { kind: 'search' }];
+    if (loading || !!error || items.length === 0) rs.push({ kind: 'status' });
+    for (let i = 0; i < items.length; i += 2) rs.push({ kind: 'pair', items: items.slice(i, i + 2) });
+    return rs;
+  }, [items, loading, error]);
 
   if (view === 'detail' && selectedId != null) {
     return (
@@ -113,42 +130,58 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
       <Header title="Komunitas" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
       {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
 
-      <View style={styles.searchRow}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Cari komunitas…"
-          placeholderTextColor={colors.muted}
-          value={search}
-          onChangeText={setSearch}
-          onSubmitEditing={load}
-          returnKeyType="search"
-        />
-        <Pressable style={({ pressed }) => [styles.searchBtn, pressed && styles.pressed]} onPress={load}>
-          <Text style={styles.searchBtnText}>Cari</Text>
-        </Pressable>
-      </View>
-
-      {loading && <ActivityIndicator style={{ marginTop: 20 }} color={colors.primary} />}
-      {error && <Text style={styles.error}>{error}</Text>}
-
       <FlatList
-        data={items}
-        keyExtractor={(c) => String(c.id)}
-        numColumns={2}
-        columnWrapperStyle={styles.column}
-        contentContainerStyle={styles.grid}
-        ListHeaderComponent={<AdBanner placement="komunitas_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />}
-        ListEmptyComponent={!loading ? <Text style={styles.empty}>Belum ada komunitas.</Text> : null}
-        renderItem={({ item }) => (
-          <CommunityCard
-            community={item}
-            style={styles.gridItem}
-            onPress={() => {
-              setSelectedId(item.id);
-              setView('detail');
-            }}
-          />
-        )}
+        data={rows}
+        keyExtractor={(row, i) => (row.kind === 'pair' ? `pair-${row.items[0]?.id ?? i}` : row.kind)}
+        contentContainerStyle={styles.listContent}
+        stickyHeaderIndices={[1]}
+        renderItem={({ item }) => {
+          if (item.kind === 'banner') {
+            return <AdBanner placement="komunitas_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />;
+          }
+          if (item.kind === 'search') {
+            return (
+              <View style={styles.searchRow}>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Cari komunitas…"
+                  placeholderTextColor={colors.muted}
+                  value={search}
+                  onChangeText={setSearch}
+                  onSubmitEditing={load}
+                  returnKeyType="search"
+                />
+                <Pressable style={({ pressed }) => [styles.searchBtn, pressed && styles.pressed]} onPress={load}>
+                  <Text style={styles.searchBtnText}>Cari</Text>
+                </Pressable>
+              </View>
+            );
+          }
+          if (item.kind === 'status') {
+            return (
+              <View style={styles.statusBox}>
+                {loading && <ActivityIndicator style={{ marginTop: 20 }} color={colors.primary} />}
+                {!!error && <Text style={styles.error}>{error}</Text>}
+                {!loading && !error && items.length === 0 && <Text style={styles.empty}>Belum ada komunitas.</Text>}
+              </View>
+            );
+          }
+          return (
+            <View style={styles.row}>
+              {item.items.map((c) => (
+                <CommunityCard
+                  key={c.id}
+                  community={c}
+                  style={styles.gridItem}
+                  onPress={() => {
+                    setSelectedId(c.id);
+                    setView('detail');
+                  }}
+                />
+              ))}
+            </View>
+          );
+        }}
       />
 
       {canManage && (
@@ -168,7 +201,7 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
-  searchRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 46, gap: 8 },
+  searchRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, gap: 8, backgroundColor: colors.bg },
   searchInput: {
     flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, fontFamily: fonts.body, color: colors.heading,
@@ -178,8 +211,9 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85 },
   empty: { textAlign: 'center', color: colors.muted, marginTop: 40, fontFamily: fonts.body },
   error: { color: colors.danger, textAlign: 'center', marginTop: 14, fontFamily: fonts.bodyMedium },
-  grid: { padding: 12, gap: 12 },
-  column: { gap: 12 },
+  statusBox: { paddingHorizontal: 12 },
+  listContent: { paddingBottom: 32, gap: 12 },
+  row: { flexDirection: 'row', gap: 12, paddingHorizontal: 12 },
   gridItem: { flex: 1, maxWidth: '48%' },
   fab: {
     position: 'absolute', right: 20, bottom: 20, width: 56, height: 56, borderRadius: 28,

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View,
 } from 'react-native';
@@ -30,6 +30,16 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'service', label: TYPE_LABELS.service },
   { key: 'place', label: TYPE_LABELS.place },
 ];
+
+// Rows fed to the single FlatList below: banner (scrolls away) + search
+// (sticky at index 1, pinned just under the header once it reaches the top)
+// + status + 2-up brand pairs. Mixing these means brands can't rely on
+// FlatList's numColumns, so pairs are chunked manually.
+type Row =
+  | { kind: 'banner' }
+  | { kind: 'search' }
+  | { kind: 'status' }
+  | { kind: 'pair'; brands: BrandSummary[] };
 
 // Marketplace directory: 2-column brand grid with type filter + search, and the
 // brand detail page. Brand management now lives in My Profile, so there is no
@@ -76,6 +86,13 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, view]);
 
+  const rows = useMemo<Row[]>(() => {
+    const items: Row[] = [{ kind: 'banner' }, { kind: 'search' }];
+    if (loading || !!error || brands.length === 0) items.push({ kind: 'status' });
+    for (let i = 0; i < brands.length; i += 2) items.push({ kind: 'pair', brands: brands.slice(i, i + 2) });
+    return items;
+  }, [brands, loading, error]);
+
   if (view === 'detail' && selectedId !== null) {
     return (
       <BrandDetailScreen
@@ -108,43 +125,58 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
         ))}
       </View>
 
-      {/* Search */}
-      <View style={styles.searchRow}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Cari brand…"
-          placeholderTextColor={colors.muted}
-          value={search}
-          onChangeText={setSearch}
-          onSubmitEditing={() => load(filter, search)}
-          returnKeyType="search"
-        />
-        <Pressable style={styles.searchBtn} onPress={() => load(filter, search)}>
-          <Text style={styles.searchBtnText}>Cari</Text>
-        </Pressable>
-      </View>
-
-      {loading && <ActivityIndicator style={{ marginTop: 20 }} color={colors.primary} />}
-      {error && <Text style={styles.error}>{error}</Text>}
-
       <FlatList
-        data={brands}
-        keyExtractor={(b) => String(b.id)}
-        numColumns={2}
-        columnWrapperStyle={styles.column}
-        contentContainerStyle={styles.grid}
-        ListHeaderComponent={<AdBanner placement="marketplace_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />}
-        ListEmptyComponent={!loading ? <Text style={styles.empty}>Belum ada brand.</Text> : null}
-        renderItem={({ item }) => (
-          <BrandCard
-            brand={item}
-            style={styles.gridItem}
-            onPress={() => {
-              setSelectedId(item.id);
-              setView('detail');
-            }}
-          />
-        )}
+        data={rows}
+        keyExtractor={(row, i) => (row.kind === 'pair' ? `pair-${row.brands[0]?.id ?? i}` : row.kind)}
+        contentContainerStyle={styles.listContent}
+        stickyHeaderIndices={[1]}
+        renderItem={({ item }) => {
+          if (item.kind === 'banner') {
+            return <AdBanner placement="marketplace_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />;
+          }
+          if (item.kind === 'search') {
+            return (
+              <View style={styles.searchRow}>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Cari brand…"
+                  placeholderTextColor={colors.muted}
+                  value={search}
+                  onChangeText={setSearch}
+                  onSubmitEditing={() => load(filter, search)}
+                  returnKeyType="search"
+                />
+                <Pressable style={styles.searchBtn} onPress={() => load(filter, search)}>
+                  <Text style={styles.searchBtnText}>Cari</Text>
+                </Pressable>
+              </View>
+            );
+          }
+          if (item.kind === 'status') {
+            return (
+              <View style={styles.statusBox}>
+                {loading && <ActivityIndicator style={{ marginTop: 20 }} color={colors.primary} />}
+                {!!error && <Text style={styles.error}>{error}</Text>}
+                {!loading && !error && brands.length === 0 && <Text style={styles.empty}>Belum ada brand.</Text>}
+              </View>
+            );
+          }
+          return (
+            <View style={styles.row}>
+              {item.brands.map((b) => (
+                <BrandCard
+                  key={b.id}
+                  brand={b}
+                  style={styles.gridItem}
+                  onPress={() => {
+                    setSelectedId(b.id);
+                    setView('detail');
+                  }}
+                />
+              ))}
+            </View>
+          );
+        }}
       />
 
       {!!canManage && (
@@ -160,6 +192,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   error: { color: colors.danger, textAlign: 'center', marginTop: 16, fontFamily: fonts.bodyMedium },
   empty: { textAlign: 'center', color: colors.muted, marginTop: 40, fontFamily: fonts.body },
+  statusBox: { paddingHorizontal: 12 },
 
   filterRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 46, paddingBottom: 4 },
   filterTab: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: 20, backgroundColor: colors.bgAlt },
@@ -167,7 +200,10 @@ const styles = StyleSheet.create({
   filterLabel: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.muted },
   filterLabelActive: { color: colors.white },
 
-  searchRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4, gap: 8 },
+  searchRow: {
+    flexDirection: 'row', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, gap: 8,
+    backgroundColor: colors.bg,
+  },
   searchInput: {
     flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, fontFamily: fonts.body, color: colors.heading,
@@ -175,8 +211,8 @@ const styles = StyleSheet.create({
   searchBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center' },
   searchBtnText: { color: colors.white, fontFamily: fonts.bodyMedium, fontSize: 13 },
 
-  grid: { padding: 12, gap: 12 },
-  column: { gap: 12 },
+  listContent: { paddingBottom: 32, gap: 12 },
+  row: { flexDirection: 'row', gap: 12, paddingHorizontal: 12 },
   gridItem: { flex: 1, maxWidth: '48%' },
   fab: {
     position: 'absolute', right: 20, bottom: 20, width: 56, height: 56, borderRadius: 28,
