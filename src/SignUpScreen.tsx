@@ -9,13 +9,16 @@ import Header from './Header';
 import KeyboardAwareScroll from './KeyboardAwareScroll';
 import { trackFormResult, recordError } from './analytics';
 
+const ANGKATAN_MIN = 1940;
+const ANGKATAN_MAX = 2050;
+
 // Required fields, mirroring the website Sign Up form (all marked *).
-const FIELDS: { key: string; label: string; hint?: string; keyboard?: any; noCaps?: boolean; secure?: boolean }[] = [
+const FIELDS: { key: string; label: string; hint?: string; keyboard?: any; noCaps?: boolean; secure?: boolean; maxLength?: number }[] = [
   { key: 'email', label: 'Email', keyboard: 'email-address', noCaps: true },
   { key: 'phone', label: 'Phone', hint: '+62xxxxxxxxx', keyboard: 'phone-pad' },
   { key: 'first_name', label: 'First Name' },
   { key: 'last_name', label: 'Last Name' },
-  { key: 'angkatan', label: 'Angkatan', keyboard: 'number-pad' },
+  { key: 'angkatan', label: 'Angkatan', hint: `Tahun kelulusan (${ANGKATAN_MIN}–${ANGKATAN_MAX})`, keyboard: 'number-pad', maxLength: 4 },
   { key: 'password', label: 'Password', secure: true, noCaps: true },
   { key: 'confirm_password', label: 'Confirm Password', secure: true, noCaps: true },
 ];
@@ -28,7 +31,10 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  const setField = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const setField = (key: string, value: string) => {
+    if (key === 'angkatan') value = value.replace(/[^0-9]/g, '').slice(0, 4);
+    setForm((f) => ({ ...f, [key]: value }));
+  };
 
   async function handleSignup() {
     setError(null);
@@ -42,6 +48,11 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
     }
     if (form.password !== form.confirm_password) {
       setError('Passwords do not match.');
+      return;
+    }
+    const angkatanNum = Number(form.angkatan.trim());
+    if (!/^\d{4}$/.test(form.angkatan.trim()) || angkatanNum < ANGKATAN_MIN || angkatanNum > ANGKATAN_MAX) {
+      setError(`Angkatan must be a 4-digit year between ${ANGKATAN_MIN} and ${ANGKATAN_MAX}.`);
       return;
     }
 
@@ -98,7 +109,7 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
       <Header title="Sign Up" onBack={onBackToLogin} />
       <KeyboardAwareScroll contentContainerStyle={styles.scroll}>
         <View style={styles.card}>
-          {FIELDS.map(({ key, label, hint, keyboard, noCaps, secure }) => (
+          {FIELDS.map(({ key, label, hint, keyboard, noCaps, secure, maxLength }) => (
             <View key={key} style={styles.fieldRow}>
               <Text style={styles.label}>
                 {label.toUpperCase()} <Text style={styles.req}>*</Text>
@@ -112,6 +123,7 @@ export default function SignUpScreen({ onBackToLogin }: Props) {
                 autoCapitalize={noCaps ? 'none' : 'sentences'}
                 keyboardType={keyboard}
                 secureTextEntry={secure}
+                maxLength={maxLength}
               />
               {!!hint && <Text style={styles.hint}>{hint}</Text>}
             </View>
