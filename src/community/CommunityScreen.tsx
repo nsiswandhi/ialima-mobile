@@ -135,6 +135,8 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
         keyExtractor={(row, i) => (row.kind === 'pair' ? `pair-${row.items[0]?.id ?? i}` : row.kind)}
         contentContainerStyle={styles.listContent}
         stickyHeaderIndices={[1]}
+        onRefresh={load}
+        refreshing={loading}
         renderItem={({ item }) => {
           if (item.kind === 'banner') {
             return <AdBanner placement="komunitas_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />;

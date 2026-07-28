@@ -159,6 +159,8 @@ export default function EventScreen({ token, canCreate, canOrg, canKomunitas, ca
         keyExtractor={(row, i) => (row.kind === 'event' ? String(row.event.id) : row.kind)}
         contentContainerStyle={styles.listContent}
         stickyHeaderIndices={[1]}
+        onRefresh={load}
+        refreshing={loading}
         renderItem={({ item }) => {
           if (item.kind === 'banner') {
             return <AdBanner placement="event_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />;

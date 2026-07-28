@@ -115,6 +115,8 @@ export default function ArtikelScreen({ token, canCreate, isIALima, initialArtik
         keyExtractor={(row, i) => (row.kind === 'article' ? String(row.article.id) : row.kind)}
         contentContainerStyle={styles.list}
         stickyHeaderIndices={[1]}
+        onRefresh={load}
+        refreshing={loading}
         renderItem={({ item }) => {
           if (item.kind === 'banner') {
             return <AdBanner placement="artikel_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />;

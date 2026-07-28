@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
@@ -68,43 +68,48 @@ export default function DashboardScreen({ token, onOpenBrand, onOpenMember, onOp
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [articles, setArticles] = useState<ArtikelSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const [statsRes, brandRes, memberRes, communityRes, eventRes, articleRes] = await Promise.all([
+        fetch(`${API_BASE}/stats`, { headers: { 'X-IA5-Token': token } })
+          .then((r) => r.json())
+          .catch(() => null),
+        mkApi.list(token, { featured: true }).catch(() => ({ data: [] as BrandSummary[] })),
+        fetch(`${API_BASE}/members?per_page=10`, { headers: { 'X-IA5-Token': token } })
+          .then((r) => r.json())
+          .catch(() => ({ data: [] })),
+        commApi.list(token, {}).catch(() => ({ data: [] as CommunitySummary[] })),
+        evApi.list(token, { when: 'upcoming', per_page: 3 }).catch(() => ({ data: [] as EventSummary[] })),
+        artikelApi.list(token, { per_page: 3 }).catch(() => ({ data: [] as ArtikelSummary[] })),
+      ]);
+      setStats(statsRes || null);
+      setBrands((brandRes.data || []).slice(0, 10));
+      setAlumni((memberRes.data || []).slice(0, 10));
+      setCommunities((communityRes.data || []).slice(0, 10));
+      setEvents((eventRes.data || []).slice(0, 3));
+      setArticles((articleRes.data || []).slice(0, 3));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [token]);
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const [statsRes, brandRes, memberRes, communityRes, eventRes, articleRes] = await Promise.all([
-          fetch(`${API_BASE}/stats`, { headers: { 'X-IA5-Token': token } })
-            .then((r) => r.json())
-            .catch(() => null),
-          mkApi.list(token, { featured: true }).catch(() => ({ data: [] as BrandSummary[] })),
-          fetch(`${API_BASE}/members?per_page=10`, { headers: { 'X-IA5-Token': token } })
-            .then((r) => r.json())
-            .catch(() => ({ data: [] })),
-          commApi.list(token, {}).catch(() => ({ data: [] as CommunitySummary[] })),
-          evApi.list(token, { when: 'upcoming', per_page: 3 }).catch(() => ({ data: [] as EventSummary[] })),
-          artikelApi.list(token, { per_page: 3 }).catch(() => ({ data: [] as ArtikelSummary[] })),
-        ]);
-        if (!alive) return;
-        setStats(statsRes || null);
-        setBrands((brandRes.data || []).slice(0, 10));
-        setAlumni((memberRes.data || []).slice(0, 10));
-        setCommunities((communityRes.data || []).slice(0, 10));
-        setEvents((eventRes.data || []).slice(0, 3));
-        setArticles((articleRes.data || []).slice(0, 3));
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [token]);
+    load();
+  }, [load]);
 
   return (
     <View style={styles.flex}>
       <Header title="Dashboard" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} colors={[colors.primary]} tintColor={colors.primary} />
+        }
+      >
         <HeroBannerSlider onInternalLink={onInternalLink} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statGrid}>
           {STAT_TILES.map((t) => (

@@ -130,6 +130,8 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
         keyExtractor={(row, i) => (row.kind === 'pair' ? `pair-${row.brands[0]?.id ?? i}` : row.kind)}
         contentContainerStyle={styles.listContent}
         stickyHeaderIndices={[1]}
+        onRefresh={() => load(filter, search)}
+        refreshing={loading}
         renderItem={({ item }) => {
           if (item.kind === 'banner') {
             return <AdBanner placement="marketplace_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />;
