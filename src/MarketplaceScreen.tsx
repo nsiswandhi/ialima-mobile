@@ -94,7 +94,6 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
   return (
     <View style={styles.flex}>
       <Header title="Marketplace" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
-      <AdBanner placement="marketplace_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />
 
       {/* Type filter tabs */}
       <View style={styles.filterRow}>
@@ -134,6 +133,7 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
         numColumns={2}
         columnWrapperStyle={styles.column}
         contentContainerStyle={styles.grid}
+        ListHeaderComponent={<AdBanner placement="marketplace_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />}
         ListEmptyComponent={!loading ? <Text style={styles.empty}>Belum ada brand.</Text> : null}
         renderItem={({ item }) => (
           <BrandCard

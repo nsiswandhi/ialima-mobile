@@ -26,7 +26,6 @@ import StaticPageScreen from './src/StaticPageScreen';
 import EventScreen from './src/events/EventScreen';
 import MyEventScreen from './src/events/MyEventScreen';
 import ArtikelScreen from './src/artikel/ArtikelScreen';
-import AdBanner from './src/ads/AdBanner';
 import MyArtikelScreen from './src/artikel/MyArtikelScreen';
 import ChatInboxScreen from './src/chat/ChatInboxScreen';
 import ChatThreadScreen from './src/chat/ChatThreadScreen';
@@ -641,12 +640,12 @@ function AppInner() {
       ) : tab === 'article' ? (
         <View style={styles.flex}>
           <Header title="Artikel" onLogout={logout} profile={meProfile} onNavigate={handleNavigate} unreadCount={unreadCount} />
-          <AdBanner placement="artikel_header" aspectRatio={16 / 9} onInternalLink={handleAdInternalLink} />
           <ArtikelScreen
             token={token}
             canCreate={true}
             isIALima={!!user?.caps?.appoint_pengurus}
             initialArtikelId={artikelDeepLinkId}
+            onInternalLink={handleAdInternalLink}
           />
         </View>
       ) : tab === 'my-artikel' ? (

@@ -121,7 +121,6 @@ export default function EventScreen({ token, canCreate, canOrg, canKomunitas, ca
   return (
     <View style={styles.flex}>
       <Header title="Event" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
-      <AdBanner placement="event_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />
       {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
 
       <View style={styles.segRow}>
@@ -161,6 +160,7 @@ export default function EventScreen({ token, canCreate, canOrg, canKomunitas, ca
         data={items}
         keyExtractor={(e) => String(e.id)}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={<AdBanner placement="event_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />}
         ListEmptyComponent={
           !loading ? (
             <Text style={styles.empty}>

@@ -10,6 +10,7 @@ import ArtikelCategoryModal from './ArtikelCategoryModal';
 import ArtikelDetailScreen from './ArtikelDetailScreen';
 import ArtikelFormScreen from './ArtikelFormScreen';
 import { useAndroidBack } from '../useAndroidBack';
+import AdBanner from '../ads/AdBanner';
 
 type View3 = 'list' | 'detail' | 'form';
 
@@ -18,9 +19,10 @@ type Props = {
   canCreate: boolean;
   isIALima: boolean;
   initialArtikelId?: number | null;
+  onInternalLink: (type: string, id: number) => void;
 };
 
-export default function ArtikelScreen({ token, canCreate, isIALima, initialArtikelId }: Props) {
+export default function ArtikelScreen({ token, canCreate, isIALima, initialArtikelId, onInternalLink }: Props) {
   const [view, setView] = useState<View3>('list');
   const [articles, setArticles] = useState<ArtikelSummary[]>([]);
   const [categories, setCategories] = useState<ArtikelCategory[]>([]);
@@ -116,6 +118,7 @@ export default function ArtikelScreen({ token, canCreate, isIALima, initialArtik
           data={articles}
           keyExtractor={(a) => String(a.id)}
           contentContainerStyle={styles.list}
+          ListHeaderComponent={<AdBanner placement="artikel_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />}
           renderItem={({ item }) => (
             <ArtikelCard article={item} onPress={() => { setActiveId(item.id); setView('detail'); }} />
           )}

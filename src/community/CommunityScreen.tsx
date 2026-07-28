@@ -111,7 +111,6 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
   return (
     <View style={styles.flex}>
       <Header title="Komunitas" onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
-      <AdBanner placement="komunitas_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />
       {!!notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
 
       <View style={styles.searchRow}>
@@ -138,6 +137,7 @@ export default function CommunityScreen({ token, canManage, onLogout, initialCom
         numColumns={2}
         columnWrapperStyle={styles.column}
         contentContainerStyle={styles.grid}
+        ListHeaderComponent={<AdBanner placement="komunitas_header" aspectRatio={16 / 9} onInternalLink={onInternalLink} />}
         ListEmptyComponent={!loading ? <Text style={styles.empty}>Belum ada komunitas.</Text> : null}
         renderItem={({ item }) => (
           <CommunityCard
