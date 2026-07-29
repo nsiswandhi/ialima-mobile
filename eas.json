@@ -18,6 +18,11 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "../files/lima-circle-dc9534266da5.json",
+        "track": "internal"
+      }
+    }
   }
 }
