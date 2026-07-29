@@ -20,16 +20,39 @@ type Props = {
 
 export default function ArtikelDetailScreen({ token, articleId, onBack, onEdit }: Props) {
   const [data, setData] = useState<ArtikelDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    artikelApi.detail(token, articleId).then((d) => {
-      setData(d);
-      if (d.status === 'publish') artikelApi.trackView(token, articleId);
-    });
+    let alive = true;
+    setLoading(true);
+    setError(null);
+    artikelApi
+      .detail(token, articleId)
+      .then((d) => {
+        if (!alive) return;
+        setData(d);
+        if (d.status === 'publish') artikelApi.trackView(token, articleId);
+      })
+      .catch((e) => alive && setError(e.message))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
   }, [token, articleId]);
 
-  if (!data) {
+  if (loading) {
     return <ActivityIndicator style={styles.loading} color={colors.primary} />;
+  }
+  if (error || !data) {
+    return (
+      <View style={styles.errorBox}>
+        <Text style={styles.errorText}>{error || 'Artikel tidak ditemukan.'}</Text>
+        <Pressable style={styles.errorBackBtn} onPress={onBack}>
+          <Text style={styles.errorBackBtnText}>Kembali</Text>
+        </Pressable>
+      </View>
+    );
   }
 
   return (
@@ -124,6 +147,10 @@ export default function ArtikelDetailScreen({ token, articleId, onBack, onEdit }
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   loading: { marginTop: 60 },
+  errorBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  errorText: { fontFamily: fonts.body, fontSize: 14, color: colors.danger, textAlign: 'center', marginBottom: 16 },
+  errorBackBtn: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 20 },
+  errorBackBtnText: { color: '#fff', fontFamily: fonts.bodyMedium, fontSize: 14 },
   heroWrap: { position: 'relative' },
   hero: { width: '100%', aspectRatio: 4 / 3, backgroundColor: colors.bgAlt },
   heroFallback: { backgroundColor: colors.bgAlt },
