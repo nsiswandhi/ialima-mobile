@@ -61,7 +61,14 @@ The JWT is sent in an `X-IA5-Token` header (the server also accepts
 - **Artikel (Articles)** — read, write, and submit articles for review
 - **Chat** — 1:1 messaging between members
 - **Notifications & Broadcasts** — in-app activity feed and announcements
-- **Angkatan** — graduating-class (batch) membership requests/verification
+- **Angkatan** — graduating-class (batch) membership requests/verification;
+  locked (read-only) on the profile once set at signup
+- **Report** — flag a chat message, community, article, or marketplace
+  listing for review by Pengurus IA Lima
+- **Ads** — hero banner slider on the Dashboard plus a single banner on each
+  of Marketplace/Komunitas/Event/Artikel, server-selected per placement with
+  impression/click tracking; taps resolve to either an external URL or an
+  in-app deep link (`app://<type>/<id>`)
 - **Account** — delete account, privacy policy, terms
 
 ## Project layout
@@ -87,11 +94,17 @@ src/
   chat/                    Chat feature (screens + api.ts)
   angkatan/                Angkatan request/approval feature
   reviews/                 Shared ratings/review UI
+  ads/                     In-app ads (HeroBannerSlider, AdBanner, api.ts + resolveAdTap)
+  report/                  Report-content action (api.ts + promptReport reason picker)
 ```
 
 Each feature module follows the same convention: its own `api.ts` with thin
 `fetch` wrappers (own `headers`/`parse`/`form` helpers per module, by design —
 not shared across features) plus its own screen components.
+
+`store-assets/` holds generated Play Store listing assets (icon, feature
+graphic, phone/tablet screenshots) — not part of the app bundle, just
+deliverables for uploading to Play Console.
 
 ## Configuration
 
