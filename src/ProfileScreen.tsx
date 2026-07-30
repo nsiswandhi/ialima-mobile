@@ -193,7 +193,11 @@ export default function ProfileScreen({
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
+      // Android's native crop step fails to return a result on some
+      // Android 15 devices (ActivityThread.deliverResultsIfNeeded NPE),
+      // silently breaking every upload — skip cropping on Android, keep
+      // it on iOS where it's stable.
+      allowsEditing: Platform.OS !== 'android',
       aspect: [1, 1], // form requires 1:1 ratio
       quality: 0.8,
     });

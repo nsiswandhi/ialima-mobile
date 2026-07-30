@@ -4,7 +4,7 @@
 // gallery grid upload for image_gallery.
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, Alert, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -107,7 +107,11 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
       if (!perm.granted) throw new Error('Izin akses galeri ditolak.');
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
+        // Android's native crop step fails to return a result on some
+        // Android 15 devices (ActivityThread.deliverResultsIfNeeded NPE),
+        // silently breaking every upload — skip cropping on Android, keep
+        // it on iOS where it's stable.
+        allowsEditing: Platform.OS !== 'android',
         aspect: kind === 'cover' ? [16, 9] : [1, 1],
         quality: 0.8,
       });

@@ -2,6 +2,7 @@
 // form (logo / cover) and the item form (photo). Returns the uploaded attachment
 // (id + urls), or null if the user cancelled. Throws on permission denial or a
 // failed upload so callers can surface an alert.
+import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { mkApi, UploadedImage } from './api';
 
@@ -16,7 +17,10 @@ export async function pickAndUpload(
 
   const res = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
-    allowsEditing: true,
+    // Android's native crop step fails to return a result on some Android 15
+    // devices (ActivityThread.deliverResultsIfNeeded NPE), silently breaking
+    // every upload — skip cropping on Android, keep it on iOS where it's stable.
+    allowsEditing: Platform.OS !== 'android',
     aspect,
     quality: 0.8,
   });
