@@ -74,6 +74,7 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
       setRegChecked(true);
       return;
     }
+    setRegChecked(false);
     let alive = true;
     getMyRegistrations(token)
       .then((list) => {
