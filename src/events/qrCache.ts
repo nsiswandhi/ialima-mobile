@@ -18,5 +18,9 @@ export async function getCachedQrUri(qrToken: string, remoteUrl: string): Promis
     return localPath;
   }
   const result = await FileSystem.downloadAsync(remoteUrl, localPath);
+  if (result.status < 200 || result.status >= 300) {
+    await FileSystem.deleteAsync(result.uri, { idempotent: true });
+    throw new Error(`QR download failed: HTTP ${result.status}`);
+  }
   return result.uri;
 }
