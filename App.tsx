@@ -42,6 +42,17 @@ import BootScreen from './src/BootScreen';
 import { trackScreen, trackFormResult, recordError, identifyUser, clearUser } from './src/analytics';
 
 const SPLASH_SEEN_KEY = 'ia5_post_login_splash_seen';
+// Persisted login session — restored on launch so an OS-killed process
+// (common on aggressive battery-optimization Android OEMs, or low-RAM
+// devices) doesn't force a relogin. `token`/`user` previously lived only in
+// React state. The `user` object is small (id/name/email/angkatan/roles/
+// is_member/caps) so it's stored alongside the token rather than re-derived
+// from a separate endpoint on restore — the existing `meProfile` effect
+// below already re-fetches fresher profile display data once `token`+`user`
+// are set, so a stale-roles edge case (an admin changes the account's roles
+// while the device is offline) self-corrects on the next profile fetch.
+const TOKEN_KEY = 'ia5_auth_token';
+const USER_KEY = 'ia5_auth_user';
 
 // Keep the native splash up until BootScreen has mounted and taken over —
 // avoids a blank-white flash between the native splash and the JS boot screen.
@@ -117,6 +128,29 @@ function AppInner() {
   // Auth state. `token` is the JWT from /login; null means logged out.
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+
+  // Whether the persisted-session restore below has resolved. Gates the
+  // login/authenticated screens further down so a still-valid session never
+  // flashes the login form before it's restored.
+  const [sessionRestoring, setSessionRestoring] = useState(true);
+  useEffect(() => {
+    (async () => {
+      try {
+        const [savedToken, savedUser] = await Promise.all([
+          SecureStore.getItemAsync(TOKEN_KEY),
+          SecureStore.getItemAsync(USER_KEY),
+        ]);
+        if (savedToken && savedUser) {
+          setToken(savedToken);
+          setUser(JSON.parse(savedUser));
+        }
+      } catch {
+        // Corrupt/unavailable storage — fall through to the login screen.
+      } finally {
+        setSessionRestoring(false);
+      }
+    })();
+  }, []);
 
   // Whether the one-time post-login splash carousel has already been shown on
   // this device. null = not read from storage yet.
@@ -213,6 +247,8 @@ function AppInner() {
       }
       setToken(data.token);
       setUser(data.user);
+      SecureStore.setItemAsync(TOKEN_KEY, data.token).catch(() => {});
+      SecureStore.setItemAsync(USER_KEY, JSON.stringify(data.user)).catch(() => {});
       setTab('dashboard');
       trackFormResult('login', true);
       identifyUser(data.user.id);
@@ -409,6 +445,8 @@ function AppInner() {
     clearUser();
     setToken(null);
     setUser(null);
+    SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
+    SecureStore.deleteItemAsync(USER_KEY).catch(() => {});
     setMeProfile(undefined);
     setUnreadCount(0);
     setMembers([]);
@@ -459,9 +497,11 @@ function AppInner() {
     return false;
   });
 
-  // Hold rendering until fonts are ready (keeps the brand look consistent).
-  // BootScreen takes over from the native splash the instant it mounts.
-  if (!fontsLoaded) {
+  // Hold rendering until fonts are ready AND the persisted-session restore
+  // above has resolved (prevents a flash of the login screen for an
+  // already-logged-in user). BootScreen takes over from the native splash
+  // the instant it mounts.
+  if (!fontsLoaded || sessionRestoring) {
     return <BootScreen />;
   }
 
