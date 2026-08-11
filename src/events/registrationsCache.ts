@@ -9,6 +9,13 @@ import { evApi, MyRegistration } from './api';
 
 let cache: MyRegistration[] | null = null;
 let inFlight: Promise<MyRegistration[]> | null = null;
+// Bumped on every fetch start so a resolving fetch can tell whether it's
+// still the most recently started one. Without this, a `force: true` fetch
+// (e.g. pull-to-refresh) racing an in-flight unforced fetch (e.g. another
+// screen's mount) could have the unforced one resolve LAST and silently
+// overwrite `cache` with stale data, even though the forced fetch started
+// more recently and should win.
+let generation = 0;
 
 export async function getMyRegistrations(
   token: string,
@@ -16,12 +23,18 @@ export async function getMyRegistrations(
 ): Promise<MyRegistration[]> {
   if (cache && !opts?.force) return cache;
   if (inFlight && !opts?.force) return inFlight;
+  const myGeneration = ++generation;
   inFlight = evApi
     .myRegistrations(token)
     .then((res) => {
-      cache = res.data;
+      // Only the most recently started fetch is allowed to update the
+      // shared cache; an older fetch that resolves late still returns its
+      // own data to whoever awaited it, it just doesn't clobber `cache`.
+      if (myGeneration === generation) {
+        cache = res.data;
+      }
       inFlight = null;
-      return cache;
+      return res.data;
     })
     .catch((err) => {
       inFlight = null;
