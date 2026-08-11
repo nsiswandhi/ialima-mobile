@@ -134,6 +134,7 @@ function AppInner() {
   // Login form fields.
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Which auth screen shows when logged out.
   const [authView, setAuthView] = useState<'login' | 'signup' | 'forgot'>('login');
@@ -413,6 +414,7 @@ function AppInner() {
     setMembers([]);
     setPhone('');
     setPassword('');
+    setShowPassword(false);
     setSelectedMemberId(null);
     setTab('dashboard');
   }
@@ -493,14 +495,24 @@ function AppInner() {
             value={phone}
             onChangeText={setPhone}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={colors.muted}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={styles.passwordRow}>
+            <TextInput
+              style={[styles.input, styles.passwordInput]}
+              placeholder="Password"
+              placeholderTextColor={colors.muted}
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <Pressable
+              style={styles.eyeBtn}
+              onPress={() => setShowPassword((v) => !v)}
+              hitSlop={8}
+              accessibilityLabel={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+            >
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.muted} />
+            </Pressable>
+          </View>
 
           <Pressable
             style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
@@ -976,6 +988,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 13, fontSize: 16, marginBottom: 12,
     fontFamily: fonts.body, color: colors.heading,
   },
+  passwordRow: { position: 'relative' },
+  passwordInput: { paddingRight: 44 },
+  eyeBtn: { position: 'absolute', right: 2, top: 0, bottom: 12, justifyContent: 'center', paddingHorizontal: 12 },
   button: {
     backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 15,
     alignItems: 'center', marginTop: 6,
