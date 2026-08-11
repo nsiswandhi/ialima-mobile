@@ -878,6 +878,8 @@ function AppInner() {
         data={members}
         keyExtractor={(m) => String(m.id)}
         contentContainerStyle={{ padding: 12 }}
+        onRefresh={() => loadMembers(search)}
+        refreshing={loading}
         ListEmptyComponent={
           !loading ? <Text style={styles.empty}>No members found.</Text> : null
         }
