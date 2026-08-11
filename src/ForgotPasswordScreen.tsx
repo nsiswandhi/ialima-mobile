@@ -6,6 +6,7 @@ import {
   Pressable, StatusBar,
   StyleSheet, Text, TextInput, View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './config';
 import { colors, fonts } from './theme';
 import { trackFormResult, recordError } from './analytics';
@@ -156,27 +157,11 @@ export default function ForgotPasswordScreen({ onBackToLogin }: Props) {
               </View>
               <View style={styles.fieldRow}>
                 <Text style={styles.label}>PASSWORD BARU</Text>
-                <TextInput
-                  style={styles.input}
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  placeholder="Password baru"
-                  placeholderTextColor={colors.muted}
-                  autoCapitalize="none"
-                  secureTextEntry
-                />
+                <PasswordField value={newPassword} onChangeText={setNewPassword} placeholder="Password baru" />
               </View>
               <View style={styles.fieldRow}>
                 <Text style={styles.label}>KONFIRMASI PASSWORD</Text>
-                <TextInput
-                  style={styles.input}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder="Ulangi password baru"
-                  placeholderTextColor={colors.muted}
-                  autoCapitalize="none"
-                  secureTextEntry
-                />
+                <PasswordField value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Ulangi password baru" />
               </View>
 
               {!!error && <Text style={styles.error}>{error}</Text>}
@@ -204,6 +189,42 @@ export default function ForgotPasswordScreen({ onBackToLogin }: Props) {
   );
 }
 
+// Eye-toggle password field, local to this screen since both "PASSWORD BARU"
+// and "KONFIRMASI PASSWORD" need it (mirrors the same UX added to the login
+// screen in App.tsx, kept as a separate copy per this codebase's
+// per-file-duplication convention rather than a new shared component for a
+// two-call-site need).
+function PasswordField({
+  value, onChangeText, placeholder,
+}: {
+  value: string;
+  onChangeText: (v: string) => void;
+  placeholder: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <View style={styles.passwordRow}>
+      <TextInput
+        style={[styles.input, styles.passwordInput]}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.muted}
+        autoCapitalize="none"
+        secureTextEntry={!visible}
+      />
+      <Pressable
+        style={styles.eyeBtn}
+        onPress={() => setVisible((v) => !v)}
+        hitSlop={8}
+        accessibilityLabel={visible ? 'Sembunyikan password' : 'Tampilkan password'}
+      >
+        <Ionicons name={visible ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.muted} />
+      </Pressable>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: 24, paddingTop: 40, paddingBottom: 48, maxWidth: 460, width: '100%', alignSelf: 'center' },
@@ -220,6 +241,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: fonts.body, color: colors.heading,
   },
+  passwordRow: { position: 'relative' },
+  passwordInput: { paddingRight: 40 },
+  eyeBtn: { position: 'absolute', right: 2, top: 0, bottom: 0, justifyContent: 'center', paddingHorizontal: 10 },
 
   error: { color: colors.danger, fontFamily: fonts.bodyMedium, textAlign: 'center', marginBottom: 10 },
 
