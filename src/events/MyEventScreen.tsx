@@ -1,5 +1,6 @@
-// Burger-menu destination for "My Event" — up to three sections: "Event Saya"
-// (events scoped to the viewer's angkatan/communities), "Event yang Saya Kelola"
+// Burger-menu destination for "My Event" — up to four sections: "Event Saya"
+// (events scoped to the viewer's angkatan/communities), "Terdaftar" (events
+// registered in-app via the organizer bridge), "Event yang Saya Kelola"
 // (events the viewer created, incl. pending — pengurus only), and — Pengurus IA
 // Lima only — "Persetujuan" (events awaiting approval, with a review popup).
 // Mirrors MyKomunitasScreen's structure.
@@ -11,7 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import { renderBlock } from '../Blocks';
-import { evApi, EventDetail, EventSummary } from './api';
+import { evApi, EventDetail, EventSummary, MyRegistration } from './api';
+import { getMyRegistrations } from './registrationsCache';
 import { wibDateTime } from './datetime';
 import EventFormScreen from './EventFormScreen';
 import EventDetailScreen from './EventDetailScreen';
@@ -38,6 +40,7 @@ export default function MyEventScreen({
 }: Props) {
   const [nav, setNav] = useState<EvNav>(null);
   const [mine, setMine] = useState<EventSummary[]>([]);
+  const [registered, setRegistered] = useState<MyRegistration[]>([]);
   const [managed, setManaged] = useState<EventSummary[]>([]);
   const [queue, setQueue] = useState<EventSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,14 +61,16 @@ export default function MyEventScreen({
     setError(null);
     setLoading(true);
     try {
-      const [member, organizer, pending] = await Promise.all([
+      const [member, organizer, pending, myRegs] = await Promise.all([
         evApi.list(token, { role: 'mine-as-member' }),
         canCreate ? evApi.list(token, { role: 'mine-as-organizer' }) : Promise.resolve({ data: [] as EventSummary[] } as any),
         isIALima ? evApi.list(token, { status: 'pending' }) : Promise.resolve({ data: [] as EventSummary[] } as any),
+        getMyRegistrations(token, { force: true }),
       ]);
       setMine(member.data);
       setManaged(organizer.data);
       setQueue(pending.data);
+      setRegistered(myRegs);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -201,6 +206,15 @@ export default function MyEventScreen({
             ) : (
               mine.map((item) => (
                 <Row key={`mine-${item.id}`} item={item} onPress={() => setNav({ kind: 'view', id: item.id })} />
+              ))
+            )}
+
+            <Text style={[styles.sectionHead, { marginTop: 24 }]}>TERDAFTAR</Text>
+            {registered.length === 0 ? (
+              <Text style={styles.empty}>Kamu belum mendaftar event apa pun.</Text>
+            ) : (
+              registered.map((item) => (
+                <Row key={`reg-${item.id}`} item={item} onPress={() => setNav({ kind: 'view', id: item.id })} />
               ))
             )}
 
