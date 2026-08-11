@@ -50,12 +50,29 @@ export type EventDetail = EventSummary & {
   latitude: string;
   longitude: string;
   link_registrasi: string;
+  is_bridge_event: boolean;
   banner_informasi: GalleryImage[];
   owner_name: string;
   created_at: string;
   is_owner: boolean;
   is_following: boolean;
   follower_count: number;
+};
+
+// A row in GET /my-event-registrations — an EventSummary the alumni is
+// registered for, plus QR fields for offline/hybrid events.
+export type MyRegistration = EventSummary & {
+  needs_qr: boolean;
+  qr_token: string | null;
+  qr_url: string | null;
+};
+
+export type RegisterResponse = {
+  success: boolean;
+  already_registered: boolean;
+  needs_qr: boolean;
+  qr_token: string | null;
+  qr_url: string | null;
 };
 
 // A person row in GET /event/{id}/followers ("Pengikut Event").
@@ -213,6 +230,21 @@ export const evApi = {
   followers(token: string, id: number) {
     return fetch(`${API_BASE}/event/${id}/followers`, { headers: headers(token) }).then(
       parse<{ data: EventFollower[]; total: number }>,
+    );
+  },
+
+  // In-app "Daftar Event" for bridge-mirrored events — single-tap, identity
+  // resolved server-side. Idempotent: calling this again for an event the
+  // alumni is already registered for returns already_registered:true.
+  register(token: string, id: number) {
+    return fetch(`${API_BASE}/event/${id}/register`, { method: 'POST', headers: headers(token) }).then(
+      parse<RegisterResponse>,
+    );
+  },
+
+  myRegistrations(token: string) {
+    return fetch(`${API_BASE}/my-event-registrations`, { headers: headers(token) }).then(
+      parse<{ data: MyRegistration[]; ok: boolean }>,
     );
   },
 };
