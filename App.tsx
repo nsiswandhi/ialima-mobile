@@ -141,8 +141,9 @@ function AppInner() {
           SecureStore.getItemAsync(USER_KEY),
         ]);
         if (savedToken && savedUser) {
+          const parsedUser = JSON.parse(savedUser); // let the outer catch handle failure
           setToken(savedToken);
-          setUser(JSON.parse(savedUser));
+          setUser(parsedUser);
         }
       } catch {
         // Corrupt/unavailable storage — fall through to the login screen.
