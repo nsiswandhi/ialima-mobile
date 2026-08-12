@@ -7,7 +7,7 @@ import { trackEvent } from '../analytics';
 
 export type Img = { full: string; thumbnail: string } | null;
 
-export type ChatPerson = { id: number; name: string; avatar: Img; angkatan: string };
+export type ChatPerson = { id: number; name: string; avatar: Img; is_member: boolean; angkatan: string };
 
 export type ChatThread = {
   id: number;

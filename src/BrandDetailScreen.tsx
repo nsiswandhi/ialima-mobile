@@ -181,14 +181,6 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
           >
             <Text style={isPlace ? styles.secondaryBtnText : styles.primaryBtnText}>{ctaLabel}</Text>
           </Pressable>
-          <Pressable
-            onPress={() => brand && promptReport(token, 'listing', brand.id)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, alignSelf: 'center' }}
-            accessibilityLabel="Laporkan brand ini"
-          >
-            <Ionicons name="flag-outline" size={14} color={colors.muted} />
-            <Text style={{ color: colors.muted, fontSize: 12 }}>Laporkan</Text>
-          </Pressable>
 
           {isOwner && onManage && (
             <Pressable style={styles.manageBtn} onPress={() => onManage(brand)}>
@@ -284,6 +276,15 @@ export default function BrandDetailScreen({ brandId, token, viewerId, onBack, on
               </View>
             </View>
           )}
+
+          <Pressable
+            onPress={() => brand && promptReport(token, 'listing', brand.id)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16, marginBottom: 8, alignSelf: 'center' }}
+            accessibilityLabel="Laporkan brand ini"
+          >
+            <Ionicons name="flag-outline" size={14} color={colors.muted} />
+            <Text style={{ color: colors.muted, fontSize: 12 }}>Laporkan</Text>
+          </Pressable>
         </ScrollView>
       ) : null}
 

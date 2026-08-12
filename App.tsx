@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './src/config';
 import { colors, fonts } from './src/theme';
 import Header, { DrawerProfile, NavTarget } from './src/Header';
+import VerifiedBadge from './src/VerifiedBadge';
 import RightDrawer from './src/RightDrawer';
 import DeleteAccountScreen from './src/DeleteAccountScreen';
 import ProfileScreen from './src/ProfileScreen';
@@ -38,10 +39,23 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SecureStore from 'expo-secure-store';
+import * as FileSystem from 'expo-file-system/legacy';
 import BootScreen from './src/BootScreen';
 import { trackScreen, trackFormResult, recordError, identifyUser, clearUser } from './src/analytics';
+import { resetMyRegistrations } from './src/events/registrationsCache';
 
 const SPLASH_SEEN_KEY = 'ia5_post_login_splash_seen';
+// Persisted login session — restored on launch so an OS-killed process
+// (common on aggressive battery-optimization Android OEMs, or low-RAM
+// devices) doesn't force a relogin. `token`/`user` previously lived only in
+// React state. The `user` object is small (id/name/email/angkatan/roles/
+// is_member/caps) so it's stored alongside the token rather than re-derived
+// from a separate endpoint on restore — the existing `meProfile` effect
+// below already re-fetches fresher profile display data once `token`+`user`
+// are set, so a stale-roles edge case (an admin changes the account's roles
+// while the device is offline) self-corrects on the next profile fetch.
+const TOKEN_KEY = 'ia5_auth_token';
+const USER_KEY = 'ia5_auth_user';
 
 // Keep the native splash up until BootScreen has mounted and taken over —
 // avoids a blank-white flash between the native splash and the JS boot screen.
@@ -94,6 +108,7 @@ type Member = {
   id: number;
   name: string;
   avatar: { thumbnail: string } | null;
+  is_member: boolean;
   angkatan: string;
   job_title: string;
   company: string;
@@ -118,6 +133,48 @@ function AppInner() {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
+  // Whether the persisted-session restore below has resolved. Gates the
+  // login/authenticated screens further down so a still-valid session never
+  // flashes the login form before it's restored.
+  const [sessionRestoring, setSessionRestoring] = useState(true);
+  useEffect(() => {
+    (async () => {
+      try {
+        const [savedToken, savedUser] = await Promise.all([
+          SecureStore.getItemAsync(TOKEN_KEY),
+          SecureStore.getItemAsync(USER_KEY),
+        ]);
+        if (savedToken && savedUser) {
+          const parsedUser = JSON.parse(savedUser); // let the outer catch handle failure
+          setToken(savedToken);
+          setUser(parsedUser);
+          // A restored token can be expired/revoked server-side (it now
+          // outlives the app process, unlike before this branch when it only
+          // ever lived in memory). Validate it with the same cheap GET the
+          // burger-drawer profile card already uses, so a dead session
+          // doesn't strand the user on screens that just show their own
+          // local API-error with no visible way back to login.
+          try {
+            const checkRes = await fetch(`${API_BASE}/member/${parsedUser.id}`, {
+              headers: { 'X-IA5-Token': savedToken },
+            });
+            if (checkRes.status === 401) {
+              logout();
+            }
+          } catch {
+            // Network error during validation — don't lock the user out on a
+            // connectivity blip; screens below have their own error handling
+            // for a genuinely unreachable API.
+          }
+        }
+      } catch {
+        // Corrupt/unavailable storage — fall through to the login screen.
+      } finally {
+        setSessionRestoring(false);
+      }
+    })();
+  }, []);
+
   // Whether the one-time post-login splash carousel has already been shown on
   // this device. null = not read from storage yet.
   const [splashSeen, setSplashSeen] = useState<boolean | null>(null);
@@ -134,6 +191,7 @@ function AppInner() {
   // Login form fields.
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Which auth screen shows when logged out.
   const [authView, setAuthView] = useState<'login' | 'signup' | 'forgot'>('login');
@@ -212,6 +270,8 @@ function AppInner() {
       }
       setToken(data.token);
       setUser(data.user);
+      SecureStore.setItemAsync(TOKEN_KEY, data.token).catch(() => {});
+      SecureStore.setItemAsync(USER_KEY, JSON.stringify(data.user)).catch(() => {});
       setTab('dashboard');
       trackFormResult('login', true);
       identifyUser(data.user.id);
@@ -408,13 +468,37 @@ function AppInner() {
     clearUser();
     setToken(null);
     setUser(null);
+    SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
+    SecureStore.deleteItemAsync(USER_KEY).catch(() => {});
     setMeProfile(undefined);
     setUnreadCount(0);
     setMembers([]);
     setPhone('');
     setPassword('');
+    setShowPassword(false);
     setSelectedMemberId(null);
     setTab('dashboard');
+    // Session-scoped registration cache — see registrationsCache.ts's comment
+    // on why a different alumni logging in next (same app process, no
+    // reload) must never see the previous alumni's registrations/QR data.
+    resetMyRegistrations();
+    // Best-effort: remove any locally-cached QR images so they can't be served
+    // to a different alumni who logs in next in the same app session.
+    (async () => {
+      try {
+        const dir = FileSystem.cacheDirectory;
+        if (dir) {
+          const files = await FileSystem.readDirectoryAsync(dir);
+          await Promise.all(
+            files
+              .filter((f) => f.startsWith('qr-'))
+              .map((f) => FileSystem.deleteAsync(dir + f, { idempotent: true })),
+          );
+        }
+      } catch {
+        // Non-fatal — stale QR files are a privacy hygiene concern, not a logout blocker.
+      }
+    })();
   }
 
   // Android hardware back: pop the outermost level of nav state (a deep-link
@@ -457,9 +541,11 @@ function AppInner() {
     return false;
   });
 
-  // Hold rendering until fonts are ready (keeps the brand look consistent).
-  // BootScreen takes over from the native splash the instant it mounts.
-  if (!fontsLoaded) {
+  // Hold rendering until fonts are ready AND the persisted-session restore
+  // above has resolved (prevents a flash of the login screen for an
+  // already-logged-in user). BootScreen takes over from the native splash
+  // the instant it mounts.
+  if (!fontsLoaded || sessionRestoring) {
     return <BootScreen />;
   }
 
@@ -493,14 +579,24 @@ function AppInner() {
             value={phone}
             onChangeText={setPhone}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={colors.muted}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={styles.passwordRow}>
+            <TextInput
+              style={[styles.input, styles.passwordInput]}
+              placeholder="Password"
+              placeholderTextColor={colors.muted}
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <Pressable
+              style={styles.eyeBtn}
+              onPress={() => setShowPassword((v) => !v)}
+              hitSlop={8}
+              accessibilityLabel={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+            >
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.muted} />
+            </Pressable>
+          </View>
 
           <Pressable
             style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
@@ -866,6 +962,8 @@ function AppInner() {
         data={members}
         keyExtractor={(m) => String(m.id)}
         contentContainerStyle={{ padding: 12 }}
+        onRefresh={() => loadMembers(search)}
+        refreshing={loading}
         ListEmptyComponent={
           !loading ? <Text style={styles.empty}>No members found.</Text> : null
         }
@@ -874,13 +972,16 @@ function AppInner() {
             style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
             onPress={() => setSelectedMemberId(item.id)}
           >
-            {item.avatar?.thumbnail ? (
-              <Image source={{ uri: item.avatar.thumbnail }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarFallback]}>
-                <Text style={styles.avatarLetter}>{item.name?.charAt(0) || '?'}</Text>
-              </View>
-            )}
+            <View style={{ position: 'relative' }}>
+              {item.avatar?.thumbnail ? (
+                <Image source={{ uri: item.avatar.thumbnail }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarFallback]}>
+                  <Text style={styles.avatarLetter}>{item.name?.charAt(0) || '?'}</Text>
+                </View>
+              )}
+              {item.is_member && <VerifiedBadge />}
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{item.name}</Text>
               <Text style={styles.meta}>
@@ -976,6 +1077,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 13, fontSize: 16, marginBottom: 12,
     fontFamily: fonts.body, color: colors.heading,
   },
+  passwordRow: { position: 'relative' },
+  passwordInput: { paddingRight: 44 },
+  eyeBtn: { position: 'absolute', right: 2, top: 0, bottom: 12, justifyContent: 'center', paddingHorizontal: 12 },
   button: {
     backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 15,
     alignItems: 'center', marginTop: 6,

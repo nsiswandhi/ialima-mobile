@@ -2,12 +2,17 @@
   "expo": {
     "name": "Lima Circle",
     "slug": "ialima-mobile",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "Lima Circle butuh akses kalender untuk menyimpan event yang kamu ikuti.",
+        "NSCalendarsFullAccessUsageDescription": "Lima Circle butuh akses kalender untuk menyimpan event yang kamu ikuti.",
+        "NSCalendarsWriteOnlyAccessUsageDescription": "Lima Circle butuh akses kalender untuk menambahkan event yang kamu ikuti."
+      }
     },
     "android": {
       "package": "id.ialima.app",
@@ -18,7 +23,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["READ_CALENDAR", "WRITE_CALENDAR"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,6 +40,12 @@
         }
       ],
       "expo-secure-store",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Lima Circle butuh akses kalender untuk menyimpan event yang kamu ikuti."
+        }
+      ],
       [
         "expo-splash-screen",
         {

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import { renderBlock } from '../Blocks';
-import { commApi, CommunityDetail, CommunitySummary, contactChannel, contactOpenUrl, hariLabel } from './api';
+import { commApi, CommunityDetail, CommunitySummary, contactChannel, contactOpenUrl, hariLabel, statusKeanggotaanLabel } from './api';
 import CommunityFormScreen from './CommunityFormScreen';
 import CommunityDetailScreen from './CommunityDetailScreen';
 import { useAndroidBack } from '../useAndroidBack';
@@ -356,7 +356,7 @@ function CommunityReviewModal({ token, communityId, onClose, onApprove, onDelete
                 <ReviewField label="Tipe Komunitas" value={data.community_type} />
                 <ReviewField label="Berdiri Sejak" value={data.berdiri_sejak} />
                 <ReviewField label="Status Komunitas" value={data.status_komunitas} />
-                <ReviewField label="Status Keanggotaan" value={data.status_keanggotaan} />
+                <ReviewField label="Status Keanggotaan" value={statusKeanggotaanLabel(data.status_keanggotaan)} />
               </View>
 
               {!!data.introduction && (

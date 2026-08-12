@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import { colors, fonts } from '../theme';
 import { chatApi, ChatThread } from './api';
+import VerifiedBadge from '../VerifiedBadge';
 
 type Props = {
   token: string;
@@ -72,13 +73,16 @@ export default function ChatInboxScreen({ token, onLogout, onOpenThread, onOpenB
           refreshing={loading}
           renderItem={({ item }) => (
             <Pressable style={styles.row} onPress={() => onOpenThread(item)}>
-              {item.other.avatar?.thumbnail ? (
-                <Image source={{ uri: item.other.avatar.thumbnail }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, styles.avatarFallback]}>
-                  <Text style={styles.avatarLetter}>{item.other.name.charAt(0).toUpperCase()}</Text>
-                </View>
-              )}
+              <View style={{ position: 'relative' }}>
+                {item.other.avatar?.thumbnail ? (
+                  <Image source={{ uri: item.other.avatar.thumbnail }} style={styles.avatar} />
+                ) : (
+                  <View style={[styles.avatar, styles.avatarFallback]}>
+                    <Text style={styles.avatarLetter}>{item.other.name.charAt(0).toUpperCase()}</Text>
+                  </View>
+                )}
+                {item.other.is_member && <VerifiedBadge />}
+              </View>
               <View style={styles.rowBody}>
                 <Text style={styles.name} numberOfLines={1}>{item.other.name}</Text>
                 <Text style={styles.preview} numberOfLines={1}>{item.last_message || 'Belum ada pesan'}</Text>

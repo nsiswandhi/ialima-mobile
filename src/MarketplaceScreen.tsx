@@ -7,7 +7,7 @@ import { colors, fonts } from './theme';
 import Header, { DrawerProfile, NavTarget } from './Header';
 import BrandDetailScreen from './BrandDetailScreen';
 import BrandCard from './marketplace/BrandCard';
-import { BrandSummary, BrandType, mkApi, TYPE_LABELS } from './marketplace/api';
+import { BrandSort, BrandSummary, BrandType, mkApi, TYPE_LABELS } from './marketplace/api';
 import { useAndroidBack } from './useAndroidBack';
 import AdBanner from './ads/AdBanner';
 
@@ -31,6 +31,12 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'place', label: TYPE_LABELS.place },
 ];
 
+const SORT_OPTIONS: { key: BrandSort; label: string }[] = [
+  { key: 'date', label: 'Terbaru' },
+  { key: 'populer', label: 'Populer' },
+  { key: 'rating', label: 'Rating Tertinggi' },
+];
+
 // Rows fed to the single FlatList below: banner (scrolls away) + search
 // (sticky at index 1, pinned just under the header once it reaches the top)
 // + status + 2-up brand pairs. Mixing these means brands can't rely on
@@ -49,6 +55,7 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
   const [selectedId, setSelectedId] = useState<number | null>(initialBrandId ?? null);
 
   const [filter, setFilter] = useState<Filter>('all');
+  const [sort, setSort] = useState<BrandSort>('date');
   const [search, setSearch] = useState('');
   const [brands, setBrands] = useState<BrandSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,13 +70,14 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
   });
 
   const load = useCallback(
-    async (f: Filter, q: string) => {
+    async (f: Filter, q: string, s: BrandSort) => {
       setError(null);
       setLoading(true);
       try {
         const res = await mkApi.list(token, {
           type: f === 'all' ? undefined : f,
           search: q || undefined,
+          sort: s,
         });
         setBrands(res.data);
       } catch (e: any) {
@@ -82,9 +90,9 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
   );
 
   useEffect(() => {
-    if (view === 'list') load(filter, search);
+    if (view === 'list') load(filter, search, sort);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, view]);
+  }, [filter, sort, view]);
 
   const rows = useMemo<Row[]>(() => {
     const items: Row[] = [{ kind: 'banner' }, { kind: 'search' }];
@@ -125,12 +133,25 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
         ))}
       </View>
 
+      {/* Sort row */}
+      <View style={styles.sortRow}>
+        {SORT_OPTIONS.map((s) => (
+          <Pressable
+            key={s.key}
+            style={[styles.filterTab, sort === s.key && styles.filterTabActive]}
+            onPress={() => setSort(s.key)}
+          >
+            <Text style={[styles.filterLabel, sort === s.key && styles.filterLabelActive]}>{s.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
       <FlatList
         data={rows}
         keyExtractor={(row, i) => (row.kind === 'pair' ? `pair-${row.brands[0]?.id ?? i}` : row.kind)}
         contentContainerStyle={styles.listContent}
         stickyHeaderIndices={[1]}
-        onRefresh={() => load(filter, search)}
+        onRefresh={() => load(filter, search, sort)}
         refreshing={loading}
         renderItem={({ item }) => {
           if (item.kind === 'banner') {
@@ -145,10 +166,10 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
                   placeholderTextColor={colors.muted}
                   value={search}
                   onChangeText={setSearch}
-                  onSubmitEditing={() => load(filter, search)}
+                  onSubmitEditing={() => load(filter, search, sort)}
                   returnKeyType="search"
                 />
-                <Pressable style={styles.searchBtn} onPress={() => load(filter, search)}>
+                <Pressable style={styles.searchBtn} onPress={() => load(filter, search, sort)}>
                   <Text style={styles.searchBtnText}>Cari</Text>
                 </Pressable>
               </View>
@@ -170,6 +191,8 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
                   key={b.id}
                   brand={b}
                   style={styles.gridItem}
+                  token={token}
+                  showReport
                   onPress={() => {
                     setSelectedId(b.id);
                     setView('detail');
@@ -197,6 +220,7 @@ const styles = StyleSheet.create({
   statusBox: { paddingHorizontal: 12 },
 
   filterRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 46, paddingBottom: 4 },
+  sortRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingBottom: 8 },
   filterTab: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: 20, backgroundColor: colors.bgAlt },
   filterTabActive: { backgroundColor: colors.primary },
   filterLabel: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.muted },

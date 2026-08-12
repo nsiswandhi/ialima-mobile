@@ -11,9 +11,13 @@ import * as Clipboard from 'expo-clipboard';
 import Header, { DrawerProfile, NavTarget } from '../Header';
 import { colors, fonts } from '../theme';
 import { renderBlock } from '../Blocks';
-import { directionsUrl, evApi, EventDetail, EventFollower, showsOffline, showsOnline } from './api';
+import { directionsUrl, evApi, EventDetail, EventFollower, MyRegistration, showsOffline, showsOnline } from './api';
 import { wibDateTime } from './datetime';
 import { useAndroidBack } from '../useAndroidBack';
+import { getMyRegistrations, addMyRegistration } from './registrationsCache';
+import { getCachedQrUri } from './qrCache';
+import VerifiedBadge from '../VerifiedBadge';
+import { addEventToCalendar, removeEventFromCalendar } from './deviceCalendar';
 
 type Props = {
   token: string;
@@ -35,6 +39,12 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
   const [copied, setCopied] = useState(false);
   const [followers, setFollowers] = useState<EventFollower[]>([]);
   const [following, setFollowing] = useState(false);
+  const [myReg, setMyReg] = useState<MyRegistration | null>(null);
+  const [regChecked, setRegChecked] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [regError, setRegError] = useState<string | null>(null);
+  const [qrUri, setQrUri] = useState<string | null>(null);
 
   useAndroidBack(() => {
     if (lightbox) {
@@ -62,17 +72,74 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
     };
   }, [eventId]);
 
+  useEffect(() => {
+    if (!data?.is_bridge_event || data.link_registrasi) {
+      setRegChecked(true);
+      return;
+    }
+    setRegChecked(false);
+    let alive = true;
+    getMyRegistrations(token)
+      .then((list) => {
+        if (alive) setMyReg(list.find((r) => r.id === eventId) ?? null);
+      })
+      .catch(() => alive && setMyReg(null))
+      .finally(() => alive && setRegChecked(true));
+    return () => {
+      alive = false;
+    };
+  }, [data?.is_bridge_event, data?.link_registrasi, eventId]);
+
+  useEffect(() => {
+    if (!myReg?.qr_token || !myReg?.qr_url) return;
+    let alive = true;
+    getCachedQrUri(myReg.qr_token, myReg.qr_url)
+      .then((uri) => alive && setQrUri(uri))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [myReg?.qr_token, myReg?.qr_url]);
+
+  const handleRegister = async () => {
+    if (registering || !data) return;
+    setRegError(null);
+    setRegistering(true);
+    try {
+      const res = await evApi.register(token, eventId);
+      const reg: MyRegistration = {
+        ...data,
+        needs_qr: res.needs_qr,
+        qr_token: res.qr_token,
+        qr_url: res.qr_url,
+      };
+      addMyRegistration(reg);
+      setMyReg(reg);
+      setConfirming(false);
+    } catch (e: any) {
+      setRegError(e.message);
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   const toggleFollow = async () => {
     if (!data || following) return;
     setFollowing(true);
     try {
-      const r = data.is_following ? await evApi.unfollow(token, eventId) : await evApi.follow(token, eventId);
+      const wasFollowing = data.is_following;
+      const r = wasFollowing ? await evApi.unfollow(token, eventId) : await evApi.follow(token, eventId);
       setData({ ...data, is_following: r.is_following, follower_count: r.follower_count });
       const list = await evApi.followers(token, eventId);
       setFollowers(list.data);
+      setFollowing(false);
+      if (wasFollowing) {
+        removeEventFromCalendar(eventId);
+      } else {
+        addEventToCalendar(data);
+      }
     } catch (e: any) {
       setError(e.message);
-    } finally {
       setFollowing(false);
     }
   };
@@ -163,6 +230,46 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
             >
               <Text style={styles.registerText}>Daftar Event</Text>
             </Pressable>
+          ) : data.is_bridge_event ? (
+            !regChecked ? (
+              <ActivityIndicator color={colors.primary} style={{ marginTop: 16 }} />
+            ) : myReg ? (
+              <View style={styles.regSuccessCard}>
+                <Ionicons name="checkmark-circle" size={20} color="#3B6D11" />
+                <Text style={styles.regSuccessText}>Kamu terdaftar untuk event ini.</Text>
+                {myReg.needs_qr && (
+                  <View style={styles.qrBox}>
+                    {qrUri ? (
+                      <Image source={{ uri: qrUri }} style={styles.qrImage} />
+                    ) : (
+                      <ActivityIndicator color={colors.primary} />
+                    )}
+                    <Text style={styles.qrHint}>Tunjukkan QR ini saat check-in.</Text>
+                  </View>
+                )}
+              </View>
+            ) : confirming ? (
+              <View style={styles.confirmCard}>
+                <Text style={styles.confirmText}>
+                  Kamu akan didaftarkan menggunakan data profil kamu (nama, email, no. HP, angkatan).
+                </Text>
+                {!!regError && <Text style={styles.regErrorText}>{regError}</Text>}
+                <Pressable
+                  style={({ pressed }) => [styles.registerBtn, pressed && styles.pressed]}
+                  disabled={registering}
+                  onPress={handleRegister}
+                >
+                  <Text style={styles.registerText}>{registering ? 'Memproses…' : 'Konfirmasi Pendaftaran'}</Text>
+                </Pressable>
+              </View>
+            ) : !hasEnded ? (
+              <Pressable
+                style={({ pressed }) => [styles.registerBtn, pressed && styles.pressed]}
+                onPress={() => setConfirming(true)}
+              >
+                <Text style={styles.registerText}>Daftar Event</Text>
+              </Pressable>
+            ) : null
           ) : !hasEnded ? (
             <Pressable
               style={({ pressed }) => [
@@ -274,7 +381,7 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
             </View>
           )}
 
-          {!data.link_registrasi && (
+          {!data.link_registrasi && !data.is_bridge_event && (
             <View style={styles.section}>
               <Text style={styles.sectionHead}>PENGIKUT EVENT{data.follower_count ? ` (${data.follower_count})` : ''}</Text>
               {followers.length === 0 ? (
@@ -282,13 +389,16 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
               ) : (
                 followers.map((m) => (
                   <View key={m.id} style={styles.personRow}>
-                    {m.avatar?.thumbnail ? (
-                      <Image source={{ uri: m.avatar.thumbnail }} style={styles.personAvatar} />
-                    ) : (
-                      <View style={[styles.personAvatar, styles.logoFallback]}>
-                        <Text style={styles.personLetter}>{m.name?.charAt(0) || '?'}</Text>
-                      </View>
-                    )}
+                    <View style={{ position: 'relative' }}>
+                      {m.avatar?.thumbnail ? (
+                        <Image source={{ uri: m.avatar.thumbnail }} style={styles.personAvatar} />
+                      ) : (
+                        <View style={[styles.personAvatar, styles.logoFallback]}>
+                          <Text style={styles.personLetter}>{m.name?.charAt(0) || '?'}</Text>
+                        </View>
+                      )}
+                      {m.is_member && <VerifiedBadge />}
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.personName}>{m.name}</Text>
                       <Text style={styles.personMeta}>
@@ -357,6 +467,18 @@ const styles = StyleSheet.create({
 
   manageBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, marginTop: 8 },
   manageText: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.primary },
+
+  regSuccessCard: {
+    backgroundColor: '#EAF3DE', borderRadius: 12, marginTop: 16, marginHorizontal: 16, padding: 16,
+    alignItems: 'center', gap: 8,
+  },
+  regSuccessText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: '#3B6D11', textAlign: 'center' },
+  qrBox: { alignItems: 'center', marginTop: 8, gap: 8 },
+  qrImage: { width: 180, height: 180, backgroundColor: colors.white, borderRadius: 8 },
+  qrHint: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, textAlign: 'center' },
+  confirmCard: { marginTop: 16, marginHorizontal: 16, gap: 8 },
+  confirmText: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 19 },
+  regErrorText: { fontFamily: fonts.body, fontSize: 12.5, color: colors.danger, marginTop: -4 },
 
   section: { marginTop: 24, paddingHorizontal: 16 },
   sectionHead: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.muted, letterSpacing: 0.5, marginBottom: 10 },

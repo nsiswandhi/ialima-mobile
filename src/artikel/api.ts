@@ -30,6 +30,7 @@ export type ArtikelAuthor = {
   id: number;
   name: string;
   avatar: Img;
+  is_member: boolean;
   angkatan: string;
   roles: string[];
   job_title: string;

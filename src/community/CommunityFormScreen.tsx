@@ -15,6 +15,7 @@ import { blocksToHtml } from '../Blocks';
 import { colors, fonts } from '../theme';
 import {
   ActivityRow, commApi, CommunityDetail, CommunityType, ContactRow, CONTACT_CHANNELS, HARI_LABELS,
+  STATUS_KEANGGOTAAN,
 } from './api';
 
 type Props = {
@@ -29,9 +30,6 @@ type Props = {
 };
 
 const STATUS_KOMUNITAS = ['Aktif dan Berbadan Hukum', 'Aktif', 'Tidak Aktif', 'Dalam Pembentukan'];
-const STATUS_KEANGGOTAAN = [
-  'Terbuka Untuk Alumni dan Umum', 'Untuk Alumni Lima', 'Terbatas Untuk Profesi', 'Berdasarkan Undangan',
-];
 
 export default function CommunityFormScreen({ token, communityId, onBack, onSaved, onLogout, profile, onNavigate, unreadCount }: Props) {
   const editing = !!communityId;
@@ -283,7 +281,12 @@ export default function CommunityFormScreen({ token, communityId, onBack, onSave
         </Field>
 
         <Field label="Status Keanggotaan *">
-          <ChipPicker options={STATUS_KEANGGOTAAN} value={statusKeanggotaan} onChange={setStatusKeanggotaan} />
+          <ChipPicker
+            options={STATUS_KEANGGOTAAN.map(([v]) => v)}
+            labels={STATUS_KEANGGOTAAN.map(([, l]) => l)}
+            value={statusKeanggotaan}
+            onChange={setStatusKeanggotaan}
+          />
         </Field>
 
         <Field label="Tentang Kami">

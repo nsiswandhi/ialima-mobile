@@ -69,6 +69,7 @@ export type CommunityMember = {
   id: number;
   name: string;
   avatar: Img;
+  is_member: boolean;
   angkatan: string;
   job_title: string;
   membership: { role: 'member' | 'manager'; status: 'pending' | 'approved' };
@@ -289,4 +290,19 @@ export const HARI_LABELS: [string, string][] = [
 ];
 export function hariLabel(key: string) {
   return HARI_LABELS.find(([k]) => k === key)?.[1] || key;
+}
+
+// Status Keanggotaan select — the stored value stays the historical string
+// even where the displayed label changed ("Untuk Alumni Lima" -> "Untuk
+// Alumni"), so already-saved communities need no data migration and the
+// backend whitelist (class-ia5-community.php's STATUS_KEANGGOTAAN) needs no
+// change either. Mirrors HARI_LABELS/hariLabel above.
+export const STATUS_KEANGGOTAAN: [string, string][] = [
+  ['Terbuka Untuk Alumni dan Umum', 'Terbuka Untuk Alumni dan Umum'],
+  ['Untuk Alumni Lima', 'Untuk Alumni'],
+  ['Terbatas Untuk Profesi', 'Terbatas Untuk Profesi'],
+  ['Berdasarkan Undangan', 'Berdasarkan Undangan'],
+];
+export function statusKeanggotaanLabel(value: string) {
+  return STATUS_KEANGGOTAAN.find(([v]) => v === value)?.[1] || value;
 }

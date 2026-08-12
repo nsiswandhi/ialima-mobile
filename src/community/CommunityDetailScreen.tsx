@@ -14,6 +14,7 @@ import { commApi, CommunityDetail, CommunityMember, contactChannel, contactOpenU
 import StarRating from '../reviews/StarRating';
 import ReviewSection from '../reviews/ReviewSection';
 import { promptReport } from '../report/promptReport';
+import VerifiedBadge from '../VerifiedBadge';
 
 type Props = {
   token: string;
@@ -116,16 +117,6 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
   return (
     <View style={styles.flex}>
       <Header title={data?.name || 'Komunitas'} onBack={onBack} onLogout={onLogout} profile={profile} onNavigate={onNavigate} unreadCount={unreadCount} />
-      {data ? (
-        <Pressable
-          onPress={() => promptReport(token, 'community', communityId)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingTop: 8 }}
-          accessibilityLabel="Laporkan komunitas ini"
-        >
-          <Ionicons name="flag-outline" size={14} color={colors.muted} />
-          <Text style={{ color: colors.muted, fontFamily: fonts.body, fontSize: 12 }}>Laporkan</Text>
-        </Pressable>
-      ) : null}
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
@@ -319,6 +310,15 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
           </View>
 
           <ReviewSection token={token} objectType="community" objectId={communityId} />
+
+          <Pressable
+            onPress={() => promptReport(token, 'community', communityId)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, marginTop: 16, marginBottom: 8 }}
+            accessibilityLabel="Laporkan komunitas ini"
+          >
+            <Ionicons name="flag-outline" size={14} color={colors.muted} />
+            <Text style={{ color: colors.muted, fontFamily: fonts.body, fontSize: 12 }}>Laporkan</Text>
+          </Pressable>
         </ScrollView>
       ) : null}
 
@@ -332,11 +332,16 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
 }
 
 function PersonAvatar({ m }: { m: CommunityMember }) {
-  return m.avatar?.thumbnail ? (
-    <Image source={{ uri: m.avatar.thumbnail }} style={styles.personAvatar} />
-  ) : (
-    <View style={[styles.personAvatar, styles.logoFallback]}>
-      <Text style={styles.personLetter}>{m.name?.charAt(0) || '?'}</Text>
+  return (
+    <View style={{ position: 'relative' }}>
+      {m.avatar?.thumbnail ? (
+        <Image source={{ uri: m.avatar.thumbnail }} style={styles.personAvatar} />
+      ) : (
+        <View style={[styles.personAvatar, styles.logoFallback]}>
+          <Text style={styles.personLetter}>{m.name?.charAt(0) || '?'}</Text>
+        </View>
+      )}
+      {m.is_member && <VerifiedBadge />}
     </View>
   );
 }

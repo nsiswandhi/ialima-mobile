@@ -10,6 +10,7 @@ import { renderBlock } from '../Blocks';
 import StarRating from '../reviews/StarRating';
 import ReviewSection from '../reviews/ReviewSection';
 import { promptReport } from '../report/promptReport';
+import VerifiedBadge from '../VerifiedBadge';
 
 type Props = {
   token: string;
@@ -77,14 +78,6 @@ export default function ArtikelDetailScreen({ token, articleId, onBack, onEdit }
         <Text style={styles.title}>{data.title}</Text>
         <Text style={styles.author}>{data.author_name}</Text>
         <StarRating value={data.rating_average} count={data.rating_count} size="md" />
-        <Pressable
-          onPress={() => promptReport(token, 'article', articleId)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}
-          accessibilityLabel="Laporkan artikel ini"
-        >
-          <Ionicons name="flag-outline" size={14} color={colors.muted} />
-          <Text style={{ color: colors.muted, fontSize: 12 }}>Laporkan</Text>
-        </Pressable>
         <View style={{ height: 16 }} />
 
         {data.status !== 'publish' && (data.is_owner || data.is_ia_lima_review) && (
@@ -111,13 +104,16 @@ export default function ArtikelDetailScreen({ token, articleId, onBack, onEdit }
           <View style={styles.authorCard}>
             <Text style={styles.authorLabel}>Penulis Artikel</Text>
             <View style={styles.authorRow}>
-              {data.author.avatar ? (
-                <Image source={{ uri: data.author.avatar.full }} style={styles.authorAvatar} />
-              ) : (
-                <View style={[styles.authorAvatar, styles.authorAvatarFallback]}>
-                  <Text style={styles.authorAvatarLetter}>{data.author.name.charAt(0).toUpperCase()}</Text>
-                </View>
-              )}
+              <View style={{ position: 'relative' }}>
+                {data.author.avatar ? (
+                  <Image source={{ uri: data.author.avatar.full }} style={styles.authorAvatar} />
+                ) : (
+                  <View style={[styles.authorAvatar, styles.authorAvatarFallback]}>
+                    <Text style={styles.authorAvatarLetter}>{data.author.name.charAt(0).toUpperCase()}</Text>
+                  </View>
+                )}
+                {data.author.is_member && <VerifiedBadge />}
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.authorName}>{data.author.name}</Text>
                 <View style={styles.authorBadges}>
@@ -139,6 +135,15 @@ export default function ArtikelDetailScreen({ token, articleId, onBack, onEdit }
         )}
 
         <ReviewSection token={token} objectType="artikel" objectId={articleId} />
+
+        <Pressable
+          onPress={() => promptReport(token, 'article', articleId)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20, alignSelf: 'center' }}
+          accessibilityLabel="Laporkan artikel ini"
+        >
+          <Ionicons name="flag-outline" size={14} color={colors.muted} />
+          <Text style={{ color: colors.muted, fontSize: 12 }}>Laporkan</Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
