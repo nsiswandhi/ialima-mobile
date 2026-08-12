@@ -5,6 +5,7 @@ import { API_BASE } from '../config';
 import { trackEvent } from '../analytics';
 
 export type BrandType = 'product' | 'service' | 'place';
+export type BrandSort = 'date' | 'populer' | 'rating';
 
 export type Img = { full: string; thumbnail: string } | null;
 
@@ -138,7 +139,10 @@ function form(fields: Record<string, unknown>) {
 export const mkApi = {
   list(
     token: string,
-    opts: { type?: BrandType; category?: string; owner?: number; search?: string; page?: number; featured?: boolean } = {},
+    opts: {
+      type?: BrandType; category?: string; owner?: number; search?: string; page?: number;
+      featured?: boolean; sort?: BrandSort;
+    } = {},
   ) {
     const q = new URLSearchParams({ per_page: '20', page: String(opts.page ?? 1) });
     if (opts.type) q.append('type', opts.type);
@@ -146,6 +150,7 @@ export const mkApi = {
     if (opts.owner) q.append('owner', String(opts.owner));
     if (opts.search) q.append('search', opts.search);
     if (opts.featured) q.append('featured', '1');
+    if (opts.sort && opts.sort !== 'date') q.append('sort', opts.sort);
     return fetch(`${API_BASE}/marketplace?${q.toString()}`, { headers: headers(token) }).then(
       parse<Paged<BrandSummary>>,
     );
