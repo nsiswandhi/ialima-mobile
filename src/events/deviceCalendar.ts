@@ -50,9 +50,9 @@ async function getWritableCalendarId(): Promise<string> {
 // block or roll back the follow action.
 export async function addEventToCalendar(event: EventDetail): Promise<void> {
   if (!event.start_date) return;
-  const granted = await ensurePermission();
-  if (!granted) return;
   try {
+    const granted = await ensurePermission();
+    if (!granted) return;
     const calendarId = await getWritableCalendarId();
     const calEventId = await Calendar.createEventAsync(calendarId, {
       title: event.name,
@@ -73,13 +73,17 @@ export async function addEventToCalendar(event: EventDetail): Promise<void> {
 // was already removed by the user from their own calendar app.
 export async function removeEventFromCalendar(eventId: number): Promise<void> {
   const key = STORAGE_PREFIX + eventId;
-  const calEventId = await SecureStore.getItemAsync(key);
-  if (!calEventId) return;
   try {
-    await Calendar.deleteEventAsync(calEventId);
+    const calEventId = await SecureStore.getItemAsync(key);
+    if (!calEventId) return;
+    try {
+      await Calendar.deleteEventAsync(calEventId);
+    } catch {
+      // Already gone — not fatal.
+    } finally {
+      await SecureStore.deleteItemAsync(key);
+    }
   } catch {
-    // Already gone — not fatal.
-  } finally {
-    await SecureStore.deleteItemAsync(key);
+    // Non-fatal — see comment above.
   }
 }

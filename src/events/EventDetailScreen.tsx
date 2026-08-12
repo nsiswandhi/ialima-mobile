@@ -130,14 +130,14 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
       setData({ ...data, is_following: r.is_following, follower_count: r.follower_count });
       const list = await evApi.followers(token, eventId);
       setFollowers(list.data);
+      setFollowing(false);
       if (wasFollowing) {
-        await removeEventFromCalendar(eventId);
+        removeEventFromCalendar(eventId);
       } else {
-        await addEventToCalendar(data);
+        addEventToCalendar(data);
       }
     } catch (e: any) {
       setError(e.message);
-    } finally {
       setFollowing(false);
     }
   };
