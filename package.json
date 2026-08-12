@@ -12,6 +12,7 @@
     "@react-native-firebase/app": "^25.1.0",
     "@react-native-firebase/crashlytics": "^25.1.0",
     "expo": "^54.0.35",
+    "expo-calendar": "~15.0.8",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.13",
     "expo-dev-client": "~6.0.21",
