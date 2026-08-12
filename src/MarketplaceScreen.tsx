@@ -170,6 +170,8 @@ export default function MarketplaceScreen({ token, viewerId, onLogout, initialBr
                   key={b.id}
                   brand={b}
                   style={styles.gridItem}
+                  token={token}
+                  showReport
                   onPress={() => {
                     setSelectedId(b.id);
                     setView('detail');

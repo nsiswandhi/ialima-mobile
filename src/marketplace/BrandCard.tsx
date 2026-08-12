@@ -1,19 +1,25 @@
 import React from 'react';
 import { Image, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
 import { BrandSummary, TYPE_LABELS } from './api';
 import StarRating from '../reviews/StarRating';
+import { promptReport } from '../report/promptReport';
 
 // Reusable brand card. Logo-forward (square image on top) so brands stand out in
 // the 2-column Marketplace grid and the Dashboard "Brand Unggulan" carousel.
 // Width is controlled by the parent via `style` (flex:1 in a grid, a fixed width
-// in a carousel).
+// in a carousel). `showReport`/`token` add a per-card "Laporkan" icon — only
+// passed `true`/set from MarketplaceScreen's grid, left unset on
+// DashboardScreen's carousel (see that screen's own usage, unchanged).
 export default function BrandCard({
-  brand, onPress, style,
+  brand, onPress, style, token, showReport,
 }: {
   brand: BrandSummary;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
+  token?: string;
+  showReport?: boolean;
 }) {
   const img = brand.logo?.thumbnail || brand.logo?.full || null;
   return (
@@ -24,6 +30,16 @@ export default function BrandCard({
         <View style={[styles.img, styles.fallback]}>
           <Text style={styles.letter}>{brand.name.charAt(0)}</Text>
         </View>
+      )}
+      {showReport && token && (
+        <Pressable
+          style={({ pressed }) => [styles.reportIcon, pressed && styles.reportIconPressed]}
+          onPress={() => promptReport(token, 'listing', brand.id)}
+          hitSlop={6}
+          accessibilityLabel="Laporkan brand ini"
+        >
+          <Ionicons name="flag-outline" size={14} color={colors.white} />
+        </Pressable>
       )}
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>{brand.name}</Text>
@@ -56,6 +72,11 @@ const styles = StyleSheet.create({
   },
   pressed: { backgroundColor: colors.bgAlt },
   img: { width: '100%', aspectRatio: 1, backgroundColor: colors.bgAlt },
+  reportIcon: {
+    position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: 13,
+    backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center',
+  },
+  reportIconPressed: { opacity: 0.7 },
   fallback: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary },
   letter: { fontFamily: fonts.heading, fontSize: 40, color: colors.white },
   body: { padding: 11 },
