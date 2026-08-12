@@ -39,8 +39,10 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SecureStore from 'expo-secure-store';
+import * as FileSystem from 'expo-file-system/legacy';
 import BootScreen from './src/BootScreen';
 import { trackScreen, trackFormResult, recordError, identifyUser, clearUser } from './src/analytics';
+import { resetMyRegistrations } from './src/events/registrationsCache';
 
 const SPLASH_SEEN_KEY = 'ia5_post_login_splash_seen';
 // Persisted login session — restored on launch so an OS-killed process
@@ -146,6 +148,24 @@ function AppInner() {
           const parsedUser = JSON.parse(savedUser); // let the outer catch handle failure
           setToken(savedToken);
           setUser(parsedUser);
+          // A restored token can be expired/revoked server-side (it now
+          // outlives the app process, unlike before this branch when it only
+          // ever lived in memory). Validate it with the same cheap GET the
+          // burger-drawer profile card already uses, so a dead session
+          // doesn't strand the user on screens that just show their own
+          // local API-error with no visible way back to login.
+          try {
+            const checkRes = await fetch(`${API_BASE}/member/${parsedUser.id}`, {
+              headers: { 'X-IA5-Token': savedToken },
+            });
+            if (checkRes.status === 401) {
+              logout();
+            }
+          } catch {
+            // Network error during validation — don't lock the user out on a
+            // connectivity blip; screens below have their own error handling
+            // for a genuinely unreachable API.
+          }
         }
       } catch {
         // Corrupt/unavailable storage — fall through to the login screen.
@@ -458,6 +478,27 @@ function AppInner() {
     setShowPassword(false);
     setSelectedMemberId(null);
     setTab('dashboard');
+    // Session-scoped registration cache — see registrationsCache.ts's comment
+    // on why a different alumni logging in next (same app process, no
+    // reload) must never see the previous alumni's registrations/QR data.
+    resetMyRegistrations();
+    // Best-effort: remove any locally-cached QR images so they can't be served
+    // to a different alumni who logs in next in the same app session.
+    (async () => {
+      try {
+        const dir = FileSystem.cacheDirectory;
+        if (dir) {
+          const files = await FileSystem.readDirectoryAsync(dir);
+          await Promise.all(
+            files
+              .filter((f) => f.startsWith('qr-'))
+              .map((f) => FileSystem.deleteAsync(dir + f, { idempotent: true })),
+          );
+        }
+      } catch {
+        // Non-fatal — stale QR files are a privacy hygiene concern, not a logout blocker.
+      }
+    })();
   }
 
   // Android hardware back: pop the outermost level of nav state (a deep-link

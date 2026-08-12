@@ -17,6 +17,15 @@ let inFlight: Promise<MyRegistration[]> | null = null;
 // more recently and should win.
 let generation = 0;
 
+// Called on logout so a subsequent login (same app process, no reload) never
+// serves a different alumni's cached registrations or their downloaded QR
+// check-in images — this cache is per-session, not per-device.
+export function resetMyRegistrations() {
+  cache = null;
+  inFlight = null;
+  generation++;
+}
+
 export async function getMyRegistrations(
   token: string,
   opts?: { force?: boolean },

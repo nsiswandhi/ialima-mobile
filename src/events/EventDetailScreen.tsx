@@ -43,6 +43,7 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
   const [regChecked, setRegChecked] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [registering, setRegistering] = useState(false);
+  const [regError, setRegError] = useState<string | null>(null);
   const [qrUri, setQrUri] = useState<string | null>(null);
 
   useAndroidBack(() => {
@@ -102,6 +103,7 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
 
   const handleRegister = async () => {
     if (registering || !data) return;
+    setRegError(null);
     setRegistering(true);
     try {
       const res = await evApi.register(token, eventId);
@@ -115,7 +117,7 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
       setMyReg(reg);
       setConfirming(false);
     } catch (e: any) {
-      setError(e.message);
+      setRegError(e.message);
     } finally {
       setRegistering(false);
     }
@@ -251,6 +253,7 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
                 <Text style={styles.confirmText}>
                   Kamu akan didaftarkan menggunakan data profil kamu (nama, email, no. HP, angkatan).
                 </Text>
+                {!!regError && <Text style={styles.regErrorText}>{regError}</Text>}
                 <Pressable
                   style={({ pressed }) => [styles.registerBtn, pressed && styles.pressed]}
                   disabled={registering}
@@ -259,14 +262,14 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
                   <Text style={styles.registerText}>{registering ? 'Memproses…' : 'Konfirmasi Pendaftaran'}</Text>
                 </Pressable>
               </View>
-            ) : (
+            ) : !hasEnded ? (
               <Pressable
                 style={({ pressed }) => [styles.registerBtn, pressed && styles.pressed]}
                 onPress={() => setConfirming(true)}
               >
                 <Text style={styles.registerText}>Daftar Event</Text>
               </Pressable>
-            )
+            ) : null
           ) : !hasEnded ? (
             <Pressable
               style={({ pressed }) => [
@@ -475,6 +478,7 @@ const styles = StyleSheet.create({
   qrHint: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, textAlign: 'center' },
   confirmCard: { marginTop: 16, marginHorizontal: 16, gap: 8 },
   confirmText: { fontFamily: fonts.body, fontSize: 13, color: colors.text, lineHeight: 19 },
+  regErrorText: { fontFamily: fonts.body, fontSize: 12.5, color: colors.danger, marginTop: -4 },
 
   section: { marginTop: 24, paddingHorizontal: 16 },
   sectionHead: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.muted, letterSpacing: 0.5, marginBottom: 10 },

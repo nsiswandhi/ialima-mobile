@@ -11,6 +11,10 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { EventDetail } from './api';
 
+// KNOWN LIMITATION: these keys are not cleared on logout (unlike
+// registrationsCache and the cached QR images — see App.tsx's logout()).
+// A full fix would need to track all persisted calendar-id keys to sweep on
+// account switch; left as a follow-up since SecureStore has no key-listing API.
 const STORAGE_PREFIX = 'ia5_event_calendar_id_';
 
 async function ensurePermission(): Promise<boolean> {

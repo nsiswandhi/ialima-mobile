@@ -68,7 +68,7 @@ export default function MyEventScreen({
         evApi.list(token, { role: 'mine-as-member' }),
         canCreate ? evApi.list(token, { role: 'mine-as-organizer' }) : Promise.resolve({ data: [] as EventSummary[] } as any),
         isIALima ? evApi.list(token, { status: 'pending' }) : Promise.resolve({ data: [] as EventSummary[] } as any),
-        getMyRegistrations(token, { force: true }),
+        getMyRegistrations(token, { force: true }).catch(() => [] as MyRegistration[]),
       ]);
       setMine(member.data);
       setManaged(organizer.data);
