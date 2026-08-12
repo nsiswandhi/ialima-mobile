@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../theme';
 import { reviewsApi, Review, ObjectType } from './api';
 import StarRating from './StarRating';
+import VerifiedBadge from '../VerifiedBadge';
 
 type Props = {
   token: string;
@@ -144,13 +145,16 @@ export default function ReviewSection({ token, objectType, objectId }: Props) {
             ) : (
               reviews.map((r) => (
                 <View key={r.id} style={styles.reviewRow}>
-                  {r.user_avatar?.thumbnail ? (
-                    <Image source={{ uri: r.user_avatar.thumbnail }} style={styles.avatar} />
-                  ) : (
-                    <View style={[styles.avatar, styles.avatarFallback]}>
-                      <Text style={styles.avatarLetter}>{r.user_name.charAt(0)}</Text>
-                    </View>
-                  )}
+                  <View style={{ position: 'relative' }}>
+                    {r.user_avatar?.thumbnail ? (
+                      <Image source={{ uri: r.user_avatar.thumbnail }} style={styles.avatar} />
+                    ) : (
+                      <View style={[styles.avatar, styles.avatarFallback]}>
+                        <Text style={styles.avatarLetter}>{r.user_name.charAt(0)}</Text>
+                      </View>
+                    )}
+                    {r.user_is_member && <VerifiedBadge />}
+                  </View>
                   <View style={{ flex: 1 }}>
                     <View style={styles.reviewHeadRow}>
                       <Text style={styles.reviewName}>{r.user_name}</Text>

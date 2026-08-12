@@ -69,6 +69,7 @@ export type CommunityMember = {
   id: number;
   name: string;
   avatar: Img;
+  is_member: boolean;
   angkatan: string;
   job_title: string;
   membership: { role: 'member' | 'manager'; status: 'pending' | 'approved' };

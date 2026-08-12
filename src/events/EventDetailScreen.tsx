@@ -16,6 +16,7 @@ import { wibDateTime } from './datetime';
 import { useAndroidBack } from '../useAndroidBack';
 import { getMyRegistrations, addMyRegistration } from './registrationsCache';
 import { getCachedQrUri } from './qrCache';
+import VerifiedBadge from '../VerifiedBadge';
 
 type Props = {
   token: string;
@@ -378,13 +379,16 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
               ) : (
                 followers.map((m) => (
                   <View key={m.id} style={styles.personRow}>
-                    {m.avatar?.thumbnail ? (
-                      <Image source={{ uri: m.avatar.thumbnail }} style={styles.personAvatar} />
-                    ) : (
-                      <View style={[styles.personAvatar, styles.logoFallback]}>
-                        <Text style={styles.personLetter}>{m.name?.charAt(0) || '?'}</Text>
-                      </View>
-                    )}
+                    <View style={{ position: 'relative' }}>
+                      {m.avatar?.thumbnail ? (
+                        <Image source={{ uri: m.avatar.thumbnail }} style={styles.personAvatar} />
+                      ) : (
+                        <View style={[styles.personAvatar, styles.logoFallback]}>
+                          <Text style={styles.personLetter}>{m.name?.charAt(0) || '?'}</Text>
+                        </View>
+                      )}
+                      {m.is_member && <VerifiedBadge />}
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.personName}>{m.name}</Text>
                       <Text style={styles.personMeta}>

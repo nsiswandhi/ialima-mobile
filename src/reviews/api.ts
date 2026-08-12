@@ -13,6 +13,7 @@ export type Review = {
   user_id: number;
   user_name: string;
   user_avatar: Img;
+  user_is_member: boolean;
   rating: number;
   review: string | null;
   created_at: string;

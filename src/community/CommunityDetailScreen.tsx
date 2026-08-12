@@ -14,6 +14,7 @@ import { commApi, CommunityDetail, CommunityMember, contactChannel, contactOpenU
 import StarRating from '../reviews/StarRating';
 import ReviewSection from '../reviews/ReviewSection';
 import { promptReport } from '../report/promptReport';
+import VerifiedBadge from '../VerifiedBadge';
 
 type Props = {
   token: string;
@@ -332,11 +333,16 @@ export default function CommunityDetailScreen({ token, communityId, onBack, onLo
 }
 
 function PersonAvatar({ m }: { m: CommunityMember }) {
-  return m.avatar?.thumbnail ? (
-    <Image source={{ uri: m.avatar.thumbnail }} style={styles.personAvatar} />
-  ) : (
-    <View style={[styles.personAvatar, styles.logoFallback]}>
-      <Text style={styles.personLetter}>{m.name?.charAt(0) || '?'}</Text>
+  return (
+    <View style={{ position: 'relative' }}>
+      {m.avatar?.thumbnail ? (
+        <Image source={{ uri: m.avatar.thumbnail }} style={styles.personAvatar} />
+      ) : (
+        <View style={[styles.personAvatar, styles.logoFallback]}>
+          <Text style={styles.personLetter}>{m.name?.charAt(0) || '?'}</Text>
+        </View>
+      )}
+      {m.is_member && <VerifiedBadge />}
     </View>
   );
 }

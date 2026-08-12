@@ -10,6 +10,7 @@ import { renderBlock } from '../Blocks';
 import StarRating from '../reviews/StarRating';
 import ReviewSection from '../reviews/ReviewSection';
 import { promptReport } from '../report/promptReport';
+import VerifiedBadge from '../VerifiedBadge';
 
 type Props = {
   token: string;
@@ -111,13 +112,16 @@ export default function ArtikelDetailScreen({ token, articleId, onBack, onEdit }
           <View style={styles.authorCard}>
             <Text style={styles.authorLabel}>Penulis Artikel</Text>
             <View style={styles.authorRow}>
-              {data.author.avatar ? (
-                <Image source={{ uri: data.author.avatar.full }} style={styles.authorAvatar} />
-              ) : (
-                <View style={[styles.authorAvatar, styles.authorAvatarFallback]}>
-                  <Text style={styles.authorAvatarLetter}>{data.author.name.charAt(0).toUpperCase()}</Text>
-                </View>
-              )}
+              <View style={{ position: 'relative' }}>
+                {data.author.avatar ? (
+                  <Image source={{ uri: data.author.avatar.full }} style={styles.authorAvatar} />
+                ) : (
+                  <View style={[styles.authorAvatar, styles.authorAvatarFallback]}>
+                    <Text style={styles.authorAvatarLetter}>{data.author.name.charAt(0).toUpperCase()}</Text>
+                  </View>
+                )}
+                {data.author.is_member && <VerifiedBadge />}
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.authorName}>{data.author.name}</Text>
                 <View style={styles.authorBadges}>

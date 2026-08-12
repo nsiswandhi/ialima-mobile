@@ -80,6 +80,7 @@ export type EventFollower = {
   id: number;
   name: string;
   avatar: Img;
+  is_member: boolean;
   angkatan: string;
   job_title: string;
 };
