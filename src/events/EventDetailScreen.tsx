@@ -17,6 +17,7 @@ import { useAndroidBack } from '../useAndroidBack';
 import { getMyRegistrations, addMyRegistration } from './registrationsCache';
 import { getCachedQrUri } from './qrCache';
 import VerifiedBadge from '../VerifiedBadge';
+import { addEventToCalendar, removeEventFromCalendar } from './deviceCalendar';
 
 type Props = {
   token: string;
@@ -124,10 +125,16 @@ export default function EventDetailScreen({ token, eventId, onBack, onLogout, on
     if (!data || following) return;
     setFollowing(true);
     try {
-      const r = data.is_following ? await evApi.unfollow(token, eventId) : await evApi.follow(token, eventId);
+      const wasFollowing = data.is_following;
+      const r = wasFollowing ? await evApi.unfollow(token, eventId) : await evApi.follow(token, eventId);
       setData({ ...data, is_following: r.is_following, follower_count: r.follower_count });
       const list = await evApi.followers(token, eventId);
       setFollowers(list.data);
+      if (wasFollowing) {
+        await removeEventFromCalendar(eventId);
+      } else {
+        await addEventToCalendar(data);
+      }
     } catch (e: any) {
       setError(e.message);
     } finally {
