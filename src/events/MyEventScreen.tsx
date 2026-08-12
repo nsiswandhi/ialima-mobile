@@ -1,9 +1,12 @@
 // Burger-menu destination for "My Event" — up to four sections: "Event Saya"
-// (events scoped to the viewer's angkatan/communities), "Terdaftar" (events
-// registered in-app via the organizer bridge), "Event yang Saya Kelola"
-// (events the viewer created, incl. pending — pengurus only), and — Pengurus IA
-// Lima only — "Persetujuan" (events awaiting approval, with a review popup).
-// Mirrors MyKomunitasScreen's structure.
+// (events the viewer follows — see IA5_Events::followers_table(); an in-app
+// "Daftar Event" registration for a bridge-mirrored event, below, inserts a
+// follow row too, so registered bridge events correctly appear here as
+// well), "Terdaftar" (events registered in-app via the organizer bridge,
+// with QR), "Event yang Saya Kelola" (events the viewer created, incl.
+// pending — pengurus only), and — Pengurus IA Lima only — "Persetujuan"
+// (events awaiting approval, with a review popup). Mirrors
+// MyKomunitasScreen's structure.
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View,
@@ -202,7 +205,7 @@ export default function MyEventScreen({
           <>
             <Text style={styles.sectionHead}>EVENT SAYA</Text>
             {mine.length === 0 ? (
-              <Text style={styles.empty}>Belum ada event untuk angkatan atau komunitasmu.</Text>
+              <Text style={styles.empty}>Kamu belum mengikuti event apa pun.</Text>
             ) : (
               mine.map((item) => (
                 <Row key={`mine-${item.id}`} item={item} onPress={() => setNav({ kind: 'view', id: item.id })} />
