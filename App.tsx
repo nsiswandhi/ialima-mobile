@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from './src/config';
 import { colors, fonts } from './src/theme';
 import Header, { DrawerProfile, NavTarget } from './src/Header';
+import VerifiedBadge from './src/VerifiedBadge';
 import RightDrawer from './src/RightDrawer';
 import DeleteAccountScreen from './src/DeleteAccountScreen';
 import ProfileScreen from './src/ProfileScreen';
@@ -105,6 +106,7 @@ type Member = {
   id: number;
   name: string;
   avatar: { thumbnail: string } | null;
+  is_member: boolean;
   angkatan: string;
   job_title: string;
   company: string;
@@ -929,13 +931,16 @@ function AppInner() {
             style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
             onPress={() => setSelectedMemberId(item.id)}
           >
-            {item.avatar?.thumbnail ? (
-              <Image source={{ uri: item.avatar.thumbnail }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarFallback]}>
-                <Text style={styles.avatarLetter}>{item.name?.charAt(0) || '?'}</Text>
-              </View>
-            )}
+            <View style={{ position: 'relative' }}>
+              {item.avatar?.thumbnail ? (
+                <Image source={{ uri: item.avatar.thumbnail }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarFallback]}>
+                  <Text style={styles.avatarLetter}>{item.name?.charAt(0) || '?'}</Text>
+                </View>
+              )}
+              {item.is_member && <VerifiedBadge />}
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{item.name}</Text>
               <Text style={styles.meta}>

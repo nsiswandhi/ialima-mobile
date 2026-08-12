@@ -2,12 +2,19 @@ import React from 'react';
 import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from './theme';
+import VerifiedBadge from './VerifiedBadge';
 
 // Read-only presentation of a member's public profile. Shared by the directory
 // Member Detail screen and the Profile tab's view mode so both look identical.
 export type ProfileViewData = {
   name: string;
   avatar?: { full?: string; thumbnail?: string } | null;
+  // "Verified member" badge — only populated by MemberDetailScreen (viewing
+  // someone ELSE's profile). ProfileScreen's own view-mode data intentionally
+  // never sets this, so the signed-in user is never badged on their own
+  // Profile tab (mirrors Header.tsx's own-avatar exclusion, just achieved by
+  // omission here rather than a code branch).
+  is_member?: boolean;
   // Contact — only passed for the signed-in user's own profile.
   email?: string;
   phone?: string;
@@ -79,13 +86,16 @@ export default function ProfileView({ data, showCareer = true }: { data: Profile
     <View>
       {/* Identity card */}
       <View style={styles.hero}>
-        {avatarUri ? (
-          <Image source={{ uri: avatarUri }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarLetter}>{initial}</Text>
-          </View>
-        )}
+        <View style={{ position: 'relative' }}>
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Text style={styles.avatarLetter}>{initial}</Text>
+            </View>
+          )}
+          {data.is_member && <VerifiedBadge />}
+        </View>
         <Text style={styles.name}>{data.name}</Text>
         <View style={styles.badgeRow}>
           {filled(data.angkatan) && (

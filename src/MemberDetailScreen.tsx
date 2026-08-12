@@ -127,6 +127,7 @@ export default function MemberDetailScreen({ memberId, token, viewer, onBack, on
         setData({
           name: m.name,
           avatar: m.avatar,
+          is_member: m.is_member,
           roles: m.roles,
           angkatan: m.angkatan,
           kota_dan_provinsi: m.kota_dan_provinsi,

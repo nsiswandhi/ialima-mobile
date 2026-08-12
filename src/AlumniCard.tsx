@@ -1,11 +1,13 @@
 import React from 'react';
 import { Image, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { colors, fonts } from './theme';
+import VerifiedBadge from './VerifiedBadge';
 
 export type AlumniSummary = {
   id: number;
   name: string;
   avatar: { thumbnail: string } | null;
+  is_member?: boolean;
   angkatan?: string;
   job_title?: string;
 };
@@ -21,13 +23,16 @@ export default function AlumniCard({
 }) {
   return (
     <Pressable style={({ pressed }) => [styles.card, style, pressed && styles.pressed]} onPress={onPress}>
-      {member.avatar?.thumbnail ? (
-        <Image source={{ uri: member.avatar.thumbnail }} style={styles.img} />
-      ) : (
-        <View style={[styles.img, styles.fallback]}>
-          <Text style={styles.letter}>{member.name?.charAt(0) || '?'}</Text>
-        </View>
-      )}
+      <View style={{ position: 'relative' }}>
+        {member.avatar?.thumbnail ? (
+          <Image source={{ uri: member.avatar.thumbnail }} style={styles.img} />
+        ) : (
+          <View style={[styles.img, styles.fallback]}>
+            <Text style={styles.letter}>{member.name?.charAt(0) || '?'}</Text>
+          </View>
+        )}
+        {member.is_member && <VerifiedBadge />}
+      </View>
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>{member.name}</Text>
         {!!member.angkatan && (
