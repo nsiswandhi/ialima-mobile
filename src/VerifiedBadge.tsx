@@ -14,7 +14,7 @@ import { colors } from './theme';
 // with `overflow: 'hidden'` and rounded corners (e.g. BrandCard-style cards).
 export default function VerifiedBadge() {
   return (
-    <View style={styles.badge}>
+    <View style={styles.badge} accessibilityRole="image" accessibilityLabel="Member terverifikasi">
       <Ionicons name="checkmark-circle" size={12} color={colors.primary} />
     </View>
   );

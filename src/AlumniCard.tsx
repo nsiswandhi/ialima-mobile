@@ -7,7 +7,7 @@ export type AlumniSummary = {
   id: number;
   name: string;
   avatar: { thumbnail: string } | null;
-  is_member?: boolean;
+  is_member: boolean;
   angkatan?: string;
   job_title?: string;
 };
